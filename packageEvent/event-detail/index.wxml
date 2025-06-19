@@ -1,0 +1,258 @@
+<!-- 简洁现代化活动详情页面 -->
+<view class="modern-container">
+
+  <!-- 主要内容 -->
+  <scroll-view class="main-scroll" scroll-y="true" wx:if="{{featuredEvent}}">
+    <!-- 信息展示区 -->
+    <view class="info-section">
+      <!-- 活动图片轮播 - 显示2.5个项目 -->
+      <view class="images-swiper fade-in-up" wx:if="{{featuredEvent.process_images && featuredEvent.process_images.length > 0}}">
+        <swiper 
+          class="images-swiper-container" 
+          indicator-dots="{{false}}" 
+          autoplay="{{true}}" 
+          interval="4000" 
+          duration="500"
+          display-multiple-items="2.5"
+          previous-margin="40rpx"
+          next-margin="40rpx"
+          bindchange="onSwiperChange"
+        >
+          <swiper-item class="images-swiper-item" wx:for="{{featuredEvent.process_images}}" wx:key="*this">
+            <view class="image-wrapper">
+              <image 
+                class="swiper-image" 
+                src="{{item}}" 
+                mode="aspectFill" 
+                bindtap="previewImage" 
+                data-url="{{item}}" 
+                data-index="{{index}}"
+              />
+            </view>
+          </swiper-item>
+        </swiper>
+        
+        <!-- 状态标签 -->
+        <view class="status-tag {{featuredEvent.actual_endTime ? 'ended' : 'active'}}">
+          {{featuredEvent.actual_end_time ? '已结束' : '进行中'}}
+        </view>
+        
+        <!-- 图片指示器 -->
+        <view class="images-indicator" wx:if="{{featuredEvent.process_images.length > 1}}">
+          <view class="indicator-dots">
+            <view 
+              class="indicator-dot {{index === currentImageIndex ? 'active' : ''}}" 
+              wx:for="{{featuredEvent.process_images}}" 
+              wx:key="*this"
+            ></view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 活动详细信息卡片 -->
+      <view class="card fade-in-up-delay-1">
+        <view class="detail-info-card">
+          <!-- 活动标题 -->
+          <view class="event-title">{{featuredEvent.title}}</view>
+          
+          <!-- 基本信息段落 -->
+          <view class="basic-info-text">
+            <view class="info-text-item">
+              <van-icon name="clock-o" size="16" color="#ff6b9d" />
+              <text class="info-text">开始时间：{{featuredEvent.pre_startTime || '时间待定'}}</text>
+            </view>
+            <view class="info-text-item">
+              <van-icon name="manager-o" size="16" color="#ff6b9d" />
+              <text class="info-text">主办方：{{featuredEvent.club_name}}</text>
+            </view>
+            <view class="info-text-item" wx:if="{{scheduleInfo && scheduleInfo.period}}">
+              <van-icon name="replay" size="16" color="#ff6b9d" />
+              <text class="info-text">重复周期：{{schedulePeriodText}}</text>
+            </view>
+            <view class="info-text-item" wx:if="{{featuredEvent.cur_user_clockin_date}}">
+              <van-icon name="success" size="16" color="#ff6b9d" />
+              <text class="info-text">我的打卡：{{featuredEvent.cur_user_clockin_date}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 地图展示 -->
+      <view class="card fade-in-up-delay-1" wx:if="{{featuredEvent.location_data}}">
+        <view class="location-card">
+          <view class="location-map" bindtap="openLocation">
+            <image 
+              class="map-image"
+              src="https://maps.geoapify.com/v1/staticmap?style=osm-bright-grey&width=600&height=300&center=lonlat:{{featuredEvent.location_data.longitude}},{{featuredEvent.location_data.latitude}}&zoom=15&marker=lonlat:{{featuredEvent.location_data.longitude}},{{featuredEvent.location_data.latitude}};type:awesome;color:%23ff6b9d;size:28&scaleFactor=2&apiKey=b8568cb9afc64fad861a69edbddb2658"
+              mode="aspectFill"
+            />
+            <view class="location-overlay">
+              <view class="location-name">{{featuredEvent.location_data.name || featuredEvent.location}}</view>
+              <view class="location-action">
+                <van-icon name="guide-o" size="16" color="#ffffff" />
+                <text>点击导航</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 活动介绍 -->
+      <view class="card fade-in-up-delay-1" wx:if="{{featuredEvent.content}}">
+        <view class="content-card">
+          <view class="content-text">{{featuredEvent.content}}</view>
+        </view>
+      </view>
+
+      <!-- 参与者展示 -->
+      <view class="card fade-in-up-delay-1" wx:if="{{featuredEvent.members && featuredEvent.members.length > 0}}">
+        <view class="participants-card">
+          <view class="participants-header">
+            <text class="participants-title">参与者 ({{featuredEvent.join_count || 0}})</text>
+            <text class="participants-subtitle">{{featuredEvent.clockin_count || 0}}人已打卡</text>
+          </view>
+          <view class="participants-grid">
+            <view 
+              class="participant-item" 
+              wx:for="{{featuredEvent.members}}" 
+              wx:key="user_id"
+              wx:if="{{index < 8}}"
+            >
+              <view class="participant-avatar">
+                <image 
+                  class="avatar-img" 
+                  src="{{item.avatar}}" 
+                />
+                <view class="checkin-badge" wx:if="{{item.clockinDate}}">
+                  <van-icon name="success" size="10" color="#ffffff" />
+                </view>
+              </view>
+              <view class="participant-name">{{item.user_name}}</view>
+            </view>
+            
+            <!-- 更多参与者 -->
+            <view class="participant-item more-participants" wx:if="{{featuredEvent.members.length > 8}}" bindtap="viewAllMembers">
+              <view class="more-avatar">
+                <text class="more-text">+{{featuredEvent.members.length - 8}}</text>
+              </view>
+              <view class="participant-name">更多</view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 活动统计 -->
+      <view class="card fade-in-up-delay-1">
+        <view class="stats-card">
+          <view class="stats-row">
+            <view class="stat-item">
+              <view class="stat-number">{{featuredEvent.join_count || 0}}</view>
+              <view class="stat-label">参与人数</view>
+            </view>
+            <view class="stat-item">
+              <view class="stat-number">{{featuredEvent.clockin_count || 0}}</view>
+              <view class="stat-label">已打卡</view>
+            </view>
+            <view class="stat-item">
+              <view class="stat-number">¥{{featuredEvent.budget || '0'}}</view>
+              <view class="stat-label">预算</view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 操作区 -->
+      <view class="action-section fade-in-up-delay-1">
+        <view class="actions-container">
+          <!-- 用户已加入活动的情况 -->
+          <block wx:if="{{featuredEvent.cur_user_is_joined}}">
+            <!-- 活动已结束时显示已结束按钮 -->
+            <view 
+              class="action-btn ended-btn"
+              wx:if="{{featuredEvent.actual_endTime}}"
+            >
+              <van-icon name="clock-o" size="20" />
+              <text>活动已结束</text>
+            </view>
+            
+            <!-- 活动未结束时显示打卡和退出按钮 -->
+            <block wx:else>
+              <!-- 活动未开始时显示未开始按钮 -->
+              <view 
+                class="action-btn not-started-btn"
+                wx:if="{{!featuredEvent.actual_startTime}}"
+              >
+                <van-icon name="clock-o" size="20" />
+                <text>活动未开始</text>
+              </view>
+              
+              <!-- 活动已开始时显示打卡按钮 -->
+              <view 
+                class="action-btn checkin-btn {{featuredEvent.cur_user_clockin_date ? 'disabled' : ''}}"
+                bindtap="clockinEvent"
+                wx:elif="{{featuredEvent.actual_startTime}}"
+              >
+                <van-icon name="{{featuredEvent.cur_user_clockin_date ? 'success' : 'sign'}}" size="20" />
+                <text>{{featuredEvent.cur_user_clockin_date ? '已打卡' : '打卡'}}</text>
+              </view>
+              
+              <!-- 退出活动按钮 -->
+              <view 
+                class="action-btn quit-btn"
+                bindtap="quitEvent"
+              >
+                <van-icon name="close" size="20" />
+                <text>退出</text>
+              </view>
+            </block>
+          </block>
+          
+          <!-- 参加活动按钮 - 当用户可以参加时显示 -->
+          <view 
+            class="action-btn join-btn"
+            bindtap="joinEvent"
+            wx:if="{{featuredEvent.cur_user_can_join}}"
+          >
+            <van-icon name="plus" size="20" />
+            <text>参加</text>
+          </view>
+          
+          <!-- 加入协会按钮 - 当用户未加入协会时显示 -->
+          <view 
+            class="action-btn join-club-btn"
+            bindtap="joinClub"
+            wx:if="{{!featuredEvent.cur_user_can_join && !featuredEvent.cur_user_is_joined}}"
+          >
+            <van-icon name="manager-o" size="20" />
+            <text>加入协会</text>
+          </view>
+          
+          <!-- 订阅按钮 - 根据后端返回的状态显示 -->
+          <view 
+            class="action-btn subscribe-btn {{userSubscribed ? 'subscribed' : ''}}"
+            bindtap="{{userSubscribed ? 'unsubscribeSchedule' : 'subscribeSchedule'}}"
+            wx:if="{{canSubscribe || userSubscribed}}"
+          >
+            <van-icon name="{{userSubscribed ? 'bell' : 'bell-o'}}" size="20" />
+            <text>{{userSubscribed ? '已订阅' : '订阅'}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 无活动状态 -->
+  <view class="empty-container" wx:elif="{{!isLoading && isEmpty}}">
+    <view class="empty-state">
+      <van-icon name="warning-o" size="64" color="#ff6b9d" />
+      <text class="empty-title">活动不存在</text>
+      <text class="empty-desc">该活动可能已被删除或不存在</text>
+    </view>
+  </view>
+
+  <!-- 加载中状态 -->
+  <view class="loading-container" wx:if="{{isLoading}}">
+    <van-loading type="spinner" color="#ff6b9d" />
+    <text class="loading-text">加载中...</text>
+  </view>
+</view>

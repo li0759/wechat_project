@@ -1,0 +1,333 @@
+/* pages/profile/index.wxss */
+.container {
+  display: flex;
+  flex-direction: column;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+  padding-bottom: 30rpx;
+}
+
+/* 头部用户信息 */
+.header {
+  background-color:rgb(223, 118, 176);
+  width:500rpx;
+  margin-top: 10rpx;
+  color: #fff;
+  border-radius: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.user-card {
+  display: flex;
+  padding-left:50rpx;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  border: 4rpx solid rgba(255, 255, 255, 0.5);
+}
+
+.user-info {
+  flex: 1;
+  margin-left: 20rpx;
+}
+
+.name {
+  font-size: 36rpx;
+  font-weight: 500;
+  margin-bottom: 6rpx;
+}
+
+.role {
+  font-size: 24rpx;
+  opacity: 0.8;
+}
+
+.edit-btn {
+  padding: 10rpx;
+}
+
+/* 数据概览 */
+.statistics {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20rpx;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 20rpx;
+  padding: 20rpx;
+}
+
+.stat-item {
+  flex: 1;
+  text-align: center;
+  position: relative;
+}
+
+.stat-item::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 15%;
+  height: 70%;
+  width: 1rpx;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.stat-item:last-child::after {
+  display: none;
+}
+
+.stat-num {
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-bottom: 6rpx;
+}
+
+.stat-label {
+  font-size: 24rpx;
+  opacity: 0.7;
+}
+
+/* 功能列表 */
+.function-list {
+  min-height: 80vh;
+  width:700rpx;
+  padding: 30rpx;
+  position: relative;
+}
+
+.function-group {
+  margin-bottom: 30rpx;
+  background-color: #fff;
+  border-radius: 20rpx;
+  overflow: hidden;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.function-title {
+  font-size: 28rpx;
+  color: #999;
+  padding: 20rpx 30rpx;
+  border-bottom: 1rpx solid #f5f5f5;
+}
+
+/* 网格布局 */
+.function-grid {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 10rpx;
+}
+
+.grid-item {
+  width: 20%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20rpx 0;
+}
+
+.grid-icon {
+  position: relative;
+  margin-bottom: 10rpx;
+  width: 80rpx;
+  height: 80rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.badge {
+  position: absolute;
+  top: -8rpx;
+  right: -8rpx;
+  background-color:rgb(255, 77, 77);
+  color: #fff;
+  font-size: 20rpx;
+  min-width: 32rpx;
+  height: 32rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6rpx;
+}
+
+.grid-text {
+  font-size: 24rpx;
+  color: #333;
+  text-align: center;
+}
+
+/* 原列表布局 */
+.function-items {
+  position: relative;
+}
+
+.function-item {
+  display: flex;
+  align-items: center;
+  padding: 30rpx;
+  position: relative;
+}
+
+.function-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 30rpx;
+  right: 30rpx;
+  height: 1rpx;
+  background-color: #f5f5f5;
+}
+
+.item-icon {
+  margin-right: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.item-text {
+  flex: 1;
+  font-size: 30rpx;
+  color: #333;
+}
+
+
+.item-arrow {
+  color: #ccc;
+}
+
+.logout {
+  color:rgb(223, 118, 176);
+}
+
+/* 动画效果 */
+.function-item {
+  transition: background-color 0.3s;
+}
+
+.function-item:active {
+  background-color: #f5f5f5;
+}
+
+.grid-item {
+  transition: transform 0.2s;
+}
+
+.grid-item:active {
+  transform: scale(0.95);
+}
+
+/* 社团管理行 */
+.club-management-row {
+  padding: 10rpx 0;
+}
+
+.club-title {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: white;
+  padding: 20rpx 30rpx 10rpx;
+  background-color:rgb(223, 118, 176);
+  border-radius: 8rpx;
+  margin: 10rpx 20rpx;
+}
+
+.club-divider {
+  height: 1rpx;
+  background-color: #eee;
+  margin: 10rpx 30rpx;
+}
+
+.no-clubs {
+  padding: 40rpx 0;
+  text-align: center;
+  color: #999;
+  font-size: 28rpx;
+}
+
+/* 活动跟踪 */
+.event-tracking-section {
+  padding: 20rpx 30rpx;
+  background-color: #f9f9f9;
+  margin: 10rpx 0;
+}
+
+.tracking-title {
+  font-size: 28rpx;
+  color: #999;
+  margin-bottom: 15rpx;
+}
+
+.tracking-list {
+  background-color: #fff;
+  border-radius: 12rpx;
+  overflow: hidden;
+}
+
+.tracking-item {
+  position: relative;
+  display: flex;
+  padding: 20rpx 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.tracking-item:last-child {
+  border-bottom: none;
+}
+
+.tracking-status {
+  width: 6rpx;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.status-1 {
+  background-color: #4caf50; /* 进行中 */
+}
+
+.status-2 {
+  background-color: #ff9800; /* 待签到 */
+}
+
+.status-3 {
+  background-color: #2196f3; /* 待开始 */
+}
+
+.tracking-info {
+  flex: 1;
+  margin-right: 20rpx;
+}
+
+.tracking-name {
+  font-size: 30rpx;
+  margin-bottom: 10rpx;
+  color: #333;
+}
+
+/* 新增样式 - 活动详情 */
+.tracking-details {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+
+.tracking-detail-item {
+  display: flex;
+  align-items: center;
+  margin-right: 8px;
+}
+
+.slash {
+  margin: 0 8px;
+  color: #666;
+  font-size: 12px;
+}

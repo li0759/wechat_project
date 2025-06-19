@@ -1,0 +1,408 @@
+/* pages/money/club-timeline/index.wxss */
+/* 基础变量 */
+:root {
+  --primary: rgb(223, 118, 176);
+  --primary-light: rgba(223, 118, 176, 0.15);
+  --primary-medium: rgba(223, 118, 176, 0.3);
+  --primary-dark: rgb(195, 93, 151);
+  --text-dark: #333333;
+  --text-medium: #666666;
+  --text-light: #999999;
+  --bg-color: #fff;
+  --bg-light: #fcf7fa;
+  --border-radius: 16rpx;
+  --shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  /* 特定的协会收支颜色变量 */
+  --expense-color: #999999;
+  --income-color: var(--primary);
+}
+
+/* 页面主容器 */
+.event-container {
+  background-color: #f7f8fa;
+  min-height: 100vh;
+}
+
+/* 列表选项卡特殊样式 */
+.list-tab {
+  position: relative;
+}
+
+/* 固定在顶部的月份显示 */
+.fixed-month-display {
+  position: fixed;
+  top: 88rpx;
+  left: 0;
+  z-index: 99;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  left: 320rpx;
+  background-color: rgba(255, 255, 255, 0.9);
+  font-size: 36rpx;
+  color: rgb(223, 118, 176);
+  font-weight: 500;
+  border-radius: 0 8rpx 8rpx 0;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+/* 新增功能按钮区域 */
+.fixed-action-buttons {
+  position: fixed;
+  top: 88rpx;
+  right: 0;
+  z-index: 99;
+  display: flex;
+  justify-content: flex-end;
+  padding: 0rpx 30rpx;
+  width: 100%;
+  box-sizing: border-box;
+  pointer-events: none; /* 使容器不阻止点击事件 */
+}
+
+.action-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 110rpx;
+  height: 110rpx;
+  border-radius: 50%;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.15);
+  margin-left: 30rpx;
+  pointer-events: auto; /* 恢复按钮的点击事件 */
+}
+
+.action-button .van-icon {
+  margin-bottom: 8rpx; /* 增加图标下方的间距 */
+}
+
+.action-button text {
+  font-size: 20rpx;
+  color: #ffffff;
+  display: block; /* 确保文字作为块级元素 */
+  text-align: center; /* 确保文字居中 */
+}
+
+.payment-button {
+  background-color: rgb(223, 118, 176);
+  float: left;
+  margin-right: auto; /* 推到左边 */
+  margin-left: 20rpx; /* 与月份显示保持一定距离 */
+}
+
+.clubfee-button {
+  background-color: #999999;
+  float: right;
+  margin-right: 20rpx; 
+}
+
+/* 月份显示占位符，防止内容被遮挡 */
+.month-display-placeholder {
+  height: 150rpx; /* 增加高度以适应新增的按钮 */
+  width: 100%;
+  margin-bottom: 10rpx;
+}
+
+/* 自定义vant Tab组件样式 */
+.van-tab {
+  flex: 1 !important;
+  min-width: 25% !important;
+  position: sticky;
+}
+
+.van-tabs__wrap {
+  background-color: #fff;
+}
+
+.van-tab--active {
+  font-weight: bold !important;
+  color: rgb(223, 118, 176) !important;
+}
+
+.van-tabs__line {
+  background-color: rgb(223, 118, 176) !important;
+  height: 6rpx !important;
+  width: 120rpx !important;
+  border-radius: 3rpx !important;
+}
+
+/* 内容区域 */
+.list-content {
+  padding-top: 50rpx;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 瀑布流容器 */
+.waterfall-container {
+
+  flex: 1;
+  height: 100%;
+  position: relative;
+}
+
+/* 全宽列布局 */
+.full-width-column {
+  width: 100%;
+  padding: 0 8rpx;
+}
+
+/* 空状态容器 */
+.empty-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100rpx 0;
+}
+
+/* 日历容器样式 */
+.calendar-container {
+  padding: 20rpx;
+  background-color: #fff;
+  border-radius: 12rpx;
+  margin: 20rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+}
+
+/* 日历空数据提示 */
+.calendar-empty-tip {
+  text-align: center;
+  padding: 30rpx 0;
+  color: #999;
+  font-size: 28rpx;
+  border-top: 1px solid #f5f5f5;
+  margin-top: 20rpx;
+}
+
+/* 添加加载更多按钮样式 */
+.load-more-container {
+  display: flex;
+  justify-content: center;
+  padding: 30rpx 0;
+  position: relative;
+  z-index: 10;
+  margin-bottom: 20rpx;
+}
+
+/* 加载更多按钮相对于时间轴的位置 */
+.timeline-items .load-more-container {
+  margin-top: 10rpx;
+}
+
+.load-more-btn {
+  width: 240rpx !important;
+  height: 70rpx !important;
+  border-radius: 35rpx !important;
+  color: #666 !important;
+  font-size: 28rpx !important;
+  font-weight: normal !important;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid #eee !important;
+  background-color: #fff !important;
+}
+
+/* 按钮禁用状态 */
+.load-more-btn.van-button--disabled {
+  color: #999 !important;
+  background-color: #f5f5f5 !important;
+}
+
+/* 图标样式 */
+.load-more-btn .van-icon {
+  font-size: 28rpx;
+  vertical-align: middle;
+  margin-right: 4rpx;
+}
+
+/* ========== 时间轴特定样式 ========== */
+/* 时间轴主容器 */
+.timeline-main-container {
+  position: relative;
+}
+
+/* 中间时间轴 */
+.timeline-center {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 10rpx;
+  z-index: 1;
+}
+
+.timeline-line {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 4rpx;
+  background-color: #e0e0e0;
+  transform: translateX(-50%);
+}
+
+/* 时间轴项目容器 */
+.timeline-items {
+  position: relative;
+  z-index: 2;
+}
+
+/* 时间轴项目共通样式 */
+.timeline-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 40rpx;
+  position: relative;
+}
+
+/* 时间轴点 */
+.timeline-dot {
+  position: absolute;
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 50%;
+  z-index: 10;
+  top: 20rpx;
+  border: 4rpx solid #fff;
+  box-shadow: 0 0 4rpx rgba(0, 0, 0, 0.2);
+}
+
+/* 收入支出点颜色区分 */
+.income-item .timeline-dot {
+  background-color: var(--income-color);
+  right: calc(50% - 10rpx);
+}
+
+.expense-item .timeline-dot {
+  background-color: var(--expense-color);
+  left: calc(50% - 10rpx);
+}
+
+/* 支出项和收入项差异化布局 */
+.income-item {
+  padding-right: 50%;
+  justify-content: flex-start;
+}
+
+.expense-item {
+  padding-left: 50%;
+  justify-content: flex-start;
+}
+
+/* 内部日期样式 */
+.item-date-inside {
+  font-size: 24rpx;
+  color: var(--text-light);
+  margin-top: 12rpx;
+  padding-top: 10rpx;
+  border-top: 1px dashed #f0f0f0;
+}
+
+/* 项目内容区 */
+.timeline-content {
+  background-color: #fff;
+  border-radius: 12rpx;
+  box-shadow: var(--shadow);
+  padding: 20rpx;
+  width: 90%;
+  position: relative;
+  z-index: 5;
+}
+
+/* 收入项目样式 */
+.pay-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.pay-description {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 10rpx;
+}
+
+.pay-amount {
+  display: flex;
+  justify-content: space-between;
+  font-size: 28rpx;
+  margin-top: 10rpx;
+}
+
+.paid {
+  color: var(--income-color);
+  font-weight: 500;
+}
+
+.unpaid {
+  color: var(--text-medium);
+}
+
+.pay-details-toggle {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: var(--income-color);
+}
+
+/* 支出项目样式 */
+.event-expense {
+  display: flex;
+  align-items: flex-start;
+}
+
+.event-cover {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 8rpx;
+  margin-right: 16rpx;
+  object-fit: cover;
+}
+
+.event-info {
+  flex: 1;
+}
+
+.event-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 10rpx;
+}
+
+.event-cost {
+  font-size: 28rpx;
+  color: var(--expense-color);
+  font-weight: 500;
+}
+
+.club-fee {
+  margin-bottom: 10rpx;
+}
+
+.fee-description {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 8rpx;
+}
+
+.fee-amount {
+  font-size: 28rpx;
+  color: var(--expense-color);
+  font-weight: 500;
+}
+
+/* 时间轴滚动视图 */
+.timeline-scroll-view {
+  min-height: calc(100vh - 250rpx); /* 最小高度适应屏幕 */
+  width: 100%;
+  box-sizing: border-box;
+  height: 100%;
+  -webkit-overflow-scrolling: touch;
+} 

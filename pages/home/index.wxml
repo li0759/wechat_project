@@ -1,0 +1,286 @@
+
+
+  <!-- 顶部导航栏 -->
+  <view class="header">
+    <view class="user-info" bindtap="navigateToUserInfo">
+      <image class="avatar" src="{{userInfo.avatar}}"></image>
+      <view class="user-detail">
+        <text class="username">{{userInfo.username || '点击登录'}}</text>
+        <text class="user-role">{{userInfo.roles_join}}</text>
+      </view>
+    </view>
+    <view class="header-right">
+      <view class="notification-icon" bindtap="navigateToMessages">
+        <van-icon name="bell" size="24px" color="#333" />
+        <view class="notification-badge" wx:if="{{unread_messages_count > 0}}">{{unread_messages_count > 99 ? '99+' : unread_messages_count}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 使用vant的Tab组件 -->
+  <van-tabs  swipeable animated sticky offset-top="{{ 65 }}">
+    <!-- 最新活动 -->
+    <van-tab title="最新活动">
+      <!-- 热门活动轮播 -->
+      <view class="hot-events-container" wx:if="{{hotActivities.length > 0}}">
+        <view class="section-title">
+          <text>热门活动</text>
+        </view>
+        <swiper class="hot-events-swiper" indicator-dots="{{true}}" interval="{{3000}}" duration="{{500}}" circular="{{true}}">
+          <swiper-item wx:for="{{hotActivities}}" wx:key="event_id">
+            <view class="hot-event-card" bindtap="navigateToEventDetail" data-event_id="{{item.event_id}}" data-user_managed="{{item.cur_user_managed}}">
+              <view class="hot-event-layout">
+                <!-- 地图背景 - 占据整个容器 -->
+                <view class="hot-event-map-background" wx:if="{{item.location_data}}">
+                  <view class="hot-event-map">
+                    <image 
+                      src="https://maps.geoapify.com/v1/staticmap?style=osm-bright-grey&width=600&height=400&center=lonlat:{{item.location_data.longitude}},{{item.location_data.latitude}}&zoom=14&styleCustomization=road_label_primary:36|road_label_secondary:36|place_label_park:36|place_label_village:36|place_label_city:36|place_label_town:36|place_state-label:36|place_label_country:36&marker=lonlat:{{item.location_data.longitude}},{{item.location_data.latitude}};type:awesome;color:%23ff0000;size:28&scaleFactor=2&apiKey=b8568cb9afc64fad861a69edbddb2658"
+                      mode="aspectFill" />
+                    <!-- 地点名称在地图中心 -->
+                    <text class="location-name">{{item.location_data.name}}</text>
+                  </view>
+                </view>
+                
+                <!-- 活动封面 - 左上角 -->
+                <view class="hot-event-image-container">
+                  <image 
+                    class="hot-event-image {{!item.cover_url ? 'image-placeholder' : ''}} {{item.end_time ? 'card-image-ended' : ''}} {{item.cur_user_is_joined ? 'is-joined' : ''}} {{item.cur_user_managed ? 'is-managed' : ''}}"
+                    src="{{item.cover_url}}" 
+                    mode="aspectFill" />
+                </view>
+                
+                <!-- 参与者头像 - 右上角 -->
+                <view class="hot-event-participants">
+                  <view class="participants-avatars">
+                    <image 
+                      wx:for="{{item.latest_joins}}" 
+                      wx:for-item="member" 
+                      wx:key="user_id" 
+                      wx:if="{{index < 5}}"
+                      src="{{member.avatar || '/assets/images/default-avatar.png'}}" 
+                      class="participant-avatar" />
+                    <view class="more-participants" wx:if="{{item.join_count > 5}}">...</view>
+                  </view>
+                  <text class="participants-count">{{item.join_count}}人参加</text>
+                </view>
+                
+                <!-- 活动信息 - 左下角 -->
+                <view class="hot-event-info">
+                  <view class="hot-event-title">{{item.title}}</view>
+                  <view class="hot-event-description">{{item.description}}</view>
+                  <view class="hot-event-time">{{item.start_time}}</view>
+                </view>
+              </view>
+            </view>
+          </swiper-item>
+        </swiper>
+      </view>
+
+      <view class="waterfall-container">
+        <view class="waterfall-column">
+          <view wx:for="{{activities}}" wx:key="event_id" wx:if="{{index % 2 === 0}}" class="waterfall-item">
+            <view class="card" bindtap="navigateToEventDetail" data-event_id="{{item.event_id}}" data-user_managed="{{item.cur_user_managed}}">
+              <view class="image-container">
+                <image 
+                  class="card-image {{!item.cover_url ? 'image-placeholder' : ''}} {{item.end_time ? 'card-image-ended' : ''}} {{item.cur_user_is_joined ? 'is-joined' : ''}} {{item.cur_user_managed ? 'is-managed' : ''}}"
+                  src="{{item.cover_url}}" 
+                  mode="aspectFill" />
+                <view class="image-members-count">
+                  <van-icon name="friends-o" size="12px" color="#fff" />
+                  <text>{{item.join_count}}人参加</text>
+                </view>
+              </view>
+              <view class="card-content">
+                <view class="card-title">{{item.title}}</view>
+                <view class="card-info-row">
+                  <view class="card-club-name" wx:if="{{item.club_name}}">
+                    <van-icon name="friends-o" size="12px" color="#666" />
+                    <text>{{item.club_name}}</text>
+                  </view>
+                  <view class="card-tag">
+                    <text>{{item.start_time}}</text>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+        <view class="waterfall-column">
+          <view wx:for="{{activities}}" wx:key="event_id" wx:if="{{index % 2 === 1}}" class="waterfall-item">
+            <view class="card" bindtap="navigateToEventDetail" data-event_id="{{item.event_id}}" data-user_managed="{{item.cur_user_managed}}">
+              <view class="image-container">
+                <image 
+                  class="card-image {{!item.cover_url ? 'image-placeholder' : ''}} {{item.end_time ? 'card-image-ended' : ''}} {{item.cur_user_is_joined ? 'is-joined' : ''}} {{item.cur_user_managed ? 'is-managed' : ''}}"
+                  src="{{item.cover_url}}" 
+                  mode="aspectFill" />
+                <view class="image-members-count">
+                  <van-icon name="friends-o" size="12px" color="#fff" />
+                  <text>{{item.join_count}}人参加</text>
+                </view>
+              </view>
+              <view class="card-content">
+                <view class="card-title">{{item.title}}</view>
+                <view class="card-info-row">
+                  <view class="card-club-name" wx:if="{{item.club_name}}">
+                    <van-icon name="friends-o" size="12px" color="#666" />
+                    <text>{{item.club_name}}</text>
+                  </view>
+                  <view class="card-tag">
+                    <text>{{item.start_time}}</text>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+        <!-- 空状态 -->
+        <view class="empty-container" wx:if="{{activities.length === 0}}">
+          <van-empty description="暂无活动" />
+        </view>
+      </view>
+    </van-tab>
+
+    <!-- 热门协会 -->
+    <van-tab title="热门协会">
+      <!-- 热门协会轮播 -->
+      <view class="hot-clubs-container" wx:if="{{hotClubs.length > 0}}">
+        <view class="section-title">
+          <text>热门协会</text>
+        </view>
+        <swiper class="hot-clubs-swiper" indicator-dots="{{true}}" interval="{{3000}}" duration="{{500}}" circular="{{true}}">
+          <swiper-item wx:for="{{hotClubs}}" wx:key="club_id">
+            <view class="hot-club-card" bindtap="navigateToClubDetail" data-club_id="{{item.club_id}}" data-user_leaded="{{item.cur_user_leaded}}">
+              <view class="hot-club-layout">
+                <!-- 协会logo背景 -->
+                <view class="hot-club-background">
+                  <image class="hot-club-bg-image {{!item.logo ? 'image-placeholder' : ''}}" src="{{item.logo}}" mode="aspectFill" />
+                  <view class="hot-club-overlay"></view>
+                </view>
+                
+                <!-- 协会信息 - 左上角 -->
+                <view class="hot-club-info">
+                  <view class="hot-club-name">{{item.club_name}}</view>
+                  <view class="hot-club-description">{{item.description}}</view>
+                </view>
+                
+                <!-- 协会会长信息 - 左中 -->
+                <view class="hot-club-leader">
+                  <view class="leader-item">
+                    <image src="{{item.leader_info.avatar || '/assets/images/default-avatar.png'}}" class="leader-avatar" mode="aspectFill" />
+                    <view class="leader-details">
+                      <text class="leader-title">会长</text>
+                      <text class="leader-name">{{item.leader_info.name || '暂无'}}</text>
+                    </view>
+                  </view>
+                </view>
+                
+                <!-- 协会会员信息 - 左下 -->
+                <view class="hot-club-members">
+                    <view class="members-list-rows">
+                      <view 
+                        wx:for="{{item.recent_members}}" 
+                        wx:for-item="member" 
+                        wx:key="user_id" 
+                        wx:if="{{index < 3}}"
+                        class="member-row">
+                        <image src="{{member.avatar || '/assets/images/default-avatar.png'}}" class="member-row-avatar" mode="aspectFill" />
+                        <text class="member-row-name">{{member.name || member.user_name}}</text>
+                      </view>
+                    </view>
+                </view>
+                
+                <!-- 最新活动列表 - 右侧 -->
+                <view class="hot-club-events">
+                  <view class="recent-events-list">
+                    <!-- 显示实际活动 -->
+                    <view wx:for="{{item.recent_events}}" wx:for-item="event" wx:key="title" wx:if="{{index < 3}}" class="recent-event-item">
+                      <view class="event-item-content">
+                        <!-- 第一个活动显示封面 -->
+                        <view wx:if="{{index === 0}}" class="event-cover-container">
+                          <image wx:if="{{event.cover}}" class="event-cover" src="{{event.cover}}" mode="aspectFill" />
+                          <view class="event-text-overlay">
+                            <text class="event-title">{{event.title}}</text>
+                            <text class="event-time">{{event.start_time}}</text>
+                          </view>
+                        </view>
+                        <!-- 第二、三个活动只显示文字 -->
+                        <view wx:else class="event-text-only">
+                          <text class="event-title-only">{{event.title}}</text>
+                          <text class="event-time-only">{{event.start_time}}</text>
+                        </view>
+                      </view>
+                    </view>
+                    <!-- 占位符，确保始终有3行的空间 -->
+                    <view wx:for="{{[1,2,3]}}" wx:key="*this" wx:if="{{item.recent_events.length < index}}" class="recent-event-placeholder">
+                      <view class="placeholder-content">
+                        <!-- 第一个占位符显示封面样式 -->
+                        <view wx:if="{{index === 1}}" class="event-cover-container">
+                          <view class="event-cover-placeholder">
+                            <van-icon name="photo" size="16px" color="#ddd" />
+                          </view>
+                          <view class="event-text-overlay">
+                            <text class="placeholder-text">暂无活动</text>
+                            <text class="placeholder-time">--</text>
+                          </view>
+                        </view>
+                        <!-- 其他占位符只显示文字 -->
+                        <view wx:else class="event-text-only">
+                          <text class="placeholder-text-only">暂无活动</text>
+                          <text class="placeholder-time-only">--</text>
+                        </view>
+                      </view>
+                    </view>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </swiper-item>
+        </swiper>
+      </view>
+
+      <view class="waterfall-container">
+        <view class="waterfall-column">
+          <view wx:for="{{clubList}}" wx:key="club_id" wx:if="{{index % 2 === 0}}" class="waterfall-item">
+            <view class="card" bindtap="navigateToClubDetail" data-club_id="{{item.club_id}}" data-user_leaded="{{item.cur_user_leaded}}">
+              <image 
+                class="card-image {{!item.logoUrl ? 'image-placeholder' : ''}} {{item.cur_user_is_member ? 'is-member' : ''}} {{item.cur_user_leaded ? 'is-leaded' : ''}}"
+                src="{{item.logoUrl}}" 
+                mode="aspectFill" />
+              <view class="card-content">
+                <view class="card-title">{{item.club_name}}</view>
+                <view class="card-desc">{{item.description}}</view>
+                <view class="card-members">
+                  <van-icon name="friends-o" size="12px" color="#666" />
+                  <text>{{item.member_num}}名成员</text>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+        <view class="waterfall-column">
+          <view wx:for="{{clubList}}" wx:key="club_id" wx:if="{{index % 2 === 1}}" class="waterfall-item">
+            <view class="card" bindtap="navigateToClubDetail" data-club_id="{{item.club_id}}" data-user_leaded="{{item.cur_user_leaded}}">
+              <image 
+                class="card-image {{!item.logoUrl ? 'image-placeholder' : ''}} {{item.cur_user_is_member ? 'is-member' : ''}} {{item.cur_user_leaded ? 'is-leaded' : ''}}"
+                src="{{item.logoUrl}}" 
+                mode="aspectFill" />
+              <view class="card-content">
+                <view class="card-title">{{item.club_name}}</view>
+                <view class="card-desc">{{item.description}}</view>
+                <view class="card-members">
+                  <van-icon name="friends-o" size="12px" color="#666" />
+                  <text>{{item.member_num}}名成员</text>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+        <!-- 空状态 -->
+        <view class="empty-container" wx:if="{{clubList.length === 0}}">
+          <van-empty description="暂无协会" />
+        </view>
+      </view>
+    </van-tab>
+
+ 
+  </van-tabs>

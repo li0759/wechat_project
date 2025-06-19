@@ -1,0 +1,116 @@
+<!--pages/profile/club-applications/index.wxml-->
+<view class="container">
+  <view class="page-header">
+    <view class="title">入团申请审批</view>
+    <view class="subtitle">{{clubInfo.name || ''}}</view>
+  </view>
+  
+  <view class="loading-container" wx:if="{{loading}}">
+    <view class="spinner">
+      <image src="/assets/images/loading.gif" mode="aspectFit" style="width: 70rpx; height: 70rpx;"></image>
+    </view>
+    <view class="loading-text">加载中...</view>
+  </view>
+  
+  <view class="empty-container" wx:elif="{{applications.length === 0}}">
+    <image class="empty-image" src="/assets/images/empty.png" mode="aspectFit"></image>
+    <view class="empty-text">暂无入团申请需要审批</view>
+  </view>
+  
+  <view class="applications-list" wx:else>
+    <view class="tab-header">
+      <view class="tab {{activeTab === 'pending' ? 'active' : ''}}" bindtap="switchTab" data-tab="pending">
+        待审批 <text class="tab-badge" wx:if="{{pendingCount > 0}}">{{pendingCount}}</text>
+      </view>
+      <view class="tab {{activeTab === 'processed' ? 'active' : ''}}" bindtap="switchTab" data-tab="processed">
+        已处理
+      </view>
+    </view>
+    
+    <view class="tab-content">
+      <!-- 待审批 -->
+      <view class="application-list" wx:if="{{activeTab === 'pending'}}">
+        <block wx:for="{{pendingApplications}}" wx:key="id">
+          <view class="application-item">
+            <view class="application-card">
+              <view class="user-info" bindtap="viewUserDetail" data-userid="{{item.user_id}}">
+                <view class="user-avatar">
+                  <image src="{{item.userAvatar || '/assets/images/default-avatar.png'}}" mode="aspectFill"></image>
+                </view>
+                <view class="user-detail">
+                  <view class="user-name">{{item.userName || '未知用户'}}</view>
+                  <view class="apply-time">申请时间：{{item.applyTime}}</view>
+                </view>
+              </view>
+              
+              <view class="application-content">
+                <view class="content-title">申请理由</view>
+                <view class="content-text">{{item.reason || '无'}}</view>
+              </view>
+              
+              <view class="application-actions">
+                <button class="reject-btn" bindtap="showRejectDialog" data-id="{{item.id}}" data-name="{{item.userName}}">拒绝</button>
+                <button class="approve-btn" bindtap="approveApplication" data-id="{{item.id}}" data-name="{{item.userName}}">通过</button>
+              </view>
+            </view>
+          </view>
+        </block>
+      </view>
+      
+      <!-- 已处理 -->
+      <view class="application-list" wx:if="{{activeTab === 'processed'}}">
+        <block wx:for="{{processedApplications}}" wx:key="id">
+          <view class="application-item">
+            <view class="application-card">
+              <view class="user-info" bindtap="viewUserDetail" data-userid="{{item.userId}}">
+                <view class="user-avatar">
+                  <image src="{{item.userAvatar || '/assets/images/default-avatar.png'}}" mode="aspectFill"></image>
+                </view>
+                <view class="user-detail">
+                  <view class="user-name">{{item.userName || '未知用户'}}</view>
+                  <view class="apply-time">申请时间：{{item.applyTime}}</view>
+                </view>
+                <view class="status-tag {{item.status === 'approved' ? 'status-approved' : 'status-rejected'}}">
+                  {{item.status === 'approved' ? '已通过' : '已拒绝'}}
+                </view>
+              </view>
+              
+              <view class="application-content">
+                <view class="content-title">申请理由</view>
+                <view class="content-text">{{item.reason || '无'}}</view>
+              </view>
+              
+              <view class="process-info">
+                <view class="process-time">处理时间：{{item.processTime}}</view>
+                <view class="process-admin">处理人：{{item.processBy || '系统'}}</view>
+                <view class="reject-reason" wx:if="{{item.status === 'rejected' && item.rejectReason}}">
+                  <view class="reason-title">拒绝原因：</view>
+                  <view class="reason-text">{{item.rejectReason}}</view>
+                </view>
+              </view>
+            </view>
+          </view>
+        </block>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 拒绝原因弹窗 -->
+<view class="reject-dialog-mask" bindtap="hideRejectDialog" wx:if="{{showRejectDialog}}"></view>
+<view class="reject-dialog" wx:if="{{showRejectDialog}}">
+  <view class="reject-dialog-header">
+    <view class="reject-dialog-title">拒绝原因</view>
+    <view class="reject-dialog-close" bindtap="hideRejectDialog">
+      <image src="/assets/images/close.png"></image>
+    </view>
+  </view>
+  <view class="reject-dialog-content">
+    <textarea placeholder="请输入拒绝原因（选填）" bindinput="onRejectReasonInput" value="{{rejectReason}}" maxlength="200"></textarea>
+    <view class="textarea-counter">{{rejectReason.length}}/200</view>
+  </view>
+  <view class="reject-dialog-footer">
+    <button class="cancel-btn" bindtap="hideRejectDialog">取消</button>
+    <button class="confirm-btn" bindtap="rejectApplication">确认拒绝</button>
+  </view>
+</view> 

@@ -1,0 +1,373 @@
+/* packageProfile/show_data/index.wxss */
+
+.container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 80vh;
+  flex-direction: column;
+}
+
+/* 错误状态 */
+.error-container {
+  padding: 64rpx 32rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+}
+
+/* 主要内容 */
+.content {
+  padding: 24rpx;
+  padding-bottom: 120rpx; /* 为悬浮按钮留空间 */
+}
+
+/* 页面头部 */
+.header-section {
+  margin-bottom: 32rpx;
+}
+
+.page-header {
+  background: #fff;
+  padding: 32rpx;
+  border-radius: 20rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 24rpx;
+}
+
+.title-info {
+  flex: 1;
+  min-width: 200rpx;
+}
+
+.main-title {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.sub-title {
+  font-size: 28rpx;
+  color: #666;
+  display: block;
+}
+
+.header-actions {
+  flex-shrink: 0;
+}
+
+/* 区域标题 */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 24rpx;
+  padding: 0 8rpx;
+}
+
+.section-title text {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+/* 统计卡片区域 */
+.stats-section {
+  margin-bottom: 40rpx;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+}
+
+/* 图表区域 */
+.charts-section {
+  margin-bottom: 40rpx;
+}
+
+.chart-container {
+  margin-bottom: 32rpx;
+}
+
+/* 表格区域 */
+.table-section {
+  margin-bottom: 40rpx;
+}
+
+.data-table {
+  background: #fff;
+  border-radius: 16rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+}
+
+.table-header {
+  display: flex;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-weight: 600;
+  font-size: 26rpx;
+}
+
+.header-cell {
+  flex: 1;
+  padding: 24rpx 16rpx;
+  text-align: center;
+  border-right: 1rpx solid rgba(255, 255, 255, 0.2);
+}
+
+.header-cell:last-child {
+  border-right: none;
+}
+
+.table-body {
+  max-height: 600rpx;
+}
+
+.table-row {
+  display: flex;
+  border-bottom: 1rpx solid #f0f0f0;
+  transition: background-color 0.2s ease;
+}
+
+.table-row:hover {
+  background-color: #f8f9fa;
+}
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.table-cell {
+  flex: 1;
+  padding: 20rpx 16rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: #333;
+  border-right: 1rpx solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  word-break: break-all;
+}
+
+.table-cell:last-child {
+  border-right: none;
+}
+
+.club-name,
+.event-title {
+  text-align: left;
+  justify-content: flex-start;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.rate-cell {
+  font-weight: 600;
+  color: #07c160;
+}
+
+/* 操作按钮区域 */
+.actions-section {
+  margin-top: 40rpx;
+}
+
+/* 悬浮刷新按钮 */
+.float-refresh {
+  position: fixed;
+  right: 32rpx;
+  bottom: 32rpx;
+  width: 96rpx;
+  height: 96rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.4);
+  z-index: 999;
+  transition: all 0.3s ease;
+}
+
+.float-refresh:active {
+  transform: scale(0.9);
+  box-shadow: 0 4rpx 12rpx rgba(102, 126, 234, 0.6);
+}
+
+/* 响应式设计 */
+@media (max-width: 750rpx) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .header-actions {
+    align-self: center;
+  }
+  
+  .table-cell {
+    padding: 16rpx 12rpx;
+    font-size: 24rpx;
+  }
+  
+  .header-cell {
+    padding: 20rpx 12rpx;
+    font-size: 24rpx;
+  }
+}
+
+/* 超小屏幕适配 */
+@media (max-width: 600rpx) {
+  .content {
+    padding: 16rpx;
+  }
+  
+  .main-title {
+    font-size: 36rpx;
+  }
+  
+  .sub-title {
+    font-size: 26rpx;
+  }
+  
+  .page-header {
+    padding: 24rpx;
+  }
+  
+  .table-cell {
+    padding: 12rpx 8rpx;
+    font-size: 22rpx;
+  }
+  
+  .header-cell {
+    padding: 16rpx 8rpx;
+    font-size: 22rpx;
+  }
+}
+
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+  .container {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  }
+  
+  .page-header {
+    background: #2d2d2d;
+    color: #fff;
+  }
+  
+  .main-title {
+    color: #fff;
+  }
+  
+  .sub-title {
+    color: #ccc;
+  }
+  
+  .section-title text {
+    color: #fff;
+  }
+  
+  .data-table {
+    background: #2d2d2d;
+  }
+  
+  .table-cell {
+    color: #fff;
+    border-right-color: #404040;
+  }
+  
+  .table-row {
+    border-bottom-color: #404040;
+  }
+  
+  .table-row:hover {
+    background-color: #404040;
+  }
+  
+  .club-name,
+  .event-title {
+    color: #fff;
+  }
+}
+
+/* 动画效果 */
+.content {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stats-grid {
+  animation: slideInLeft 0.8s ease-out;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-50rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.chart-container {
+  animation: slideInRight 0.8s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(50rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.data-table {
+  animation: zoomIn 0.6s ease-out;
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+} 

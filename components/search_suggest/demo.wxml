@@ -1,0 +1,109 @@
+<!-- 搜索组件演示页面 -->
+<view class="demo-container">
+  <!-- 页面标题 -->
+  <view class="demo-header">
+    <text class="demo-title">搜索建议组件演示</text>
+    <text class="demo-desc">展示各种配置和使用场景</text>
+  </view>
+
+  <!-- 基础用法 -->
+  <view class="demo-section">
+    <view class="section-title">基础用法</view>
+    <search-suggest 
+      id="basicSearch"
+      placeholder="搜索用户、协会、活动..."
+      bind:search="onSearch"
+      bind:fetchSuggestions="onFetchSuggestions"
+      bind:select="onSelectSuggestion"
+    />
+  </view>
+
+  <!-- 自定义主题 -->
+  <view class="demo-section">
+    <view class="section-title">自定义主题色</view>
+    <search-suggest 
+      placeholder="蓝色主题搜索框"
+      themeColor="#007aff"
+      bind:search="onSearch"
+      bind:fetchSuggestions="onFetchSuggestions"
+    />
+  </view>
+
+  <!-- 方角搜索框 -->
+  <view class="demo-section">
+    <view class="section-title">方角搜索框</view>
+    <search-suggest 
+      placeholder="方角搜索框"
+      shape="square"
+      themeColor="#52c41a"
+      bind:search="onSearch"
+      bind:fetchSuggestions="onFetchSuggestions"
+    />
+  </view>
+
+  <!-- 无搜索按钮 -->
+  <view class="demo-section">
+    <view class="section-title">无搜索按钮</view>
+    <search-suggest 
+      placeholder="回车搜索"
+      showSearchButton="{{false}}"
+      bind:search="onSearch"
+      bind:fetchSuggestions="onFetchSuggestions"
+    />
+  </view>
+
+  <!-- 禁用历史记录 -->
+  <view class="demo-section">
+    <view class="section-title">禁用历史记录</view>
+    <search-suggest 
+      placeholder="不保存搜索历史"
+      showHistory="{{false}}"
+      themeColor="#fa8c16"
+      bind:search="onSearch"
+      bind:fetchSuggestions="onFetchSuggestions"
+    />
+  </view>
+
+  <!-- 自定义防抖时间 -->
+  <view class="demo-section">
+    <view class="section-title">快速响应（100ms防抖）</view>
+    <search-suggest 
+      placeholder="快速搜索建议"
+      debounceTime="{{100}}"
+      minSearchLength="{{2}}"
+      themeColor="#722ed1"
+      bind:search="onSearch"
+      bind:fetchSuggestions="onFetchSuggestions"
+    />
+  </view>
+
+  <!-- 搜索结果展示 -->
+  <view class="demo-section" wx:if="{{searchResults.length > 0}}">
+    <view class="section-title">搜索结果</view>
+    <view class="search-results">
+      <view class="result-item" wx:for="{{searchResults}}" wx:key="id">
+        <view class="result-icon">
+          <van-icon name="{{item.icon || 'search'}}" size="16" color="#ff6b9d" />
+        </view>
+        <view class="result-content">
+          <view class="result-title">{{item.title}}</view>
+          <view class="result-desc" wx:if="{{item.description}}">{{item.description}}</view>
+        </view>
+        <view class="result-tag" wx:if="{{item.tag}}">
+          <text class="tag-text">{{item.tag}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 操作日志 -->
+  <view class="demo-section" wx:if="{{logs.length > 0}}">
+    <view class="section-title">操作日志</view>
+    <view class="logs-container">
+      <view class="log-item" wx:for="{{logs}}" wx:key="index">
+        <text class="log-time">{{item.time}}</text>
+        <text class="log-content">{{item.content}}</text>
+      </view>
+    </view>
+  </view>
+</view> 

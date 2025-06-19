@@ -1,0 +1,82 @@
+<view class="container">
+  <view class="applications-list">
+    <block wx:if="{{allApplications.length > 0}}">
+      <van-cell-group wx:for="{{allApplications}}" wx:key="index" custom-class="application-item">
+        <view class="application-header">
+          <image class="user-avatar" src="{{item.appliced_user_avartor || '/assets/images/default-avatar.png'}}" mode="aspectFill"></image>
+          <view class="application-info">
+            <van-cell title="申请人" value="{{item.appliced_user_name}}" border="{{false}}" />
+            <van-cell title="申请时间" value="{{item.applicatedDate}}" border="{{false}}" />
+          </view>
+        </view>
+        <van-cell title="协会名称" value="{{item.club_name}}" />
+        <van-cell title="状态" value="{{item.processedDate ? (item.approved ? '已批准' : '已拒绝') : '待审批'}}" />
+        <block wx:if="{{item.processedDate}}">
+          <van-cell title="处理人" value="{{item.processed_user_name}}" />
+          <van-cell title="处理时间" value="{{item.processedDate}}" />
+          <van-cell title="处理意见" value="{{item.opinion}}" />
+        </block>
+        <view class="action-buttons" wx:if="{{!item.processedDate}}">
+          <van-button 
+            round 
+            color="rgb(153, 153, 153)" 
+            size="small" 
+            bind:click="showRejectDialog" 
+            data-applicationid="{{item.applicationID}}"
+            custom-class="action-btn"
+          >拒绝</van-button>
+          <van-button 
+            round 
+            color="rgb(223, 118, 176)" 
+            size="small" 
+            bind:click="showApproveDialog" 
+            data-applicationid="{{item.applicationID}}"
+            custom-class="action-btn primary-btn"
+          >批准</van-button>
+        </view>
+      </van-cell-group>
+    </block>
+    <van-empty wx:else description="暂无申请记录" />
+  </view>
+
+<!-- 批准对话框 -->
+<van-dialog
+  use-slot
+  title="批准申请"
+  show="{{ showApproveDialog }}"
+  show-cancel-button
+  bind:confirm="handleApprove"
+  bind:close="closeDialog"
+  confirm-button-color="rgb(223, 118, 176)"
+>
+  <van-field
+    model:value="{{ approveOpinion }}"
+    placeholder="请输入批准意见（选填）"
+    border="{{ false }}"
+    maxlength="200"
+    type="textarea"
+    autosize
+  />
+</van-dialog>
+
+<!-- 拒绝对话框 -->
+<van-dialog
+  use-slot
+  title="拒绝申请"
+  show="{{ showRejectDialog }}"
+  show-cancel-button
+  bind:confirm="handleReject"
+  bind:close="closeDialog"
+  confirm-button-color="rgb(223, 118, 176)"
+>
+  <van-field
+    model:value="{{ rejectOpinion }}"
+    placeholder="请输入拒绝理由（必填）"
+    border="{{ false }}"
+    maxlength="200"
+    type="textarea"
+    autosize
+    required
+  />
+</van-dialog>
+</view> 

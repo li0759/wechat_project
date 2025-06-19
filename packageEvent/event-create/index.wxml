@@ -1,0 +1,586 @@
+<!-- 简洁现代化活动创建页面 -->
+<view class="modern-container">
+
+  <!-- 主要内容 -->
+  <scroll-view class="main-scroll" scroll-y="true">
+    <!-- 信息展示区 -->
+    <view class="info-section">
+      <!-- 活动基本信息卡片 -->
+      <view class="card fade-in-up">
+        <view class="create-info-card">
+          <!-- 信息网格 -->
+          <view class="create-info-grid">
+            <!-- 活动协会 - 单个块 -->
+            <view class="create-info-item single-block" bindtap="editClub">
+              <van-icon name="manager-o" size="24" color="#ff6b9d" />
+              <view class="create-info-content">
+                <view class="create-info-label">活动协会</view>
+                <view class="create-info-value">{{formData.clubName || '点击填写'}}</view>
+              </view>
+            </view>
+            
+            <!-- 活动预计开始时间 - 单个块 -->
+            <view class="create-info-item single-block" bindtap="editStartTime">
+              <van-icon name="clock-o" size="24" color="#ff6b9d" />
+              <view class="create-info-content">
+                <view class="create-info-label">预计开始时间</view>
+                <view class="create-info-value">{{formData.preStartTimeDisplay || '点击填写'}}</view>
+              </view>
+            </view>
+            
+            <!-- 预计结束时间 - 单个块 -->
+            <view class="create-info-item single-block">
+              <van-icon name="clock" size="24" color="#666" />
+              <view class="create-info-content">
+                <view class="create-info-label">预计结束时间</view>
+                <view class="create-info-value">{{formData.preEndTimeDisplay || '待计算'}}</view>
+              </view>
+            </view>
+            
+            <!-- 活动名称 - 双倍宽度 -->
+            <view class="create-info-item double-width" bindtap="editTitle">
+              <van-icon name="edit" size="24" color="#ff6b9d" />
+              <view class="create-info-content">
+                <view class="create-info-label">活动名称</view>
+                <view class="create-info-value">{{formData.title || '点击填写'}}</view>
+              </view>
+            </view>
+            
+            <!-- 活动预算 - 单个块 -->
+            <view class="create-info-item single-block" bindtap="editBudget">
+              <van-icon name="gold-coin-o" size="24" color="#ff6b9d" />
+              <view class="create-info-content">
+                <view class="create-info-label">活动预算</view>
+                <view class="create-info-value">{{formData.budget ? '¥' + formData.budget : '点击填写'}}</view>
+              </view>
+            </view>
+            
+            <!-- 活动图片 - 单个块 -->
+            <view class="create-info-item single-block" bindtap="editImages">
+              <van-icon name="photo-o" size="24" color="#ff6b9d" />
+              <view class="create-info-content">
+                <view class="create-info-label">活动图片</view>
+                <view class="create-info-value">
+                  {{dragImgCount > 0 ? '已添加封面 (' + dragImgCount + '张)' : '点击添加'}}
+                </view>
+              </view>
+            </view>
+            
+            <!-- 日程管理 - 单个块 -->
+            <view class="create-info-item single-block" bindtap="editSchedule">
+              <van-icon name="calendar-o" size="24" color="#ff6b9d" />
+              <view class="create-info-content">
+                <view class="create-info-label">日程管理</view>
+                <view class="create-info-value">{{scheduleDisplay || '点击设置'}}</view>
+              </view>
+            </view>
+            
+            <!-- 活动地点 - 单个块 -->
+            <view class="create-info-item single-block" bindtap="editLocation">
+              <van-icon name="location-o" size="24" color="#ff6b9d" />
+              <view class="create-info-content">
+                <view class="create-info-label">活动地点</view>
+                <view class="create-info-value">{{formData.locationName || formData.location || '点击填写'}}</view>
+              </view>
+            </view>
+            
+            <!-- 活动描述 - 双倍宽度和高度 -->
+            <view class="create-info-item double-width double-height" bindtap="editContent">
+              <van-icon name="description" size="24" color="#ff6b9d" />
+              <view class="create-info-content">
+                <view class="create-info-label">活动描述</view>
+                <view class="create-info-value description-text">{{formData.content || '点击填写'}}</view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 操作区 -->
+      <view class="action-section fade-in-up-delay-1">
+        <view class="actions-container">
+          <view class="action-btn secondary" bindtap="navigateBack">
+            <van-icon name="cross" size="20" />
+            <text>退出编辑</text>
+          </view>
+          
+          <view class="action-btn primary" bindtap="submitForm">
+            <van-icon name="success" size="20" />
+            <text>发布活动</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 编辑弹窗 -->
+  <!-- 协会选择弹窗 -->
+  <van-popup 
+    show="{{ showClubPopup }}" 
+    position="bottom" 
+    round
+    close-on-click-overlay
+    bind:close="closeClubPopup"
+    custom-class="club-popup"
+    z-index="2000"
+    safe-area-inset-bottom
+  >
+    <view class="popup-container">
+      <view class="popup-header">
+        <text class="popup-title">选择协会</text>
+        <van-icon name="cross" bind:click="closeClubPopup" color="#666" />
+      </view>
+      
+      <view class="popup-content">
+        <van-radio-group value="{{ selectedClubId }}" bind:change="onClubChange">
+          <van-cell-group>
+            <van-cell 
+              wx:for="{{clubList}}" 
+              wx:key="id"
+              title="{{item.name}}"
+              clickable
+              data-name="{{item.id}}"
+              bind:click="selectClub"
+            >
+              <van-radio slot="right-icon" name="{{item.id}}" />
+            </van-cell>
+          </van-cell-group>
+        </van-radio-group>
+        
+        <view class="popup-actions">
+          <view class="action-btn primary" bindtap="confirmClub">
+            <van-icon name="success" size="16" />
+            <text>确认</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </van-popup>
+
+  <!-- 活动名称编辑弹窗 -->
+  <van-popup 
+    show="{{ showTitlePopup }}" 
+    position="bottom" 
+    round
+    close-on-click-overlay
+    bind:close="closeTitlePopup"
+    custom-class="title-popup"
+    z-index="2000"
+    safe-area-inset-bottom
+  >
+    <view class="popup-container">
+      <view class="popup-header">
+        <text class="popup-title">活动名称</text>
+        <van-icon name="cross" bind:click="closeTitlePopup" color="#666" />
+      </view>
+      
+      <view class="popup-content">
+        <van-field
+          value="{{ tempTitle }}"
+          placeholder="请输入活动名称"
+          border="{{ false }}"
+          bind:change="onTempTitleChange"
+          maxlength="50"
+          show-word-limit
+        />
+        
+        <view class="popup-actions">
+          <view class="action-btn primary" bindtap="confirmTitle">
+            <van-icon name="success" size="16" />
+            <text>确认</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </van-popup>
+
+  <!-- 活动时间编辑弹窗 -->
+  <van-popup 
+    show="{{ showTimePopup }}" 
+    position="bottom" 
+    round
+    close-on-click-overlay
+    bind:close="closeTimePopup"
+    custom-class="schedule-popup"
+    z-index="2000"
+    safe-area-inset-bottom
+  >
+    <view class="popup-container">
+      <view class="popup-header">
+        <text class="popup-title">活动时间设置</text>
+        <van-icon name="cross" bind:click="closeTimePopup" color="#666" />
+      </view>
+      
+      <view class="popup-content">
+        <!-- 预计开始时间 -->
+        <view class="form-section">
+          <text class="section-title">预计开始时间</text>
+          <view class="form-input" bindtap="showDateTimePicker">
+            <text class="{{formData.preStartTimeDisplay ? 'has-value' : 'placeholder'}}">
+              {{formData.preStartTimeDisplay || '请选择预计开始时间'}}
+            </text>
+            <van-icon name="arrow" size="16" color="#666" />
+          </view>
+        </view>
+        
+        <!-- 活动时长 -->
+        <view class="form-section">
+          <text class="section-title">活动时长</text>
+          <view class="slider-container">
+            <van-slider
+              value="{{ formData.duration }}"
+              min="0"
+              max="7"
+              step="1"
+              bar-height="6px"
+              active-color="#ff6b9d"
+              bind:change="onDurationChange"
+            />
+            <text class="slider-label">{{ durationLabels[formData.duration] }}</text>
+          </view>
+        </view>
+        
+        <!-- 预计结束时间显示 -->
+        <view wx:if="{{ formData.preEndTimeDisplay }}" class="form-section">
+          <text class="section-title">预计结束时间</text>
+          <view class="end-time-display">
+            <text class="end-time-text">{{ formData.preEndTimeDisplay }}</text>
+          </view>
+        </view>
+        
+        <view class="popup-actions">
+          <view class="action-btn primary" bindtap="confirmTime">
+            <van-icon name="success" size="16" />
+            <text>确认</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </van-popup>
+
+  <!-- 预算编辑弹窗 -->
+  <van-popup 
+    show="{{ showBudgetPopup }}" 
+    position="bottom" 
+    round
+    close-on-click-overlay
+    bind:close="closeBudgetPopup"
+    custom-class="budget-popup"
+    z-index="2000"
+    safe-area-inset-bottom
+  >
+    <view class="popup-container">
+      <view class="popup-header">
+        <text class="popup-title">活动预算</text>
+        <van-icon name="cross" bind:click="closeBudgetPopup" color="#666" />
+      </view>
+      
+      <view class="popup-content">
+        <van-field
+          value="{{ tempBudget }}"
+          placeholder="请输入活动预算（单位：元）"
+          border="{{ false }}"
+          bind:change="onTempBudgetChange"
+          type="digit"
+        />
+        
+        <view class="popup-actions">
+          <view class="action-btn primary" bindtap="confirmBudget">
+            <van-icon name="success" size="16" />
+            <text>确认</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </van-popup>
+
+  <!-- 日程编辑弹窗 -->
+  <van-popup 
+    show="{{ showSchedulePopup }}" 
+    position="bottom" 
+    round
+    close-on-click-overlay
+    bind:close="closeSchedulePopup"
+    custom-class="schedule-popup"
+    z-index="2000"
+    safe-area-inset-bottom
+  >
+    <view class="popup-container">
+      <view class="popup-header">
+        <text class="popup-title">设置定期日程</text>
+        <van-icon name="cross" bind:click="closeSchedulePopup" color="#666" />
+      </view>
+      
+      <view class="popup-content">
+        <!-- 重复周期选择 -->
+        <view class="form-section">
+          <text class="section-title">重复周期</text>
+          <van-radio-group value="{{ scheduleForm.schedule_type }}" bind:change="onScheduleTypeChange">
+            <van-radio name="weekly" icon-size="18px">每周</van-radio>
+            <van-radio name="monthly" icon-size="18px">每月</van-radio>
+          </van-radio-group>
+        </view>
+
+        <!-- 执行日期选择 -->
+        <view class="form-section">
+          <text class="section-title">执行日期</text>
+          
+          <!-- 周选择器 -->
+          <view wx:if="{{ scheduleForm.schedule_type === 'weekly' }}" class="date-selector">
+            <select-day 
+              title="选择星期"
+              value="{{ scheduleForm.weekdays }}"
+              show="{{ showWeekdayPopup }}"
+              bind:display="showWeekdaySelector"
+              bind:close="closeWeekdayPopup"
+              bind:confirm="onWeekdaysChange"
+            />
+          </view>
+          
+          <!-- 月选择器 -->
+          <view wx:if="{{ scheduleForm.schedule_type === 'monthly' }}" class="date-selector">
+            <select-date 
+              title="选择日期"
+              value="{{ scheduleForm.month_days }}"
+              show="{{ showMonthdayPopup }}"
+              bind:display="showMonthdaySelector"
+              bind:close="closeMonthdayPopup"
+              bind:confirm="onMonthdaysChange"
+            />
+          </view>
+        </view>
+
+        <!-- 活动时间选择 -->
+        <view class="form-section">
+          <text class="section-title">活动时间</text>
+          <view class="time-selector" bindtap="showTimeOfDayPicker">
+            <text class="time-display">{{ scheduleForm.activity_time }}</text>
+            <van-icon name="arrow" size="16" color="#666" />
+          </view>
+        </view>
+
+        <!-- 提前通知 -->
+        <view class="form-section">
+          <text class="section-title">提前通知</text>
+          <view class="slider-container">
+            <van-slider
+              value="{{ scheduleForm.advance_hours_slider }}"
+              min="0"
+              max="6"
+              step="1"
+              bar-height="6px"
+              active-color="#ff6b9d"
+              bind:change="onAdvanceHoursChange"
+            />
+            <text class="slider-label">{{ advanceHourLabels[scheduleForm.advance_hours_slider] }}</text>
+          </view>
+        </view>
+        
+        <!-- 操作按钮 -->
+        <view class="popup-actions">
+          <view class="action-btn secondary" bindtap="closeSchedulePopup">
+            <text>取消</text>
+          </view>
+          <!-- 如果已设置日程，显示清除按钮 -->
+          <view wx:if="{{ scheduleDisplay }}" class="action-btn warning" bindtap="clearSchedule">
+            <text>清除日程</text>
+          </view>
+          <view class="action-btn primary" bindtap="confirmSchedule">
+            <text>确认</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </van-popup>
+
+  <!-- 活动时间选择器 -->
+  <van-popup 
+    show="{{ showTimeOfDayPickerPopup }}" 
+    position="bottom"
+    close-on-click-overlay
+    bind:close="closeTimeOfDayPicker"
+    z-index="4000"
+    safe-area-inset-bottom
+  >
+    <van-datetime-picker
+      type="time"
+      value="{{ timeOfDayValue }}"
+      bind:confirm="onTimeOfDayConfirm"
+      bind:cancel="closeTimeOfDayPicker"
+    />
+  </van-popup>
+
+  <!-- 图片管理弹窗 -->
+  <van-popup 
+    show="{{ showImagePopup }}" 
+    position="bottom" 
+    round
+    close-on-click-overlay
+    bind:close="closeImagePopup"
+    custom-class="image-popup"
+    z-index="2000"
+    safe-area-inset-bottom
+  >
+    <view class="popup-container">
+      <view class="popup-header">
+        <text class="popup-title">管理活动图片</text>
+        <van-icon name="cross" bind:click="closeImagePopup" color="#666" />
+      </view>
+      
+      <view class="popup-content">
+        <view class="images-tip">
+          <van-icon name="info-o" size="14" color="#ff6b9d" />
+          <text>拖拽调整顺序，第一张将自动作为封面图</text>
+        </view>
+        
+        <drag-img 
+          id="drag-img"
+          previewSize="90" 
+          defaultImgList="{{[]}}" 
+          maxCount="9"
+          columns="3"
+          gap="10"
+          customClass="drag-img-container"
+          itemClass="drag-img-item"
+          bind:updateImageList="onImageListUpdate"
+        />
+        
+        <view class="popup-actions">
+          <view class="action-btn primary" bindtap="confirmImages">
+            <van-icon name="success" size="16" />
+            <text>确认</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </van-popup>
+
+  <!-- 地点编辑弹窗 -->
+  <van-popup 
+    show="{{ showLocationPopup }}" 
+    position="bottom" 
+    round
+    close-on-click-overlay
+    bind:close="closeLocationPopup"
+    custom-class="location-popup"
+    z-index="2000"
+    safe-area-inset-bottom
+  >
+    <view class="popup-container">
+      <view class="popup-header">
+        <text class="popup-title">活动地点</text>
+        <van-icon name="cross" bind:click="closeLocationPopup" color="#666" />
+      </view>
+      
+      <view class="popup-content">
+        <!-- 地点输入 -->
+        <view class="location-input-container" wx:if="{{!formData.locationName}}">
+          <view class="form-item">
+            <text class="form-label">地点名称</text>
+            <van-field
+              value="{{ tempLocation }}"
+              placeholder="请输入活动地点或使用地图选点"
+              border="{{ false }}"
+              bind:change="onTempLocationChange"
+              custom-class="location-input"
+            />
+          </view>
+          <view class="location-btn" bindtap="chooseLocation">
+            <van-icon name="guide-o" size="16" color="#ff6b9d" />
+            <text>地图选点</text>
+          </view>
+        </view>
+        
+        <!-- 已选位置信息显示 -->
+        <view class="selected-location" wx:if="{{formData.locationName}}">
+          <view class="location-name">{{formData.locationName}}</view>
+          <view class="location-address">{{formData.locationAddress}}</view>
+          
+          <!-- 地图显示 -->
+          <view class="location-map" wx:if="{{formData.latitude && formData.longitude}}">
+            <map 
+              id="locationMap"
+              longitude="{{formData.longitude}}"
+              latitude="{{formData.latitude}}"
+              scale="16"
+              markers="{{locationMarkers}}"
+              style="width: 100%; height: 200rpx; border-radius: 16rpx;"
+            ></map>
+          </view>
+          
+          <view class="location-actions">
+            <van-button size="small" type="default" bindtap="clearLocation">重新选择</van-button>
+          </view>
+        </view>
+        
+        <view class="popup-actions">
+          <view class="action-btn secondary" bindtap="closeLocationPopup">
+            <text>取消</text>
+          </view>
+          <view class="action-btn primary" bindtap="confirmLocation">
+            <text>确认</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </van-popup>
+
+  <!-- 活动描述编辑弹窗 -->
+  <van-popup 
+    show="{{ showContentPopup }}" 
+    position="bottom" 
+    round
+    close-on-click-overlay
+    bind:close="closeContentPopup"
+    custom-class="content-popup"
+    z-index="2000"
+    safe-area-inset-bottom
+  >
+    <view class="popup-container">
+      <view class="popup-header">
+        <text class="popup-title">活动描述</text>
+        <van-icon name="cross" bind:click="closeContentPopup" color="#666" />
+      </view>
+      
+      <view class="popup-content">
+        <van-field
+          value="{{ tempContent }}"
+          placeholder="请详细描述活动内容和要求"
+          type="textarea"
+          autosize="{{ { minHeight: 100, maxHeight: 200 } }}"
+          border="{{ false }}"
+          bind:change="onTempContentChange"
+          maxlength="1000"
+          show-word-limit
+        />
+        
+        <view class="popup-actions">
+          <view class="action-btn primary" bindtap="confirmContent">
+            <van-icon name="success" size="16" />
+            <text>确认</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </van-popup>
+
+  <!-- 时间选择器 -->
+  <van-popup 
+    show="{{ showDateTimePickerPopup }}" 
+    position="bottom"
+    close-on-click-overlay
+    bind:close="closeDateTimePicker"
+    z-index="4000"
+    safe-area-inset-bottom
+  >
+    <van-datetime-picker
+      type="datetime"
+      value="{{ currentDate }}"
+      min-date="{{ minDate }}"
+      max-date="{{ maxDate }}"
+      bind:confirm="onDateTimeConfirm"
+      bind:cancel="closeDateTimePicker"
+    />
+  </van-popup>
+</view>
+

@@ -1,0 +1,64 @@
+<!-- 协会列表页面 -->
+<view class="club-container">
+  <view class="club-list">
+    <!-- 有协会数据时显示列表 -->
+    <block wx:if="{{clubList.length > 0}}">
+      <view wx:for="{{clubList}}" wx:key="club_id" class="club-item" bindtap="{{item.cur_user_leaded ? 'handleManageClub' : 'onClubTap'}}" data-club-id="{{item.club_id}}">
+        <!-- 状态标签层 -->
+        <view class="status-overlay">
+          <!-- 右上角 - 管理/加入标签 -->
+          <text wx:if="{{item.cur_user_leaded === true}}" class="status-tag status-managed status-right">我管理</text>
+          <text wx:elif="{{item.cur_user_is_member === true}}" class="status-tag status-joined status-right">已加入</text>
+          
+          <!-- 申请状态标签 (仅在申请列表中显示) -->
+          <text wx:if="{{item.processedDate && item.approved}}" class="status-tag status-approved status-right">已通过</text>
+          <text wx:elif="{{item.processedDate && !item.approved}}" class="status-tag status-rejected status-right">已拒绝</text>
+          <text wx:elif="{{item.processedDate === null}}" class="status-tag status-pending status-right">审核中</text>
+        </view>
+        
+        <view class="club-content">
+          <view class="club-left">
+            <view class="club-title">{{item.club_name}}</view>
+            <view class="club-description">{{item.description || '暂无介绍'}}</view>
+            
+            <!-- 会长信息 -->
+            <view class="club-leader" wx:if="{{item.leader_username || item.leader_avatar}}">
+              <image class="leader-avatar" src="{{item.leader_avatar || '/assets/images/default-avatar.png'}}" mode="aspectFill"></image>
+              <text class="leader-name">会长: {{item.leader_username || '暂无'}}</text>
+            </view>
+            
+            <!-- 成员信息 (协会列表显示) -->
+            <view wx:if="{{item.member_num !== undefined}}" class="club-members">
+              <van-icon name="friends-o" size="12px" />
+              <text>{{item.member_num || 0}}人</text>
+            </view>
+            
+            <!-- 申请时间 (申请列表显示) -->
+            <view wx:if="{{item.applicatedDate}}" class="club-application-date">
+              <van-icon name="clock-o" size="12px" />
+              <text>申请时间: {{item.applicatedDate}}</text>
+            </view>
+            
+            <!-- 处理人 (申请列表显示) -->
+            <view wx:if="{{item.processed_user}}" class="club-processed-by">
+              <van-icon name="manager-o" size="12px" />
+              <text>处理人: {{item.processed_user}}</text>
+            </view>
+          </view>
+          
+          <view class="club-right">
+            <image class="club-logo" src="{{item.logo || '/assets/icons/club.png'}}" mode="aspectFill"></image>
+          </view>
+        </view>
+      </view>
+    </block>
+    
+    <!-- 无协会数据时显示空状态 -->
+    <block wx:else>
+      <view class="empty-state">
+        <image src="/assets/icons/club.png" mode="aspectFit" class="empty-icon"></image>
+        <text class="empty-text">暂无数据</text>
+      </view>
+    </block>
+  </view>
+</view> 

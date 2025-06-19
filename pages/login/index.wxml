@@ -1,0 +1,22 @@
+<view class="container">
+  <view class="logo">
+    <image src="https://www.vhhg.top/assets/logo.png" mode="aspectFit"></image>
+  </view>
+  <view class="subtitle">协会活动管理平台</view>
+  
+  <button class="login-btn" type="primary" bindtap="handleLogin">微信一键登录</button>
+  
+  <view class="user-list-title">选择用户直接登录</view>
+  <scroll-view class="user-list" scroll-y="true">
+    <view wx:if="{{userList.length === 0}}" class="no-data">加载用户列表中...</view>
+    <view wx:for="{{userList}}" wx:key="id" class="user-item" bindtap="selectUserLogin" data-wecomUserID="{{item.wecomUserID}}">
+      <view class="user-avatar">
+        <image src="{{item.avatar || 'https://www.vhhg.top/assets/default-avatar.png'}}" mode="aspectFill"></image>
+      </view>
+      <view class="user-info">
+        <view class="user-name">{{item.name || item.username}}</view>
+        <view class="user-role-main">{{item.roles_join}}</view>
+      </view>
+    </view>
+  </scroll-view>
+</view> 

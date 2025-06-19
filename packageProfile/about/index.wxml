@@ -1,0 +1,65 @@
+<!--pages/profile/about/index.wxml-->
+<view class="container">
+  <view class="page-header">
+    <view class="title">关于我们</view>
+  </view>
+  
+  <view class="about-content">
+    <view class="app-info">
+      <image src="/assets/images/logo.png" class="app-logo"></image>
+      <view class="app-name">WeTest</view>
+      <view class="app-version">版本 1.0.0</view>
+    </view>
+    
+    <view class="about-section">
+      <view class="section-title">应用介绍</view>
+      <view class="section-content">
+        <text>WeTest是一款专为高校社团设计的管理平台，旨在帮助社团高效组织活动、管理成员和促进交流。通过我们的平台，社团管理员可以轻松发布通知、组织活动，成员可以及时获取社团动态、参与活动报名，让社团管理更加便捷高效。</text>
+      </view>
+    </view>
+    
+    <view class="about-section">
+      <view class="section-title">功能特点</view>
+      <view class="section-content">
+        <view class="feature-item">
+          <image src="/assets/images/feature-club.png" class="feature-icon"></image>
+          <view class="feature-text">社团管理</view>
+        </view>
+        <view class="feature-item">
+          <image src="/assets/images/feature-event.png" class="feature-icon"></image>
+          <view class="feature-text">活动组织</view>
+        </view>
+        <view class="feature-item">
+          <image src="/assets/images/feature-notice.png" class="feature-icon"></image>
+          <view class="feature-text">通知发布</view>
+        </view>
+        <view class="feature-item">
+          <image src="/assets/images/feature-member.png" class="feature-icon"></image>
+          <view class="feature-text">成员管理</view>
+        </view>
+      </view>
+    </view>
+    
+    <view class="about-section">
+      <view class="section-title">联系我们</view>
+      <view class="section-content">
+        <view class="contact-item">
+          <image src="/assets/images/email.png" class="contact-icon"></image>
+          <text class="contact-text">support@wetest.com</text>
+        </view>
+        <view class="contact-item">
+          <image src="/assets/images/phone.png" class="contact-icon"></image>
+          <text class="contact-text">400-123-4567</text>
+        </view>
+        <view class="contact-item">
+          <image src="/assets/images/web.png" class="contact-icon"></image>
+          <text class="contact-text">www.wetest.com</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <view class="about-footer">
+    <text>Copyright © 2023 WeTest. All Rights Reserved.</text>
+  </view>
+</view> 

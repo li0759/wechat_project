@@ -1,0 +1,229 @@
+<!-- 现代化协会详情页 - 与活动详情页面保持一致的风格 -->
+<view class="modern-container">
+
+  <!-- 主要内容 -->
+  <scroll-view class="main-scroll" scroll-y="true" wx:if="{{clubDetail}}">
+    <!-- 信息展示区 -->
+    <view class="info-section">
+      <!-- 协会封面展示 - 仿照活动图片轮播的样式 -->
+      <view class="cover-display-section fade-in-up">
+        <view class="cover-image-wrapper">
+          <image 
+            class="cover-image" 
+            src="{{clubDetail.logo || '/assets/icons/club.png'}}" 
+            mode="aspectFill"
+          />
+          <view class="cover-overlay">
+            <view class="club-name">{{clubDetail.name}}</view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 统计信息卡片 -->
+      <view class="stats-section">
+        <view class="stats-card fade-in-up" style="animation-delay: 0.1s;">
+          <view class="stats-row">
+            <view class="stat-item">
+              <view class="stat-number">
+                <count-num 
+                  value="{{clubDetail.member_count || clubMembers.length || 0}}" 
+                  size="large"
+                  color="custom"
+                  customStyle="color: #ff6b9d; font-size: 32rpx;"
+                  fontWeight="bold"
+                  duration="{{800}}"
+                  delay="{{300}}"
+                />
+              </view>
+              <view class="stat-label">成员总数</view>
+            </view>
+            <view class="stat-divider"></view>
+            <view class="stat-item">
+              <view class="stat-number">
+                <count-num 
+                  value="{{clubDetail.recent_events ? clubDetail.recent_events.length : 0}}" 
+                  size="large"
+                  color="custom"
+                  customStyle="color: #ff6b9d; font-size: 32rpx;"
+                  fontWeight="bold"
+                  duration="{{800}}"
+                  delay="{{300}}"
+                />
+              </view>
+              <view class="stat-label">最近活动</view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 协会简介 -->
+      <view class="card fade-in-up-delay-1" wx:if="{{clubDetail.description}}">
+        <view class="content-card">
+          <view class="section-title">
+            <van-icon name="description" size="18" color="#ff6b9d" />
+            <text>协会简介</text>
+          </view>
+          <view class="content-text">{{clubDetail.description}}</view>
+        </view>
+      </view>
+
+      <!-- 协会章程 -->
+      <view class="card fade-in-up-delay-1" wx:if="{{clubDetail.charter}}">
+        <view class="content-card">
+          <view class="section-title">
+            <van-icon name="notes-o" size="18" color="#ff6b9d" />
+            <text>协会章程</text>
+          </view>
+          <view class="content-text">{{clubDetail.charter}}</view>
+        </view>
+      </view>
+
+      <!-- 最近活动展示 - 新增 -->
+      <view class="card fade-in-up-delay-1" wx:if="{{clubDetail.recent_events && clubDetail.recent_events.length > 0}}">
+        <view class="participants-card">
+          <view class="participants-header">
+            <text class="participants-title">最近活动 ({{clubDetail.recent_events.length}})</text>
+            <text class="participants-subtitle">近期举办</text>
+          </view>
+          <view class="recent-events-list">
+            <view 
+              class="event-item" 
+              wx:for="{{clubDetail.recent_events}}" 
+              wx:key="event_id"
+              bindtap="viewEventDetail"
+              data-event-id="{{item.event_id}}"
+            >
+              <view class="event-cover">
+                <image 
+                  class="event-image" 
+                  src="{{item.process_images && item.process_images.length > 0 ? item.process_images[0] : '/assets/icons/activity.png'}}" 
+                  mode="aspectFill"
+                />
+                <view class="event-status {{item.is_ended ? 'ended' : 'active'}}">
+                  {{item.is_ended ? '已结束' : '进行中'}}
+                </view>
+              </view>
+              <view class="event-info">
+                <view class="event-title">{{item.title}}</view>
+                <view class="event-desc">{{item.description}}</view>
+                <view class="event-meta">
+                  <view class="event-time">
+                    <van-icon name="clock-o" size="12" color="#999" />
+                    <text>{{item.start_time}}</text>
+                  </view>
+                  <view class="event-joins">
+                    <van-icon name="friends-o" size="12" color="#999" />
+                    <text>{{item.join_count}}人参与</text>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 协会成员展示 - 使用recent_members数据 -->
+      <view class="card fade-in-up-delay-1" wx:if="{{clubDetail.recent_members && clubDetail.recent_members.length > 0 || clubDetail.leader_id}}">
+        <view class="participants-card">
+          <view class="participants-header">
+            <text class="participants-title">成员 ({{clubDetail.member_count || 0}})</text>
+          </view>
+          <view class="participants-grid">
+            <!-- 会长信息优先展示 -->
+            <view 
+              class="participant-item leader-item" 
+              wx:if="{{clubDetail.leader_id}}"
+            >
+              <view class="participant-avatar">
+                <image 
+                  class="avatar-img" 
+                  src="{{clubDetail.leader_avatar || '/assets/icons/user.png'}}" 
+                />
+                <view class="leader-badge">会长</view>
+              </view>
+              <view class="participant-name">{{clubDetail.leader_username || '未知用户'}}</view>
+            </view>
+            
+            <!-- 其他成员 -->
+            <view 
+              class="participant-item" 
+              wx:for="{{clubDetail.recent_members}}" 
+              wx:key="user_id"
+              wx:if="{{index < (clubDetail.leader_id ? 3 : 4) && item.user_id !== clubDetail.leader_id}}"
+            >
+              <view class="participant-avatar">
+                <image 
+                  class="avatar-img" 
+                  src="{{item.avatar || '/assets/icons/user.png'}}" 
+                />
+              </view>
+              <view class="participant-name">{{item.user_name || '未知用户'}}</view>
+            </view>
+            
+            <!-- 查看更多成员 -->
+            <view class="participant-item more-participants" wx:if="{{clubDetail.member_count > (clubDetail.leader_id ? 4 : 3)}}" bindtap="viewAllMembers">
+              <view class="more-avatar">
+                <text class="more-text">+{{clubDetail.member_count - (clubDetail.leader_id ? 4 : 3)}}</text>
+              </view>
+              <view class="participant-name">更多</view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 空成员状态 -->
+      <view class="card fade-in-up-delay-1" wx:if="{{(!clubDetail.recent_members || clubDetail.recent_members.length === 0) && !clubDetail.leader_id}}">
+        <view class="participants-card">
+          <view class="participants-header">
+            <text class="participants-title">协会成员 (0)</text>
+          </view>
+          <view class="empty-members">
+            <van-icon name="friends-o" size="48" color="#dddddd" />
+            <text>暂无成员</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 操作区 -->
+      <view class="action-section fade-in-up-delay-1">
+        <view class="actions-container">
+          <!-- 加入/退出协会按钮 -->
+          <view class="action-info" wx:if="{{!isClubMember && !hasApplied}}">
+            <text class="info-tip">加入协会可参与协会活动并接收协会通知</text>
+          </view>
+          <view class="action-info" wx:if="{{hasApplied}}">
+            <text class="info-tip">您的申请正在审核中</text>
+          </view>
+          <view class="action-info" wx:if="{{isClubMember}}">
+            <text class="info-tip">您已是该协会成员</text>
+          </view>
+          
+          <block wx:if="{{isClubMember}}">
+            <view class="action-btn quit-btn disabled">
+              <van-icon name="success" size="20" />
+              <text>已加入</text>
+            </view>
+          </block>
+          <block wx:else>
+            <view 
+              class="action-btn {{hasApplied ? 'quit-btn disabled' : 'join-btn'}}"
+              bindtap="{{hasApplied ? '' : 'applyToJoin'}}"
+            >
+              <van-icon name="{{hasApplied ? 'clock-o' : 'plus'}}" size="20" />
+              <text>{{hasApplied ? '申请审核中' : '申请加入'}}</text>
+            </view>
+          </block>
+        </view>
+      </view>
+      
+      <!-- 底部填充 -->
+      <view class="footer-space"></view>
+    </view>
+  </scroll-view>
+
+  <!-- 加载状态 -->
+  <view class="loading-container" wx:if="{{!clubDetail}}">
+    <van-loading size="24px" vertical>加载中...</van-loading>
+    <text class="loading-text">正在加载协会信息</text>
+  </view>
+</view> 

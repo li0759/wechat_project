@@ -1,0 +1,23 @@
+<view class="container">
+  <view class="applications-list">
+    <block wx:if="{{applications.length > 0}}">
+      <van-cell-group wx:for="{{applications}}" wx:key="index" custom-class="application-item">
+        <van-cell title="协会名称" value="{{item.club_name}}" />
+        <van-cell title="申请时间" value="{{item.applicatedDate}}" />
+        <view class="status-row">
+          <van-cell 
+            title="状态" 
+            value="{{!item.processedDate ? '审核中' : (item.approved ? '已通过' : '已拒绝')}}" 
+            value-class="{{!item.processedDate ? 'status-pending' : (item.approved ? 'status-approved' : 'status-rejected')}}"
+          />
+        </view>
+        <block wx:if="{{item.processedDate}}">
+          <van-cell title="处理人" value="{{item.processed_user}}" />
+          <van-cell title="处理时间" value="{{item.processedDate}}" />
+          <van-cell wx:if="{{item.opinion}}" title="处理意见" value="{{item.opinion}}" />
+        </block>
+      </van-cell-group>
+    </block>
+    <van-empty wx:else description="暂无申请记录" />
+  </view>
+</view> 

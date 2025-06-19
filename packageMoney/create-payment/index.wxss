@@ -1,0 +1,197 @@
+/* 群收款页面样式 */
+
+/* 基础变量 */
+page {
+  --primary: rgb(223, 118, 176);
+  --primary-light: rgba(223, 118, 176, 0.15);
+  --primary-medium: rgba(223, 118, 176, 0.3);
+  --primary-dark: rgb(195, 93, 151);
+  --gradient-pink: linear-gradient(135deg, rgb(223, 118, 176) 0%, rgb(253, 162, 210) 100%);
+  --text-dark: #333333;
+  --text-medium: #666666;
+  --text-light: #999999;
+  --bg-color: #f7f8fa;
+  --bg-light: #fcf7fa;
+  --border-light: #f0f0f0;
+  --border-radius: 16rpx;
+  --shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  background-color: var(--bg-color);
+}
+
+/* 页面容器 */
+.payment-container {
+  position: relative;
+  box-sizing: border-box;
+  min-height: 2000rpx;
+  background-color: #f8f8f8;
+  padding-bottom: 140rpx;
+}
+
+/* 页面标题区域 */
+.page-header {
+  background-color: #fff;
+  padding: 30rpx 40rpx;
+  padding-top: 60rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
+  margin-bottom: 30rpx;
+}
+
+.page-title {
+  display: block;
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.club-title {
+  display: block;
+  font-size: 32rpx;
+  color: #666;
+  margin-top: 10rpx;
+}
+
+/* 瀑布流滚动区域 */
+.waterfall-scroll {
+  height: 2000rpx;
+  padding: 0 30rpx;
+}
+
+/* 瀑布流区块通用样式 */
+.waterfall-block {
+  background-color: #fff;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.06);
+  margin-bottom: 40rpx;
+  overflow: hidden;
+}
+
+.block-header {
+  display: flex;
+  align-items: center;
+  padding: 30rpx 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.block-header text {
+  font-size: 34rpx;
+  font-weight: 600;
+  margin-left: 16rpx;
+  color: #333;
+}
+
+.block-content {
+  padding: 30rpx;
+}
+
+/* 表单元素样式 */
+.form-item {
+  margin-bottom: 30rpx;
+}
+
+.form-item:last-child {
+  margin-bottom: 0;
+}
+
+.form-label {
+  display: block;
+  font-size: 30rpx;
+  color: #333;
+  margin-bottom: 16rpx;
+  font-weight: 500;
+}
+
+.form-label.required:after {
+  content: '*';
+  color: #e65559;
+  margin-left: 8rpx;
+}
+
+/* 日期范围选择器样式 */
+.date-range-picker {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  padding: 20rpx 0;
+}
+
+.date-value {
+  flex: 1;
+  font-size: 30rpx;
+  color: #333;
+  padding: 10rpx 0;
+}
+
+.date-separator {
+  padding: 0 20rpx;
+  color: #999;
+}
+
+/* 协会支出列表样式 */
+.fee-list {
+  margin-top: 10rpx;
+}
+
+.fee-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.fee-item:last-child {
+  border-bottom: none;
+}
+
+.fee-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.fee-date {
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 8rpx;
+}
+
+.fee-desc {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.fee-amount {
+  font-size: 34rpx;
+  color: #e65559;
+  font-weight: 500;
+}
+
+/* 日期选择器样式 */
+.picker-value {
+  padding: 20rpx 0;
+  border-bottom: 1px solid #eee;
+  font-size: 30rpx;
+  color: #333;
+}
+
+/* 按钮样式 */
+.action-buttons {
+  margin-top: 20rpx;
+}
+
+.primary-btn {
+  width: 100% !important;
+  margin-top: 20rpx !important;
+}
+
+/* 底部填充 */
+.footer-space {
+  height: 100rpx;
+}
+
+/* van-field 样式调整 */
+van-field {
+  --field-input-text-color: #333;
+  --cell-background-color: transparent;
+} 

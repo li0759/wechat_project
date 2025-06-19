@@ -1,0 +1,108 @@
+<!-- 活动列表页面 -->
+<view class="event-container">
+  <van-tabs active="{{ activeTab }}" bind:change="onTabChange" sticky animated swipeable>
+    <!-- 活动列表选项卡 -->
+    <van-tab title="活动列表" class="list-tab">
+      <!-- 固定在顶部的年月显示 - 只在活动列表选项卡中显示 -->
+      <view class="fixed-month-display" wx:if="{{ activeTab === 0 }}">
+        <view class="month-text">
+          <text>{{ listDisplayYear || currentYear }}年{{ listDisplayMonth || currentMonth }}月</text>
+        </view>
+      </view>
+      
+      <!-- 内容区域 -->
+      <view class="list-content" bindscroll="onTimelineScroll">
+        <scroll-view class="waterfall-container" scroll-y bindscroll="onTimelineScroll" enhanced show-scrollbar="{{false}}">
+          <!-- 添加一个顶部占位视图，为固定的年月显示留出空间 -->
+          <view class="month-display-placeholder"></view>
+          <view class="full-width-column">
+            <view wx:for="{{ eventList }}" wx:key="event_id" class="timeline-item waterfall-item joined-item" data-index="{{index}}">
+              <view class="joined-card" bindtap="onEventTap" data-event_id="{{ item.event_id }}" data-user_managed="{{item.cur_user_managed}}">
+
+                <view class="card-content">
+                  <view class="card-left">
+                    <view class="card-title">{{ item.title }}</view>
+                    <view class="card-info">
+                      <!-- 活动时间 -->
+                      <view class="card-tag">
+                        <van-icon name="clock-o" />
+                        <text>{{ item.start_time }}</text>
+                      </view>
+                      <!-- 活动地点 -->
+                      <view class="card-location" wx:if="{{ item.location }}">
+                        <van-icon name="location-o" />
+                        <text>{{ item.location }}</text>
+                      </view>
+                    </view>
+                  </view>
+                  <view class="card-right">
+                    <image 
+                      class="joined-image" 
+                      src="{{ item.cover_image }}" 
+                    ></image>
+                  </view>
+                </view>
+              </view>
+            </view>
+            
+            <!-- 更换成点击加载更多按钮 -->
+            <view class="load-more-container" wx:if="{{ eventList.length > 0 }}">
+              <van-button 
+                round 
+                type="default" 
+                size="small" 
+                loading="{{ isLoading }}"
+                loading-type="spinner"
+                disabled="{{ !hasMore }}"
+                bind:click="onLoadMoreClick"
+                custom-class="load-more-btn"
+                icon="{{ hasMore ? 'arrow-down' : 'info-o' }}"
+              >
+                {{ isLoading ? '加载中...' : (hasMore ? '加载更多' : '无更多数据') }}
+              </van-button>
+            </view>
+            
+            <!-- 无数据展示 -->
+            <view wx:if="{{ eventList.length === 0 }}" class="empty-container">
+              <van-empty description="暂无活动数据" />
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+    </van-tab>
+    
+    <!-- 活动日历选项卡 -->
+    <van-tab title="活动日历">
+      <view class="calendar-container">
+        <!-- 日历组件 -->
+        <calendar
+          show="{{true}}"
+          events="{{ calendarEvents || [] }}"
+          bind:select="onCalendarSelect"
+          bind:monthChange="onCalendarMonthChange"
+        />
+        <!-- 如果没有活动数据，显示提示 -->
+        <view wx:if="{{ eventList.length === 0 }}" class="calendar-empty-tip">
+          暂无活动数据可显示
+        </view>
+      </view>
+    </van-tab>
+  </van-tabs>
+  
+  <!-- 月份选择器弹出层 -->
+  <van-popup
+    show="{{ monthPickerVisible }}"
+    position="bottom"
+    bind:close="closeMonthPicker"
+    round
+  >
+    <van-datetime-picker
+      type="year-month"
+      value="{{ monthPickerDate }}"
+      min-date="{{ minDate }}"
+      max-date="{{ maxDate }}"
+      bind:confirm="confirmMonthPicker"
+      bind:cancel="closeMonthPicker"
+    />
+  </van-popup>
+</view> 

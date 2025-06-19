@@ -1,0 +1,121 @@
+<view class="custom-calendar" wx:if="{{show}}">
+  <!-- 日历头部 -->
+  <view class="calendar-header">
+    <view class="calendar-title" bindtap="showYearMonthPicker">
+      <text>{{selectedYear}}年{{selectedMonth}}月</text>
+      <van-icon name="arrow-down" />
+    </view>
+    <view class="calendar-nav">
+      <view class="nav-item" bindtap="onPrevMonth">
+        <van-icon name="arrow-left" />
+      </view>
+      <view class="nav-item" bindtap="onNextMonth">
+        <van-icon name="arrow" />
+      </view>
+    </view>
+  </view>
+  
+  <!-- 星期栏 -->
+  <view class="calendar-weeks">
+    <view class="week-item" wx:for="{{weeks}}" wx:key="index">{{item}}</view>
+  </view>
+  
+  <!-- 日期格子 -->
+  <view class="calendar-days">
+    <!-- 上个月的空白格子 -->
+    <view 
+      class="day-item day-empty" 
+      wx:for="{{emptyGrids}}" 
+      wx:key="index">
+    </view>
+    
+    <!-- 当月的日期 -->
+    <view 
+      class="day-item {{item.isToday ? 'day-today' : ''}} {{selectedDay === item.day ? 'day-selected' : ''}} {{item.hasEvents ? 'day-has-events' : ''}}"
+      wx:for="{{days}}" 
+      wx:key="index"
+      data-index="{{index}}"
+      bindtap="onDayClick"
+    >
+      <view class="day-content">
+        <text class="day-text">{{item.day}}</text>
+        <!-- 如果有事件，显示角标 -->
+        <view wx:if="{{item.hasEvents}}" class="event-badge">{{item.eventCount}}</view>
+      </view>
+    </view>
+    
+    <!-- 下个月的空白格子 -->
+    <view 
+      class="day-item day-empty" 
+      wx:for="{{lastEmptyGrids}}" 
+      wx:key="index">
+    </view>
+  </view>
+  
+  <!-- 年月选择器弹窗 -->
+  <van-popup 
+    show="{{yearMonthPickerShow}}" 
+    position="bottom" 
+    bind:close="onYearMonthPickerClose"
+    round
+  >
+    <view class="picker-header">
+      <view class="picker-title">选择年月</view>
+      <view class="picker-actions">
+        <van-button size="small" type="default" bindtap="onYearMonthPickerClose">取消</van-button>
+        <van-button size="small" type="primary" bindtap="onYearMonthPickerConfirm">确定</van-button>
+      </view>
+    </view>
+    <picker-view 
+      value="{{pickerValue}}" 
+      class="year-month-picker" 
+      indicator-style="height: 50px;"
+      bindchange="onYearMonthPickerChange"
+    >
+      <picker-view-column>
+        <view wx:for="{{yearRange}}" wx:key="index" class="picker-item">{{item}}年</view>
+      </picker-view-column>
+      <picker-view-column>
+        <view wx:for="{{[1,2,3,4,5,6,7,8,9,10,11,12]}}" wx:key="index" class="picker-item">{{item}}月</view>
+      </picker-view-column>
+    </picker-view>
+  </van-popup>
+</view>
+
+<!-- 事件详情弹窗 -->
+<van-popup 
+  show="{{eventPopupShow}}" 
+  round 
+  custom-class="event-popup" 
+  bind:close="onEventPopupClose"
+>
+  <view class="event-popup-container">
+    <view class="event-popup-header">
+      <view class="event-popup-title">活动列表</view>
+      <van-icon name="cross" bind:click="onEventPopupClose" />
+    </view>
+    
+    <view class="event-popup-content">
+      <view 
+        class="event-item" 
+        wx:for="{{currentEvents}}" 
+        wx:key="index" 
+        data-index="{{index}}"
+        bindtap="onEventItemClick"
+      >
+        <view class="event-item-container">
+          <view class="event-image" wx:if="{{item.active_url}}">
+            <image class="event-img" src="{{item.active_url}}" mode="aspectFill"></image>
+          </view>
+          <view class="event-info">
+            <view class="event-title">{{item.active_title}}</view>
+            <view class="event-time">{{item.formatted_time}}</view>
+          </view>
+        </view>
+      </view>
+      <view wx:if="{{currentEvents.length === 0}}" class="empty-events">
+        当天没有活动
+      </view>
+    </view>
+  </view>
+</van-popup> 

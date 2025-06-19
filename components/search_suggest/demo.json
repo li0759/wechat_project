@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "搜索建议组件演示",
+  "usingComponents": {
+    "search-suggest": "./index",
+    "van-icon": "@vant/weapp/icon/index"
+  }
+} 

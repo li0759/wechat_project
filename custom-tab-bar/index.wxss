@@ -1,0 +1,93 @@
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 110rpx;
+  background: white;
+  display: flex;
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 1000;
+}
+
+.tab-bar-border {
+  background-color: rgba(0, 0, 0, 0.33);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 1rpx;
+  transform: scaleY(0.5);
+}
+
+.tab-bar-item {
+  flex: 1;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  position: relative;
+}
+
+.tab-bar-item.bulge {
+  padding-bottom: 40rpx;
+}
+
+.tab-bar-item .image {
+  width: 54rpx;
+  height: 54rpx;
+  margin-bottom: 8rpx;
+}
+
+.tab-bar-view {
+  font-size: 24rpx;
+}
+
+/* 中间突出部分样式 */
+.tab-bar-bulge {
+  position: absolute;
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  top: -40rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 -5rpx 8rpx rgba(0, 0, 0, 0.9);
+  z-index: 100;
+  background-color:rgb(255, 77, 175)
+}
+
+.bulge-image {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+}
+
+/* 突出按钮对应的文字向下移动一些 */
+.bulge .tab-bar-view {
+  margin-top: 120rpx;
+}
+
+.van-tabbar {
+  --tabbar-height: 100rpx;
+  box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.06);
+  position: relative;
+}
+
+.van-tabbar-item {
+  --tabbar-item-font-size: 24rpx;
+  --tabbar-item-icon-size: 48rpx;
+  --tabbar-item-margin-bottom: 8rpx;
+}
+
+.van-tabbar-item__icon {
+  font-size: 48rpx !important;
+}
+.tab-text {
+  position: absolute;
+  bottom: 10rpx;
+  font-size: 24rpx;
+  color: #000;
+}

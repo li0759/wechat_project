@@ -1,0 +1,274 @@
+<!-- pages/money/club-timeline/index.wxml -->
+<view class="event-container">
+  <van-tabs active="{{ activeTab }}" bind:change="onTabChange" sticky animated swipeable>
+    <!-- 收支记录选项卡 -->
+    <van-tab title="收支记录" class="list-tab">
+      <!-- 固定在顶部的年月显示 - 只在收支记录选项卡中显示 -->
+      <view class="fixed-month-display" wx:if="{{ activeTab === 0 }}">
+        <text>{{ listDisplayYear }}年{{ listDisplayMonth }}月</text>
+      </view>
+      
+      <!-- 新增功能按钮区域 - 只在收支记录选项卡中显示 -->
+      <view class="fixed-action-buttons" wx:if="{{ activeTab === 0 }}">
+        <view class="action-button payment-button" bindtap="navigateToCreatePayment">
+          <van-icon name="balance-o" size="32px" color="#ffffff" />
+        </view>
+        <view class="action-button clubfee-button" bindtap="navigateToCreateClubfee">
+          <van-icon name="balance-list-o" size="32px" color="#ffffff" />
+        </view>
+      </view>
+      
+      <!-- 内容区域 -->
+      <view class="list-content">
+        <view class="waterfall-container">
+
+          <view class="full-width-column">
+            <!-- 收支记录时间轴 -->
+            <scroll-view 
+              scroll-y 
+              class="timeline-scroll-view" 
+              bindscroll="onTimelineScroll"
+              scroll-with-animation
+              enhanced
+              show-scrollbar="{{false}}"
+              style="height: 90vh;"
+            >
+              <view class="timeline-main-container">
+                <!-- 中间时间轴 -->
+                <view class="timeline-center">
+                  <view class="timeline-line"></view>
+                </view>
+
+                <!-- 时间轴内容区 -->
+                <view class="timeline-items">
+                  <block wx:for="{{ timeline }}" wx:key="index">
+                    <!-- 收入项目（显示在左侧） -->
+                    <block wx:if="{{ item.type === 'pay_group' }}">
+                      <view class="timeline-item income-item" data-index="{{index}}" data-date="{{item.create_date}}">
+                        <view class="timeline-content">
+                          <view class="pay-group">
+                            <view class="pay-description">{{ item.description }}</view>
+                            <view class="pay-amount">
+                              <text class="paid">已收: ¥{{ item.paid }}</text>
+                              <text class="unpaid">待收: ¥{{ item.unpaid }}</text>
+                            </view>
+                            <!-- 创建日期 -->
+                            <view class="item-date-inside">{{ item.create_date }}</view>
+                            <view class="pay-details-toggle" bindtap="showPayDetails" data-index="{{ index }}">
+                              <text>查看详情</text>
+                              <van-icon name="arrow-right" color="var(--income-color, rgb(223, 118, 176))" size="14px" />
+                            </view>
+                          </view>
+                        </view>
+                        <view class="timeline-dot"></view>
+                      </view>
+                    </block>
+
+                    <!-- 支出项目（显示在右侧） -->
+                    <block wx:if="{{ item.type === 'club_fee' || item.type === 'event_real_cost' }}">
+                      <view class="timeline-item expense-item" data-index="{{index}}" data-date="{{item.create_date}}">
+                        <view class="timeline-dot"></view>
+                        <view class="timeline-content">
+                          <!-- 活动支出 -->
+                          <block wx:if="{{ item.type === 'event_real_cost' }}">
+                            <view class="event-expense">
+                              <image wx:if="{{ item.cover }}" class="event-cover" src="{{ item.cover }}" mode="aspectFill"></image>
+                              <view class="event-info">
+                                <view class="event-title">{{ item.title }}</view>
+                                <view class="event-cost">¥{{ item.real_cost }}</view>
+                              </view>
+                            </view>
+                          </block>
+                          <!-- 自定义支出 -->
+                          <block wx:if="{{ item.type === 'club_fee' }}">
+                            <view class="club-fee">
+                              <view class="fee-description">{{ item.description }}</view>
+                              <view class="fee-amount">¥{{ item.feement }}</view>
+                            </view>
+                          </block>
+                          <!-- 创建日期 -->
+                          <view class="item-date-inside">{{ item.create_date }}</view>
+                        </view>
+                      </view>
+                    </block>
+                  </block>
+                  
+                  <!-- 更换成点击加载更多按钮 - 移到时间轴内容内 -->
+                  <view class="load-more-container" wx:if="{{ timeline.length > 0 }}">
+                    <van-button 
+                      round 
+                      type="default" 
+                      size="small" 
+                      loading="{{ isLoading }}"
+                      loading-type="spinner"
+                      disabled="{{ !hasMore }}"
+                      bind:click="onLoadMoreClick"
+                      custom-class="load-more-btn"
+                      icon="{{ hasMore ? 'arrow-down' : 'info-o' }}"
+                    >
+                      {{ isLoading ? '加载中...' : (hasMore ? '加载更多 (第' + currentPage + '/' + totalPages + '页)' : '已加载全部数据') }}
+                    </van-button>
+                  </view>
+                </view>
+              </view>
+            </scroll-view>
+            
+            <!-- 无数据展示 -->
+            <view wx:if="{{ timeline.length === 0 }}" class="empty-container">
+              <van-empty description="暂无收支记录" />
+            </view>
+          </view>
+        </view>
+      </view>
+    </van-tab>
+    
+    <!-- 收支日历选项卡 -->
+    <van-tab title="收支日历">
+      <view class="calendar-container">
+        <!-- 日历组件 -->
+        <calendar
+          show="{{true}}"
+          events="{{ calendarEvents || [] }}"
+          bind:select="onCalendarSelect"
+          bind:monthChange="onCalendarMonthChange"
+        />
+        <!-- 如果没有数据，显示提示 -->
+        <view wx:if="{{ timeline.length === 0 }}" class="calendar-empty-tip">
+          暂无收支数据可显示
+        </view>
+      </view>
+    </van-tab>
+  </van-tabs>
+  
+  <!-- 月份选择器弹窗 -->
+  <van-popup
+    show="{{ monthPickerVisible }}"
+    position="bottom"
+    round
+    bind:close="closeMonthPicker"
+  >
+    <van-datetime-picker
+      type="year-month"
+      value="{{ monthPickerDate }}"
+      min-date="{{ minDate }}"
+      max-date="{{ maxDate }}"
+      bind:confirm="confirmMonthPicker"
+      bind:cancel="closeMonthPicker"
+    />
+  </van-popup>
+
+  <!-- 添加支出模态框 -->
+  <van-dialog
+    use-slot
+    title="添加支出"
+    show="{{ expenseModalVisible }}"
+    show-cancel-button
+    confirm-button-color="var(--primary-color, rgb(223, 118, 176))"
+    bind:close="closeExpenseModal"
+    bind:confirm="confirmAddExpense"
+  >
+    <view class="modal-form">
+      <van-field
+        label="支出金额"
+        type="digit"
+        placeholder="请输入支出金额"
+        model:value="{{ newExpense_feement }}"
+      />
+      <van-field
+        label="支出描述"
+        type="text"
+        placeholder="请输入支出描述"
+        model:value="{{ newExpense_description }}"
+      />
+      <!-- 添加日期选择器 -->
+      <view class="form-item">
+        <text class="form-label">支出日期</text>
+        <view class="datetime-picker">
+          <picker mode="date" value="{{newExpense_date}}" bindchange="onExpenseDateChange">
+            <view class="picker-value {{newExpense_date ? '' : 'placeholder'}}">
+              {{newExpense_date || '请选择日期'}}
+            </view>
+          </picker>
+          <view class="datetime-separator">-</view>
+          <picker mode="time" value="{{newExpense_time}}" bindchange="onExpenseTimeChange">
+            <view class="picker-value {{newExpense_time ? '' : 'placeholder'}}">
+              {{newExpense_time || '请选择时间'}}
+            </view>
+          </picker>
+        </view>
+      </view>
+    </view>
+  </van-dialog>
+
+  <!-- 发起收款模态框 -->
+  <van-dialog
+    use-slot
+    title="发起收款"
+    show="{{ incomeModalVisible }}"
+    show-cancel-button
+    confirm-button-color="var(--primary-color, rgb(223, 118, 176))"
+    bind:close="closeIncomeModal"
+    bind:confirm="confirmAddIncome"
+  >
+    <view class="modal-form">
+      <van-field
+        label="收款总额"
+        type="digit"
+        placeholder="请输入收款总额"
+        model:value="{{ newIncome_total_fee }}"
+      />
+      <van-field
+        label="收款描述"
+        type="text"
+        placeholder="请输入收款描述"
+        model:value="{{ newIncome_description }}"
+      />
+      <!-- 添加日期选择器 -->
+      <view class="form-item">
+        <text class="form-label">收款日期</text>
+        <view class="datetime-picker">
+          <picker mode="date" value="{{newIncome_date}}" bindchange="onIncomeDateChange">
+            <view class="picker-value {{newIncome_date ? '' : 'placeholder'}}">
+              {{newIncome_date || '请选择日期'}}
+            </view>
+          </picker>
+          <view class="datetime-separator">-</view>
+          <picker mode="time" value="{{newIncome_time}}" bindchange="onIncomeTimeChange">
+            <view class="picker-value {{newIncome_time ? '' : 'placeholder'}}">
+              {{newIncome_time || '请选择时间'}}
+            </view>
+          </picker>
+        </view>
+      </view>
+    </view>
+  </van-dialog>
+
+  <!-- 收款详情弹窗 -->
+  <van-dialog
+    use-slot
+    show="{{ payDetailsDialogVisible }}"
+    title="收款详情"
+    confirm-button-text="关闭"
+    show-cancel-button="{{ false }}"
+    confirm-button-color="var(--primary-color, rgb(223, 118, 176))"
+    bind:close="closePayDetailsDialog"
+  >
+    <view class="pay-details-dialog">
+      <view class="pay-details-dialog-title" wx:if="{{ currentPayGroup }}">{{ currentPayGroup.description }}</view>
+      <view class="pay-details-dialog-content">
+        <view class="pay-detail-item" wx:for="{{ currentPayGroupDetails }}" wx:key="index">
+          <view class="payor-info">
+            <image class="payor-avatar" wx:if="{{ item.payor.avatar }}" src="{{ item.payor.avatar }}"></image>
+            <text class="payor-name">{{ item.payor.name }}</text>
+          </view>
+          <view class="payment-info">
+            <text class="payment-amount">¥{{ item.personal_payment }}</text>
+            <text class="payment-status {{ item.personal_paydate ? 'paid' : 'unpaid' }}">
+              {{ item.personal_paydate ? '已支付' : '未支付' }}
+            </text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </van-dialog>
+</view> 

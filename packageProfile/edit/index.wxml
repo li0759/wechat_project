@@ -1,0 +1,70 @@
+<!--pages/profile/edit/index.wxml-->
+<view class="container">
+  <view class="page-header">
+    <view class="title">编辑个人信息</view>
+  </view>
+  
+  <view wx:if="{{loading}}" class="loading-container">
+    <van-loading size="24px" type="spinner" color="#1989fa" />
+    <view class="loading-text">加载中...</view>
+  </view>
+  
+  <view wx:else class="form-container">
+    <view class="form-group">
+      <view class="form-item">
+        <view class="form-label">姓名</view>
+        <view class="form-input">
+          <van-field
+            value="{{ formData.name }}"
+            placeholder="请输入姓名"
+            border="{{ false }}"
+            bind:change="onInputChange"
+            data-field="name"
+          />
+        </view>
+      </view>
+      
+      <view class="form-item">
+        <view class="form-label">性别</view>
+        <view class="form-input">
+          <van-radio-group value="{{ formData.gender }}" bind:change="onGenderChange" direction="horizontal">
+            <van-radio name="男">男</van-radio>
+            <van-radio name="女">女</van-radio>
+          </van-radio-group>
+        </view>
+      </view>
+      
+      <view class="form-item">
+        <view class="form-label">手机号</view>
+        <view class="form-input">
+          <van-field
+            value="{{ formData.phone }}"
+            placeholder="请输入手机号"
+            border="{{ false }}"
+            bind:change="onInputChange"
+            data-field="phone"
+            type="number"
+            maxlength="11"
+          />
+        </view>
+      </view>
+      
+      <view class="form-item">
+        <view class="form-label">邮箱</view>
+        <view class="form-input">
+          <van-field
+            value="{{ formData.email }}"
+            placeholder="请输入邮箱"
+            border="{{ false }}"
+            bind:change="onInputChange"
+            data-field="email"
+          />
+        </view>
+      </view>
+    </view>
+    
+    <view class="form-actions">
+      <van-button type="primary" block round bindtap="submitForm">保存</van-button>
+    </view>
+  </view>
+</view> 

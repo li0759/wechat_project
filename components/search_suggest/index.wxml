@@ -1,0 +1,128 @@
+<!-- 搜索建议组件 -->
+<view class="search-suggest-container {{customClass}}" style="{{customStyle}}">
+  <!-- 搜索输入框 -->
+  <view class="search-input-wrapper {{shape === 'round' ? 'round' : 'square'}} {{focused ? 'focused' : ''}}">
+    <!-- 搜索图标 -->
+    <view class="search-icon">
+      <van-icon name="search" size="18" color="#999" />
+    </view>
+    
+    <!-- 输入框 -->
+    <input 
+      class="search-input"
+      type="text"
+      value="{{inputValue}}"
+      placeholder="{{placeholder}}"
+      bindinput="onInputChange"
+      bindfocus="onInputFocus"
+      bindblur="onInputBlur"
+      confirm-type="search"
+      bindconfirm="onSearchTap"
+    />
+    
+    <!-- 清空按钮 -->
+    <view 
+      class="clear-button {{inputValue ? 'show' : 'hide'}}" 
+      wx:if="{{showClearButton}}"
+      bindtap="onClearInput"
+    >
+      <van-icon name="clear" size="16" color="#999" />
+    </view>
+    
+    <!-- 搜索按钮 -->
+    <view 
+      class="search-button" 
+      wx:if="{{showSearchButton}}"
+      bindtap="onSearchTap"
+      style="background-color: {{themeColor}}"
+    >
+      <text class="search-button-text">{{searchButtonText}}</text>
+    </view>
+  </view>
+  
+  <!-- 建议下拉框 -->
+  <view class="suggestions-dropdown {{showSuggestions ? 'show' : 'hide'}}" wx:if="{{showSuggestions}}">
+    <!-- 加载状态 -->
+    <view class="loading-wrapper" wx:if="{{isLoading}}">
+      <van-loading size="16" color="{{themeColor}}" />
+      <text class="loading-text">搜索中...</text>
+    </view>
+    
+    <!-- 搜索建议列表 -->
+    <view class="suggestions-list" wx:if="{{!isLoading && suggestions.length > 0}}">
+      <view class="suggestions-header">
+        <text class="suggestions-title">搜索建议</text>
+      </view>
+      <view 
+        class="suggestion-item"
+        wx:for="{{suggestions}}"
+        wx:key="id"
+        bindtap="onSuggestionTap"
+        data-item="{{item}}"
+        data-index="{{index}}"
+      >
+        <!-- 建议项图标 -->
+        <view class="suggestion-icon">
+          <van-icon 
+            name="{{item.icon || 'search'}}" 
+            size="16" 
+            color="{{item.iconColor || '#999'}}" 
+          />
+        </view>
+        
+        <!-- 建议项内容 -->
+        <view class="suggestion-content">
+          <view class="suggestion-title">{{item.title || item.text || item}}</view>
+          <view class="suggestion-desc" wx:if="{{item.description}}">{{item.description}}</view>
+        </view>
+        
+        <!-- 建议项标签 -->
+        <view class="suggestion-tag" wx:if="{{item.tag}}">
+          <text class="tag-text">{{item.tag}}</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 搜索历史 -->
+    <view class="history-list" wx:if="{{!isLoading && suggestions.length === 0 && searchHistory.length > 0}}">
+      <view class="history-header">
+        <text class="history-title">搜索历史</text>
+        <view class="clear-history-btn" bindtap="onClearHistory">
+          <van-icon name="delete-o" size="14" color="#999" />
+          <text class="clear-text">清空</text>
+        </view>
+      </view>
+      <view 
+        class="history-item"
+        wx:for="{{searchHistory}}"
+        wx:key="index"
+        bindtap="onHistoryTap"
+        data-item="{{item}}"
+        data-index="{{index}}"
+      >
+        <!-- 历史记录图标 -->
+        <view class="history-icon">
+          <van-icon name="clock-o" size="16" color="#999" />
+        </view>
+        
+        <!-- 历史记录文本 -->
+        <view class="history-text">{{item}}</view>
+        
+        <!-- 删除按钮 -->
+        <view 
+          class="delete-history-btn"
+          bindtap="onDeleteHistory"
+          data-index="{{index}}"
+        >
+          <van-icon name="cross" size="14" color="#ccc" />
+        </view>
+      </view>
+    </view>
+    
+    <!-- 空状态 -->
+    <view class="empty-suggestions" wx:if="{{!isLoading && suggestions.length === 0 && searchHistory.length === 0 && inputValue}}">
+      <van-icon name="search" size="32" color="#ddd" />
+      <text class="empty-text">暂无搜索建议</text>
+    </view>
+  </view>
+</view> 

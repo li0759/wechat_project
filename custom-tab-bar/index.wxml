@@ -1,0 +1,19 @@
+<view class="tab-bar">
+  <view class="tab-bar-border"></view>
+  <view wx:for="{{list}}" wx:key="index" class="tab-bar-item {{item.isSpecial ? 'bulge' : ''}}" data-path="{{item.url}}" data-index="{{index}}" bindtap="onChange">
+    <block wx:if="{{item.isSpecial}}">
+      <view class="tab-bar-bulge">
+        <block wx:if="{{specialActivityImage}}">
+          <image class="bulge-image" src="{{specialActivityImage}}" mode="aspectFill"></image>
+        </block>
+        <block wx:else>
+          <van-icon name="{{item.icon}}" size="54rpx" color="white" />
+        </block>
+      </view>
+    </block>
+    <block wx:else>
+      <van-icon name="{{item.icon}}" size="54rpx" color="{{active === index ? 'rgb(255, 77, 175)' : '#000'}}" />
+    </block>
+    <view style="color: {{active === index ? 'rgb(255, 77, 175)' : '#000'}}" class="tab-bar-view">{{item.text}}</view>
+  </view>
+</view>

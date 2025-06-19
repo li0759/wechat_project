@@ -1,0 +1,85 @@
+<!--pages/profile/club-members/index.wxml-->
+<view class="container">
+  <view class="page-header">
+    <view class="title">{{clubInfo.name || '社团'}}成员管理</view>
+    <view class="subtitle">共 {{members.length}} 名成员</view>
+  </view>
+  
+  <view class="loading-container" wx:if="{{loading}}">
+    <view class="spinner">
+      <image src="/assets/images/loading.gif" mode="aspectFit" style="width: 70rpx; height: 70rpx;"></image>
+    </view>
+    <view class="loading-text">加载中...</view>
+  </view>
+  
+  <view class="empty-container" wx:elif="{{members.length === 0}}">
+    <image class="empty-image" src="/assets/images/empty.png" mode="aspectFit"></image>
+    <view class="empty-text">暂无成员</view>
+  </view>
+  
+  <view class="search-box">
+    <view class="search-input">
+      <image src="/assets/images/search.png" class="search-icon"></image>
+      <input 
+        type="text" 
+        placeholder="搜索成员姓名" 
+        confirm-type="search"
+        bindinput="onSearchInput"
+        bindconfirm="onSearch"
+      ></input>
+      <view class="clear-btn" bindtap="clearSearch" wx:if="{{searchKeyword}}">
+        <image src="/assets/images/clear.png"></image>
+      </view>
+    </view>
+  </view>
+  
+  <view class="members-list" wx:if="{{members.length > 0}}">
+    <block wx:for="{{filteredMembers}}" wx:key="id">
+      <view class="member-item">
+        <view class="member-card">
+          <view class="member-avatar">
+            <image src="{{item.avatarUrl || '/assets/images/default-avatar.png'}}" mode="aspectFill"></image>
+          </view>
+          <view class="member-info">
+            <view class="member-name">{{item.name}}</view>
+            <view class="member-role {{item.role === 'admin' ? 'role-admin' : item.role === 'manager' ? 'role-manager' : 'role-member'}}">
+              {{item.role === 'admin' ? '管理员' : item.role === 'manager' ? '干部' : '成员'}}
+            </view>
+            <view class="member-jointime">加入时间：{{item.join_date}}</view>
+          </view>
+          <view class="member-actions" >
+            <view class="action-btn remove-btn" bindtap="confirmRemoveMember" data-userid="{{item.id}}" data-username="{{item.name}}">
+              <image src="/assets/images/remove.png"></image>
+              <text>移除</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </block>
+  </view>
+</view>
+
+<!-- 角色选择弹窗 -->
+<view class="role-picker-mask" bindtap="hideRoleOptions" wx:if="{{showRolePicker}}"></view>
+<view class="role-picker" wx:if="{{showRolePicker}}">
+  <view class="role-picker-header">
+    <view class="role-picker-title">设置成员角色</view>
+    <view class="role-picker-close" bindtap="hideRoleOptions">
+      <image src="/assets/images/close.png"></image>
+    </view>
+  </view>
+  <view class="role-option {{selectedRole === 'manager' ? 'selected' : ''}}" bindtap="selectRole" data-role="manager">
+    <text class="role-name">干部</text>
+    <text class="role-desc">可以创建活动和发布通知</text>
+    <image src="/assets/images/check.png" wx:if="{{selectedRole === 'manager'}}"></image>
+  </view>
+  <view class="role-option {{selectedRole === 'member' ? 'selected' : ''}}" bindtap="selectRole" data-role="member">
+    <text class="role-name">成员</text>
+    <text class="role-desc">只能参与活动</text>
+    <image src="/assets/images/check.png" wx:if="{{selectedRole === 'member'}}"></image>
+  </view>
+  <view class="role-picker-actions">
+    <button class="cancel-btn" bindtap="hideRoleOptions">取消</button>
+    <button class="confirm-btn" bindtap="changeRole">确定</button>
+  </view>
+</view> 

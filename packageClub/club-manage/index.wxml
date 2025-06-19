@@ -1,0 +1,431 @@
+<!-- 简洁现代化协会管理页面 -->
+<view class="modern-container">
+
+  <!-- 主要内容 -->
+  <scroll-view class="main-scroll" scroll-y="true" wx:if="{{clubDetail}}">
+    <!-- 信息展示区 -->
+    <view class="info-section">
+      <!-- 协会图片轮播 - 显示2.5个项目 -->
+      <view class="images-swiper fade-in-up" wx:if="{{clubDetail.process_images && clubDetail.process_images.length > 0}}">
+        <swiper 
+          class="images-swiper-container" 
+          indicator-dots="{{false}}" 
+          autoplay="{{true}}" 
+          interval="4000" 
+          duration="500"
+          display-multiple-items="2.5"
+          previous-margin="40rpx"
+          next-margin="40rpx"
+          bindchange="onSwiperChange"
+        >
+          <swiper-item class="images-swiper-item" wx:for="{{clubDetail.process_images}}" wx:key="*this">
+            <view class="image-wrapper">
+              <image 
+                class="swiper-image" 
+                src="{{item}}" 
+                mode="aspectFill" 
+                bindtap="previewImage" 
+                data-url="{{item}}" 
+                data-index="{{index}}"
+              />
+            </view>
+          </swiper-item>
+        </swiper>
+        
+        <!-- 状态标签 -->
+        <view class="status-tag active">
+          活跃中
+        </view>
+        
+        <!-- 图片指示器 -->
+        <view class="images-indicator" wx:if="{{clubDetail.process_images.length > 1}}">
+          <view class="indicator-dots">
+            <view 
+              class="indicator-dot {{index === currentImageIndex ? 'active' : ''}}" 
+              wx:for="{{clubDetail.process_images}}" 
+              wx:key="*this"
+            ></view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 协会详细信息卡片 -->
+      <view class="card fade-in-up-delay-1">
+        <view class="detail-info-card">
+          <!-- 协会标题 -->
+          <view class="club-title">{{clubDetail.name}}</view>
+          
+          <!-- 基本信息段落 -->
+          <view class="basic-info-text">
+            <view class="info-text-item">
+              <van-icon name="manager-o" size="16" color="#ff6b9d" />
+              <text class="info-text">会长：{{clubDetail.leader_name || '暂无'}}</text>
+            </view>
+            <view class="info-text-item">
+              <van-icon name="friends-o" size="16" color="#ff6b9d" />
+              <text class="info-text">成员数量：{{clubDetail.member_count || 0}}人</text>
+            </view>
+          </view>
+
+          <!-- 统计区域 -->
+          <view class="stats-card" style="margin-top: 32rpx;">
+            <view class="stats-row">
+              <view class="stat-item">
+                <count-num 
+                  value="{{clubDetail.member_count || 0}}" 
+                  size="large"
+                  color="custom"
+                  customStyle="color: #ff6b9d; font-size: 32rpx;"
+                  fontWeight="bold"
+                  duration="{{800}}"
+                  delay="{{600}}"
+                />  
+                <view class="stat-label">总成员</view>
+              </view>
+              <view class="stat-item">
+                <count-num 
+                  value="{{pendingApplications.length || 0}}" 
+                  size="large"
+                  color="custom"
+                  customStyle="color: #ff6b9d; font-size: 32rpx;"
+                  fontWeight="bold"
+                  duration="{{800}}"
+                  delay="{{600}}"
+                />  
+                <view class="stat-label">待审核</view>
+              </view>
+              <view class="stat-item">
+                <count-num 
+                  value="{{clubDetail.recent_events ? clubDetail.recent_events.length : 0}}" 
+                  size="large"
+                  color="custom"
+                  customStyle="color: #ff6b9d; font-size: 32rpx;"
+                  fontWeight="bold"
+                  duration="{{800}}"
+                  delay="{{600}}"
+                />  
+                <view class="stat-label">近期活动</view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 可编辑信息块区域 -->
+      <view class="card fade-in-up-delay-1">
+        <view class="create-info-card">
+          <!-- 信息网格 -->
+          <view class="create-info-grid">
+            <!-- 协会图片 - 单个块 -->
+            <view class="create-info-item single-block" bindtap="showImageDialog">
+              <van-icon name="photo-o" size="24" color="#ff6b9d" />
+              <view class="create-info-content">
+                <view class="create-info-label">协会图片</view>
+                <view class="create-info-value">
+                  {{clubDetail.process_images && clubDetail.process_images.length > 0 ? '已添加 (' + clubDetail.process_images.length + '张)' : '点击添加图片'}}
+                </view>
+              </view>
+            </view>
+            
+            <!-- 协会简介 - 双倍宽度 -->
+            <view class="create-info-item double-width" bindtap="editDescription">
+              <van-icon name="description" size="24" color="#ff6b9d" />
+              <view class="create-info-content">
+                <view class="create-info-label">协会简介</view>
+                <view class="create-info-value description-text">{{clubDetail.description || '点击添加简介'}}</view>
+              </view>
+            </view>
+            
+            <!-- 协会章程 - 双倍宽度和高度 -->
+            <view class="create-info-item double-width double-height" bindtap="editCharter">
+              <van-icon name="notes-o" size="24" color="#ff6b9d" />
+              <view class="create-info-content">
+                <view class="create-info-label">协会章程</view>
+                <view class="create-info-value description-text">{{clubDetail.charter || '点击添加章程'}}</view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 操作区域 -->
+      <view class="card fade-in-up-delay-1">
+        <view class="action-card">
+          <view class="action-buttons">
+            <view class="action-button primary" bindtap="manageMembers">
+              <van-icon name="manager-o" size="24" color="#ffffff" />
+              <text>管理会员</text>
+            </view>
+            <view class="action-button secondary" bindtap="addMember">
+              <van-icon name="add-o" size="24" color="#ff6b9d" />
+              <text>添加会员</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{isEmpty}}">
+    <van-empty description="协会信息加载失败" />
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-state" wx:if="{{isLoading}}">
+    <van-loading size="24px" vertical>加载中...</van-loading>
+  </view>
+</view>
+
+<!-- 协会简介编辑弹窗 -->
+<van-popup 
+  show="{{showDescriptionPopup}}" 
+  position="bottom" 
+  round="{{true}}"
+  bind:close="closeDescriptionPopup"
+  custom-style="height: 60vh;"
+>
+  <view class="popup-container">
+    <view class="popup-header">
+      <view class="popup-title">编辑协会简介</view>
+      <van-icon name="cross" size="20" color="#999" bindtap="closeDescriptionPopup" />
+    </view>
+    <view class="popup-content">
+      <van-field
+        value="{{tempDescription}}"
+        type="textarea"
+        placeholder="请输入协会简介..."
+        autosize="{{true}}"
+        maxlength="500"
+        show-word-limit="{{true}}"
+        bind:change="onTempDescriptionChange"
+        custom-style="background: #f8f9fa; border-radius: 12rpx;"
+      />
+    </view>
+    <view class="popup-footer">
+      <van-button 
+        type="primary" 
+        size="large" 
+        color="#ff6b9d"
+        bindtap="confirmDescription"
+        loading="{{saving}}"
+      >
+        保存
+      </van-button>
+    </view>
+  </view>
+</van-popup>
+
+<!-- 协会章程编辑弹窗 -->
+<van-popup 
+  show="{{showCharterPopup}}" 
+  position="bottom" 
+  round="{{true}}"
+  bind:close="closeCharterPopup"
+  custom-style="height: 70vh;"
+>
+  <view class="popup-container">
+    <view class="popup-header">
+      <view class="popup-title">编辑协会章程</view>
+      <van-icon name="cross" size="20" color="#999" bindtap="closeCharterPopup" />
+    </view>
+    <view class="popup-content">
+      <van-field
+        value="{{tempCharter}}"
+        type="textarea"
+        placeholder="请输入协会章程..."
+        autosize="{{true}}"
+        maxlength="2000"
+        show-word-limit="{{true}}"
+        bind:change="onTempCharterChange"
+        custom-style="background: #f8f9fa; border-radius: 12rpx;"
+      />
+    </view>
+    <view class="popup-footer">
+      <van-button 
+        type="primary" 
+        size="large" 
+        color="#ff6b9d"
+        bindtap="confirmCharter"
+        loading="{{saving}}"
+      >
+        保存
+      </van-button>
+    </view>
+  </view>
+</van-popup>
+
+<!-- 图片管理弹窗 -->
+<van-popup 
+  show="{{ showImageDialog }}" 
+  position="bottom" 
+  round
+  close-on-click-overlay
+  bind:close="closeImageDialog"
+  custom-class="image-popup"
+  z-index="2000"
+  safe-area-inset-bottom
+>
+  <view class="popup-container">
+    <view class="popup-header">
+      <text class="popup-title">管理活动图片</text>
+      <van-icon name="cross" bind:click="closeImageDialog" color="#666" />
+    </view>
+    
+    <view class="popup-content">
+      <view class="images-tip">
+        <van-icon name="info-o" size="14" color="#ff6b9d" />
+        <text>拖拽调整顺序，第一张将自动作为封面图</text>
+      </view>
+      
+      <!-- 添加外层容器并阻止事件冒泡 -->
+      <view class="drag-container" catchtap="preventClose">
+        <drag-img 
+          id="drag-img-{{clubId}}"
+          previewSize="90" 
+          defaultImgList="{{clubDetail.process_images}}" 
+          maxCount="9"
+          columns="3"
+          gap="10"
+          customClass="drag-img-container"
+          itemClass="drag-img-item"
+          bind:addImg="preventClose"
+          bind:delImg="preventClose"
+        />
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="popup-actions">
+      <view 
+        class="action-btn primary"
+        bindtap="saveImageChanges" 
+        data-club-id="{{clubId}}"
+      >
+        <van-icon name="success" size="16" />
+        <text>保存图片</text>
+      </view>
+    </view>
+  </view>
+</van-popup>
+
+<!-- 会员管理弹窗 -->
+<van-popup 
+  show="{{showMembersPopup}}" 
+  position="bottom" 
+  round="{{true}}"
+  bind:close="closeMembersPopup"
+  custom-style="height: 80vh;"
+>
+  <view class="popup-container">
+    <view class="popup-header">
+      <view class="popup-title">会员管理</view>
+      <van-icon name="cross" size="20" color="#999" bindtap="closeMembersPopup" />
+    </view>
+    <view class="popup-content">
+      <view class="members-list">
+        <view 
+          class="member-item" 
+          wx:for="{{membersList}}" 
+          wx:key="member_id"
+        >
+          <view class="member-info">
+            <image 
+              class="member-avatar" 
+              src="{{item.avatar || '/assets/icons/user.png'}}" 
+            />
+            <view class="member-details">
+              <view class="member-name">{{item.user_name}}</view>
+              <view class="member-role">{{item.role_display}}</view>
+            </view>
+          </view>
+          <view class="member-actions">
+            <view 
+              class="member-action-btn promote" 
+              wx:if="{{item.can_promote}}"
+              bindtap="promoteMember" 
+              data-memberId="{{item.member_id}}"
+              data-user-name="{{item.user_name}}"
+            >
+              提拔
+            </view>
+            <view 
+              class="member-action-btn remove" 
+              wx:if="{{!item.is_current_user && item.role_display !== '会长'}}"
+              bindtap="removeMember" 
+              data-memberId="{{item.member_id}}"
+            >
+              移除
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</van-popup>
+
+<!-- 添加会员弹窗 -->
+<van-popup 
+  show="{{showAddMemberPopup}}" 
+  position="bottom" 
+  round="{{true}}"
+  bind:close="closeAddMemberPopup"
+  custom-style="height: 70vh;"
+>
+  <view class="popup-container">
+    <view class="popup-header">
+      <view class="popup-title">添加会员</view>
+      <van-icon name="cross" size="20" color="#999" bindtap="closeAddMemberPopup" />
+    </view>
+    <view class="popup-content">
+      <view class="search-section">
+        <search-suggest 
+          id="memberSearchSuggest"
+          placeholder="搜索用户姓名、手机号、邮箱..."
+          themeColor="#ff6b9d"
+          shape="round"
+          enableAutocomplete="{{true}}"
+          showHistory="{{true}}"
+          maxSuggestions="{{8}}"
+          debounceTime="{{300}}"
+          minSearchLength="{{1}}"
+          bind:search="onMemberSearch"
+          bind:fetchSuggestions="onFetchMemberSuggestions"
+          bind:select="onSelectMemberSuggestion"
+          bind:historySelect="onMemberHistorySelect"
+        />
+      </view>
+      <view class="search-results">
+        <view 
+          class="search-result-item" 
+          wx:for="{{searchResults}}" 
+          wx:key="user_id"
+        >
+          <view class="user-info">
+            <image 
+              class="user-avatar" 
+              src="{{item.avatar || '/assets/icons/user.png'}}" 
+            />
+            <view class="user-details">
+              <view class="user-name">{{item.user_name}}</view>
+              <view class="user-phone">{{item.phone}}</view>
+            </view>
+            
+          </view>
+          <!-- 协会信息显示在右边 -->
+          <view class="user-right-info">
+            <view class="user-clubs-tag" wx:if="{{item.tag}}">
+              <text class="clubs-summary">{{item.tag}}</text>
+            </view>
+          </view>
+          <view class="add-user-btn" bindtap="addUserToClub" data-id="{{item.user_id}}">
+              <van-icon name="arrow" size="16" color="#ff6b9d" />
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</van-popup>
+
+
+<tabBar id="vant-tabbar" active="{{1}}"></tabBar>

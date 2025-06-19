@@ -1,0 +1,214 @@
+<!--pages/profile/index.wxml-->
+<view class="container">
+  <!-- 头部用户信息 -->
+  <view class="header">
+    <view class="user-card">
+      <image class="avatar" src="{{userInfo.avatar}}" mode="aspectFill"></image>
+      <view class="user-info">
+        <view class="name">{{userInfo.username || '未登录'}}</view>
+        <view class="role">{{userInfo.roles_join}}</view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 功能列表 -->
+  <view class="function-list">
+    <!-- 普通用户和管理员都有的功能 -->
+    <view class="function-group">
+      <view class="function-title">个人中心</view>
+      <view class="function-grid">
+        <view class="grid-item" bindtap="navigateToUserInfo">
+          <view class="grid-icon">
+            <van-icon name="user-o" size="24px" color="rgb(223, 118, 176)" />
+            <view class="badge" wx:if="{{false}}">0</view>
+          </view>
+          <view class="grid-text">个人信息</view>
+        </view>
+        
+        <view class="grid-item" bindtap="navigateToJoinedClubs">
+          <view class="grid-icon">
+            <van-icon name="friends-o" size="24px" color="rgb(223, 118, 176)" />
+            <view class="badge" wx:if="{{statistics.joinedClubs > 0}}">{{statistics.joinedClubs}}</view>
+          </view>
+          <view class="grid-text">我的协会</view>
+        </view>
+        
+        <view class="grid-item" bindtap="navigateToJoinedEvents">
+          <view class="grid-icon">
+            <van-icon name="calendar-o" size="24px" color="rgb(223, 118, 176)" />
+            <view class="badge" wx:if="{{statistics.joinedEvents > 0}}">{{statistics.joinedEvents}}</view>
+          </view>
+          <view class="grid-text">我的活动</view>
+        </view>
+        
+        <view class="grid-item" bindtap="navigateToApplications">
+          <view class="grid-icon">
+            <van-icon name="records" size="24px" color="rgb(223, 118, 176)" />
+            <view class="badge" wx:if="{{statistics.pendingApplications > 0}}">{{statistics.pendingApplications}}</view>
+          </view>
+          <view class="grid-text">入会申请</view>
+        </view>       
+        
+        <view class="grid-item" bindtap="navigateToPaypersonal">
+          <view class="grid-icon">
+            <van-icon name="balance-pay" size="24px" color="rgb(223, 118, 176)" />
+            <view class="badge" wx:if="{{statistics.unpaidPayments > 0}}">{{statistics.unpaidPayments}}</view>
+          </view>
+          <view class="grid-text">我的缴费</view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 超级用户特有功能 -->
+    <view class="function-group" wx:if="{{isSuperUser}}">
+      <view class="function-title">超会管理</view>
+      <view class="function-grid">
+        <view class="grid-item" bindtap="navigateToCreateClub">
+          <view class="grid-icon">
+            <van-icon name="add-square" size="24px" color="rgb(223, 118, 176)" />
+            <view class="badge" wx:if="{{false}}">0</view>
+          </view>
+          <view class="grid-text">创建协会</view>
+        </view>
+        
+        <view class="grid-item" bindtap="navigateToEventDataDisplay">
+          <view class="grid-icon">
+            <van-icon name="bar-chart-o" size="24px" color="rgb(223, 118, 176)" />
+            <view class="badge" wx:if="{{false}}">0</view>
+          </view>
+          <view class="grid-text">活动数据</view>
+        </view>
+        
+        <view class="grid-item" bindtap="navigateToUserDataDisplay">
+          <view class="grid-icon">
+            <van-icon name="friends-o" size="24px" color="rgb(223, 118, 176)" />
+            <view class="badge" wx:if="{{false}}">0</view>
+          </view>
+          <view class="grid-text">用户数据</view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 管理员特有功能 -->
+    <view class="function-group" wx:if="{{isClubAdmin}}">
+      <view class="function-title">管理功能</view>
+      
+      <!-- 按社团分组显示管理功能 -->
+      <view wx:for="{{managedClubs}}" wx:key="id" class="club-management-row">
+        <view class="club-title">{{item.club_name}}</view>
+        
+        <!-- 活动跟踪部分，显示未完结活动 -->
+        <view class="event-tracking-section" wx:if="{{item.activities && item.activities_count > 0}}">
+          <view class="tracking-title">活动跟踪</view>
+          <view class="tracking-list">
+            <view class="tracking-item" wx:for="{{item.activities}}" wx:key="id" wx:for-item="event" bindtap="navigateToEventTracking" data-event_id="{{event.event_id}}">
+              <view class="tracking-status status-{{event.status}}"></view>
+              <view class="tracking-info">
+                <view class="tracking-name">{{event.title}}</view>
+                
+                <!-- 新增的活动详情行 -->
+                <view class="tracking-details">
+                  <!-- 开始时间 -->
+                  <view class="tracking-detail-item">
+                    <van-icon name="clock-o" size="18px" color="rgb(223, 118, 176)" />
+                    <text>{{event.is_started ? '已开始' : event.start_time}}</text>
+                  </view>
+              
+                  <!-- 打卡人数 -->
+                  <view class="tracking-detail-item">
+                    <van-icon name="success" size="18px" color="rgb(223, 118, 176)" />
+                    <text>{{event.checkin_count || 0}}人</text>
+                  </view>
+                  <!-- 分隔斜杠 -->
+                  <text class="slash">/</text>
+                  <!-- 参加人数 -->
+                  <view class="tracking-detail-item">
+                    <van-icon name="friends-o" size="18px" color="rgb(223, 118, 176)" />
+                    <text>{{event.participant_count || 0}}人</text>
+                  </view>
+                </view>
+              </view>
+
+            </view>
+          </view>
+        </view>
+        
+        <view class="function-grid">
+          <view class="grid-item" bindtap="navigateToClubmanage" data-club_id="{{item.club_id}}">
+            <view class="grid-icon">
+              <van-icon name="cluster-o" size="24px" color="rgb(223, 118, 176)" />
+              <view class="badge" wx:if="{{false}}">0</view>
+            </view>
+            <view class="grid-text">管理协会</view>
+          </view>
+          
+          <view class="grid-item" bindtap="navigateToClubMembers" data-club_id="{{item.club_id}}">
+            <view class="grid-icon">
+              <van-icon name="manager-o" size="24px" color="rgb(223, 118, 176)" />
+              <view class="badge" wx:if="{{false}}">0</view>
+            </view>
+            <view class="grid-text">成员管理</view>
+          </view>
+          
+          <view class="grid-item" bindtap="navigateToCreateEvent" data-club_id="{{item.club_id}}">
+            <view class="grid-icon">
+              <van-icon name="add-o" size="24px" color="rgb(223, 118, 176)" />
+              <view class="badge" wx:if="{{false}}">0</view>
+            </view>
+            <view class="grid-text">创建活动</view>
+          </view>
+          
+          <view class="grid-item" bindtap="navigateToClubApplications" data-club_id="{{item.club_id}}">
+            <view class="grid-icon">
+              <van-icon name="description" size="24px" color="rgb(223, 118, 176)" />
+              <view class="badge" wx:if="{{item.pending_applications > 0}}">{{item.pending_applications}}</view>
+            </view>
+            <view class="grid-text">入会审批</view>
+          </view>
+          <view class="grid-item" bindtap="navigateToClubEvent" data-club_id="{{item.club_id}}" data-club_name="{{item.club_name}}">
+            <view class="grid-icon">
+              <van-icon name="calendar-o" size="24px" color="rgb(223, 118, 176)" />
+              <view class="badge"  wx:if="{{item.activities_count > 0}}">{{item.activities_count}}</view>
+            </view>
+            <view class="grid-text">活动管理</view>
+          </view>
+          <view class="grid-item" bindtap="navigateToClubTimeline" data-club_id="{{item.club_id}}">
+            <view class="grid-icon">
+              <van-icon name="balance-list-o" size="24px" color="rgb(223, 118, 176)" />
+              <view class="badge" wx:if="{{false}}">0</view>
+            </view>
+            <view class="grid-text">协会收支</view>
+          </view>
+        </view>
+        <view class="club-divider" wx:if="{{index < managedClubs.length - 1}}"></view>
+      </view>
+      
+      <!-- 如果没有管理的协会 -->
+      <view class="no-clubs" wx:if="{{managedClubs.length === 0}}">
+        <view>您目前没有管理的协会</view>
+      </view>
+    </view>
+    
+    <!-- 系统功能 -->
+    <view class="function-group">
+      <view class="function-title">系统</view>
+      <view class="function-items">
+        <view class="function-item" bindtap="navigateToSettings">
+          <view class="item-icon"><van-icon name="setting-o" size="24px" color="#757575" /></view>
+          <view class="item-text">设置</view>
+          <view class="item-arrow"><van-icon name="arrow" /></view>
+        </view>
+        <view class="function-item" bindtap="navigateToAbout">
+          <view class="item-icon"><van-icon name="info-o" size="24px" color="#757575" /></view>
+          <view class="item-text">关于</view>
+          <view class="item-arrow"><van-icon name="arrow" /></view>
+        </view>
+        <view class="function-item logout" bindtap="handleLogout">
+          <view class="item-icon"><van-icon name="close" size="24px" color="#ff5252" /></view>
+          <view class="item-text">退出登录</view>
+          <view class="item-arrow"><van-icon name="arrow" /></view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
