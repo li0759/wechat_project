@@ -1,0 +1,66 @@
+<!-- components/expandable-container_fullscreen/index.wxml -->
+<!-- 注意：不使用 root-portal，因为真机上可能被禁用 -->
+
+<!-- 触发器容器 -->
+<view 
+  class="expandable-wrapper {{fullSize ? 'full-size' : ''}}"
+  bindtouchstart="onTriggerTouchStart"
+  bindtouchend="handleTriggerTap"
+>
+  <view class="trigger-content {{fullSize ? 'full-size' : ''}}">
+    <slot name="trigger"></slot>
+  </view>
+</view>
+
+<!-- 涟漪遮罩层 - 使用 fixed 定位确保在最顶层 -->
+<view 
+  wx:if="{{rippleVisible}}"
+  class="fs-ripple fs-ripple-fixed"
+  style="{{rippleStyle}}"
+></view>
+
+<!-- 全屏内容 -->
+<view 
+  wx:if="{{isExpanded || isExpanding}}"
+  class="fs-portal fs-portal-fixed"
+  style="z-index: {{effectiveZIndex + 1}};"
+>
+  <view
+    wx:if="{{isExpanded}}"
+    class="fs-sheet {{fsContentClass}}"
+    style="--fs-content-dur: {{fsContentDur}}ms; --fs-top: {{fsNav.totalHeight + fsTopGapPx}}px; --fs-sheet-bg: {{fsSheetBgColor}}; z-index: {{effectiveZIndex + 2}};"
+    catchtap="handleContentTap"
+  >
+    <!-- 顶部拖动区域 -->
+    <view
+      class="fs-top-drag-area"
+      style="position: absolute; top: 0; left: 0; right: 0; height: var(--fs-top, 0px); background: transparent; z-index: 999;"
+      catchtouchstart="onFsTouchStart"
+      catchtouchmove="onFsTouchMove"
+      catchtouchend="onFsTouchEnd"
+      catchtouchcancel="onFsTouchCancel"
+    ></view>
+
+    <!-- 返回键 -->
+    <view 
+      class="fullscreen-back-btn"
+      style="position: absolute; top: calc(var(--fs-top, 0px) - 50rpx); left: 20rpx; width: 50rpx; height: 50rpx; z-index: 1001; display: flex; align-items: center; justify-content: center;"
+      catchtap="handleFullscreenBack"
+    >
+      <view class="fullscreen-topbar-back-icon"></view>
+    </view>
+
+    <!-- 内容区域 -->
+    <view
+      class="fs-sheet-content"
+      style="position: absolute; left: 0; right: 0; bottom: 0; top: var(--fs-top, 0px); transform: {{fsDragTransform}}; transition: {{fsDragTransition}}; "
+      bindtouchstart="onFsTouchStart"
+      bindtouchmove="onFsTouchMove"
+      bindtouchend="onFsTouchEnd"
+      bindtouchcancel="onFsTouchCancel"
+    >
+
+        <slot name="content" ></slot>
+    </view>
+  </view>
+</view>

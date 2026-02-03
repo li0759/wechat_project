@@ -1,10 +1,10 @@
-<!-- 搜索建议组件 -->
+<!-- 搜索建议组件 - TDesign版本 -->
 <view class="search-suggest-container {{customClass}}" style="{{customStyle}}">
   <!-- 搜索输入框 -->
   <view class="search-input-wrapper {{shape === 'round' ? 'round' : 'square'}} {{focused ? 'focused' : ''}}">
     <!-- 搜索图标 -->
     <view class="search-icon">
-      <van-icon name="search" size="18" color="#999" />
+      <t-icon name="search" size="18" color="#999" />
     </view>
     
     <!-- 输入框 -->
@@ -22,18 +22,24 @@
     
     <!-- 清空按钮 -->
     <view 
-      class="clear-button {{inputValue ? 'show' : 'hide'}}" 
+      class="clear-button {{inputValue ? 'show' : 'hide'}} {{activeStates.clearButton ? 'clear-button-active' : ''}}" 
       wx:if="{{showClearButton}}"
       bindtap="onClearInput"
+      bindtouchstart="onButtonTouchStart"
+      bindtouchend="onButtonTouchEnd"
+      data-button="clear"
     >
-      <van-icon name="clear" size="16" color="#999" />
+      <t-icon name="close-circle-filled" size="16" color="#999" />
     </view>
     
     <!-- 搜索按钮 -->
     <view 
-      class="search-button" 
+      class="search-button {{activeStates.searchButton ? 'search-button-active' : ''}}" 
       wx:if="{{showSearchButton}}"
       bindtap="onSearchTap"
+      bindtouchstart="onButtonTouchStart"
+      bindtouchend="onButtonTouchEnd"
+      data-button="search"
       style="background-color: {{themeColor}}"
     >
       <text class="search-button-text">{{searchButtonText}}</text>
@@ -44,85 +50,121 @@
   <view class="suggestions-dropdown {{showSuggestions ? 'show' : 'hide'}}" wx:if="{{showSuggestions}}">
     <!-- 加载状态 -->
     <view class="loading-wrapper" wx:if="{{isLoading}}">
-      <van-loading size="16" color="{{themeColor}}" />
+      <t-loading size="small" theme="circular" loading="{{true}}" />
       <text class="loading-text">搜索中...</text>
     </view>
     
     <!-- 搜索建议列表 -->
-    <view class="suggestions-list" wx:if="{{!isLoading && suggestions.length > 0}}">
-      <view class="suggestions-header">
-        <text class="suggestions-title">搜索建议</text>
+    <scroll-view 
+      class="suggestions-list" 
+      scroll-y="true"
+      type="list"
+      wx:if="{{!isLoading && suggestions.length > 0}}"
+    >
+      <view class="suggestion-list-item">
+        <view class="suggestions-header">
+          <text class="suggestions-title">搜索建议</text>
+        </view>
+        <t-cell-group 
+          class="suggestion-cells"
+          bordered="{{false}}"
+        >
+          <t-cell 
+            wx:for="{{suggestions}}"
+            wx:key="id"
+            class="suggestion-cell {{activeStates.suggestionItems[index] ? 'suggestion-item-active' : ''}}"
+            list-item
+            bindtap="onSuggestionTap"
+            bindtouchstart="onItemTouchStart"
+            bindtouchend="onItemTouchEnd"
+            data-item="{{item}}"
+            data-index="{{index}}"
+            data-type="suggestion"
+            title="{{item.title || item.text || item}}"
+            description="{{item.description}}"
+            left-icon="{{item.icon || 'search'}}"
+            hover="{{true}}"
+            clickable="{{true}}"
+          >
+            <!-- 自定义右侧内容 -->
+            <view slot="right" wx:if="{{item.tag}}" class="suggestion-tag">
+              <t-tag variant="light" size="small" theme="default">{{item.tag}}</t-tag>
+            </view>
+          </t-cell>
+        </t-cell-group>
       </view>
-      <view 
-        class="suggestion-item"
-        wx:for="{{suggestions}}"
-        wx:key="id"
-        bindtap="onSuggestionTap"
-        data-item="{{item}}"
-        data-index="{{index}}"
-      >
-        <!-- 建议项图标 -->
-        <view class="suggestion-icon">
-          <van-icon 
-            name="{{item.icon || 'search'}}" 
-            size="16" 
-            color="{{item.iconColor || '#999'}}" 
-          />
-        </view>
-        
-        <!-- 建议项内容 -->
-        <view class="suggestion-content">
-          <view class="suggestion-title">{{item.title || item.text || item}}</view>
-          <view class="suggestion-desc" wx:if="{{item.description}}">{{item.description}}</view>
-        </view>
-        
-        <!-- 建议项标签 -->
-        <view class="suggestion-tag" wx:if="{{item.tag}}">
-          <text class="tag-text">{{item.tag}}</text>
-        </view>
-      </view>
-    </view>
+    </scroll-view>
     
     <!-- 搜索历史 -->
-    <view class="history-list" wx:if="{{!isLoading && suggestions.length === 0 && searchHistory.length > 0}}">
-      <view class="history-header">
-        <text class="history-title">搜索历史</text>
-        <view class="clear-history-btn" bindtap="onClearHistory">
-          <van-icon name="delete-o" size="14" color="#999" />
-          <text class="clear-text">清空</text>
+    <scroll-view
+      class="history-list" 
+      scroll-y="true"
+      type="list"
+      wx:if="{{!isLoading && suggestions.length === 0 && searchHistory.length > 0}}"
+    >
+      <view class="history-list-item">
+        <view class="history-header">
+          <text class="history-title">搜索历史</text>
+          <t-button 
+            class="clear-history-btn {{activeStates.clearHistoryBtn ? 'clear-history-btn-active' : ''}}" 
+            variant="text"
+            size="extra-small"
+            bindtap="onClearHistory"
+            bindtouchstart="onButtonTouchStart"
+            bindtouchend="onButtonTouchEnd"
+            data-button="clearHistory"
+          >
+            <t-icon name="delete" size="14" color="#999" />
+            <text class="clear-text">清空</text>
+          </t-button>
         </view>
-      </view>
-      <view 
-        class="history-item"
-        wx:for="{{searchHistory}}"
-        wx:key="index"
-        bindtap="onHistoryTap"
-        data-item="{{item}}"
-        data-index="{{index}}"
-      >
-        <!-- 历史记录图标 -->
-        <view class="history-icon">
-          <van-icon name="clock-o" size="16" color="#999" />
-        </view>
-        
-        <!-- 历史记录文本 -->
-        <view class="history-text">{{item}}</view>
-        
-        <!-- 删除按钮 -->
-        <view 
-          class="delete-history-btn"
-          bindtap="onDeleteHistory"
-          data-index="{{index}}"
+        <t-cell-group 
+          class="history-cells"
+          bordered="{{false}}"
         >
-          <van-icon name="cross" size="14" color="#ccc" />
-        </view>
+          <t-cell 
+            wx:for="{{searchHistory}}"
+            wx:key="index"
+            class="history-cell {{activeStates.historyItems[index] ? 'history-item-active' : ''}}"
+            list-item
+            bindtap="onHistoryTap"
+            bindtouchstart="onItemTouchStart"
+            bindtouchend="onItemTouchEnd"
+            data-item="{{item}}"
+            data-index="{{index}}"
+            data-type="history"
+            title="{{item}}"
+            left-icon="history"
+            hover="{{true}}"
+            clickable="{{true}}"
+          >
+            <!-- 自定义右侧删除按钮 -->
+            <view slot="right">
+              <t-button 
+                class="delete-history-btn {{activeStates.deleteHistoryBtns[index] ? 'delete-history-btn-active' : ''}}"
+                variant="text"
+                size="extra-small"
+                shape="circle"
+                bindtap="onDeleteHistory"
+                bindtouchstart="onButtonTouchStart"
+                bindtouchend="onButtonTouchEnd"
+                data-button="deleteHistory"
+                data-index="{{index}}"
+              >
+                <t-icon name="close" size="14" color="#ccc" />
+              </t-button>
+            </view>
+          </t-cell>
+        </t-cell-group>
       </view>
-    </view>
+    </scroll-view>
     
     <!-- 空状态 -->
     <view class="empty-suggestions" wx:if="{{!isLoading && suggestions.length === 0 && searchHistory.length === 0 && inputValue}}">
-      <van-icon name="search" size="32" color="#ddd" />
-      <text class="empty-text">暂无搜索建议</text>
+      <t-empty 
+        icon="search"
+        description="暂无搜索建议"
+      />
     </view>
   </view>
 </view> 

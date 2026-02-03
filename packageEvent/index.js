@@ -1,5 +1,15 @@
 const app = getApp();
 
+/**
+ * 活动包页面 - 参考 event-detail 动态列表样式重构
+ * 
+ * 新增功能：
+ * - 骨架屏预加载效果
+ * - 宫格图片展示
+ * - 下拉加载更多
+ * - 协会信息显示
+ */
+
 Page({
   /**
    * 页面的初始数据
@@ -8,15 +18,24 @@ Page({
     // 控制面板相关
     activeTab: 0,                              // 当前选中的标签页索引
     
-    // 数据相关
-    eventList: [],                              // 活动列表数据（仅用于列表视图）
+    // 骨架屏配置
+    skeletonRowCol: [
+      { width: '180rpx', height: '24rpx', marginBottom: '16rpx' },
+      { type: 'row', height: '150rpx' }
+    ],
+    
+    // 数据相关 - 列表视图（参考动态列表结构）
+    eventList: [],                             // 活动列表数据
+    isEventLoading: false,                     // 是否正在加载活动数据
+    eventPage: 1,                             // 当前页码
+    eventTotalPages: 1,                       // 总页数
+    eventEmpty: false,                        // 是否为空状态
+    
+    // 日历视图数据
     listDisplayYear: null,                     // 列表视图当前显示年份
     listDisplayMonth: null,                    // 列表视图当前显示月份
     calendarEventData: {},                     // 日历事件原始数据 {year-month: events}
     calendarEvents: [],                        // 日历事件展示数据
-    
-    // URL和请求相关
-    baseUrl: '',                               // 基础URL（从options获取）
     
     // 年月信息
     currentYear: new Date().getFullYear(),     // 当前年份
@@ -37,47 +56,25 @@ Page({
     // 分页相关
     currentPage: 1,                            // 当前页码
     totalPages: 1,                             // 总页数
-    
-    // 用户信息
-    userInfo: null,                            // 用户信息
-    token: '',                                 // 用户令牌
-    userID: ''                                 // 用户ID
+                             // 用户ID
   },
 
   /**
    * 生命周期函数--监听页面加载
    */
   onLoad: function (options) {
-    // 检查登录状态
-    const userInfo = wx.getStorageSync('userInfo');
-    if (!userInfo) {
-      return wx.navigateTo({ url: '/pages/login/index' });
-    }
-    
-    // 初始化用户数据
-    this.setData({
-      userInfo: userInfo,
-      token: wx.getStorageSync('token'),
-      userID: wx.getStorageSync('userId')
-    });
-    
-    // 从路由参数中获取baseUrl
-    if (options.url) {
+    if (options && options.url) {
       this.setData({
-        baseUrl: options.url
-      }, () => {
-        // 加载初始数据
-        this.initData();
+        requestUrl: options.url
       });
-    } else {
-      // 没有传入url，提示错误并返回
-      wx.showToast({
-        title: '缺少URL信息',
-        icon: 'none'
-      });
-      setTimeout(() => {
-        wx.navigateBack();
-      }, 1500);
+    }
+
+
+  },
+
+  onShow: async function () {
+    if(await app.checkLoginStatus()){
+      this.initData();
     }
   },
 
@@ -95,90 +92,132 @@ Page({
    * 初始化数据
    */
   initData: function() {
-    wx.showLoading({ title: '加载中...' });
-    
     // 并行加载日历和列表数据
     Promise.all([
       // 日历数据 - 当前月份（即使没有数据也要加载）
-      this.loadEventsForCalendar(this.data.currentYear, this.data.currentMonth),
-      // 列表数据 - 使用分页方式获取第1页数据
-      this.loadInitialTimelineData()
-    ]).finally(() => {
-      wx.hideLoading();
-    });
+    this.loadEventsForCalendar(this.data.currentYear, this.data.currentMonth),
+      // 列表数据 - 使用新的加载方法
+    this.loadEventList(1)
+    ]);
   },
 
   /**
-   * 加载初始活动列表数据
-   * 加载第1页的数据
+   * 加载活动列表（参考 event-detail 的 loadEventMoments 方法）
    */
-  loadInitialTimelineData: function() {
-    this.setData({ 
-      isLoading: true,
-      currentPage: 1
-    });
+  async loadEventList(page = 1) {
+    // 防止重复请求
+    if (this.data.isEventLoading || (this.data.eventTotalPages && page > this.data.eventTotalPages)) return;
     
-    // 使用分页API获取第1页数据
-    const requestUrl = `${this.data.baseUrl}?mode=page&page=1`;
+    this.setData({ isEventLoading: true });
+    
+    // 只在加载更多时添加骨架屏，首次加载保持原有骨架屏
+    if (page > 1) {
+      const skeletons = Array(2).fill({ loading: true });
+      this.setData({
+        eventList: this.data.eventList.concat(skeletons)
+      });
+    } else if (page === 1 && this.data.eventList.length === 0) {
+      // 首次加载显示骨架屏
+    this.setData({
+        eventList: Array(4).fill({ loading: true })
+      });
+    }
 
-    return this.request({
-      url: requestUrl,
-      method: 'GET'
-    }).then(res => {
-      if (res.Flag === '4000') {
-        const events = res.data.records;
-        const totalPages = res.data.pagination.total_pages;
-        const currentPage = res.data.pagination.current_page;
+    try {
+      const requestUrl = `${this.data.requestUrl}?mode=page&page=${page}`;
+
+      const response = await this.request({
+        url: requestUrl,
+        method: 'GET'
+      });
+      
+      if (response.Flag == '4000') {
+        const events = response.data.records || [];
+        const realData = events.map(event => ({
+          ...event,
+          loading: false,
+          // 处理封面缩略图
+          cover_url_thumb: event.event_imgs ? app.convertToThumbnailUrl(event.event_imgs[0], 150) : '',
+          // 格式化时间显示
+          pre_startTime: event.pre_startTime ? this.formatEventTime(event.pre_startTime) : '',
+          actual_startTime: event.actual_startTime ? this.formatEventTime(event.actual_startTime) : '',
+          // 处理协会信息
+          club_info: {
+            club_name: event.club_name,
+            club_cover: event.club_cover
+          }
+        }));
+
+        const isEmpty = page === 1 && realData.length === 0;
         
-        // 处理数据并显示
-        if (events.length > 0) {
-          // 处理数据
-          const processedEvents = this.processEvents(events);
-          
-          // 设置活动列表数据
-          this.setData({
-            eventList: processedEvents,
-            hasMore: currentPage < totalPages,
-            totalPages: totalPages,
-            currentPage: currentPage
+        if (page === 1) {
+          // 首次加载，清空后设置数据
+    this.setData({
+            eventList: []
           }, () => {
-            // 数据设置完成后，延迟更新月份显示，确保DOM渲染完成
-            setTimeout(() => {
-              this.updateTopVisibleItemDate();
-            }, 200);
+            this.setData({
+              eventList: realData,
+              eventPage: response.data.pagination.current_page || page,
+              eventTotalPages: response.data.pagination.total_pages || 1,
+              eventEmpty: isEmpty,
+              isEventLoading: false
+            });
           });
-          
-          return true;
         } else {
-          this.setData({ 
-            eventList: [],
-            hasMore: false,
-            totalPages: 1,
-            currentPage: 1
+          // 加载更多时，移除骨架屏并拼接新数据
+    const remain = this.data.eventList.length - 2;
+          this.setData({
+            eventList: [
+              ...this.data.eventList.slice(0, remain),
+              ...realData
+            ],
+            eventPage: response.data.pagination.current_page || page,
+            eventTotalPages: response.data.pagination.total_pages || 1,
+            isEventLoading: false
           });
-          wx.showToast({
-            title: '暂无活动记录',
-            icon: 'none'
-          });
-          return false;
         }
       } else {
-        wx.showToast({ 
-          title: res.message || '获取活动列表数据失败', 
-          icon: 'none' 
-        });
-        return false;
+        if (page === 1) {
+          this.setData({ 
+            isEventLoading: false
+          });
+        } else {
+          // 加载更多失败，移除刚添加的骨架屏
+    const remain = this.data.eventList.length - 2;
+          this.setData({
+            eventList: this.data.eventList.slice(0, remain),
+            isEventLoading: false
+          });
+        }
+        throw new Error(response.message || '获取活动列表失败');
       }
-    }).catch(error => {
-      console.error('请求异常:', error);
-      wx.showToast({ 
-        title: typeof error === 'string' ? error : (error.message || '请求失败'), 
-        icon: 'none' 
-      });
-      return false;
-    }).finally(() => {
-      this.setData({ isLoading: false });
-    });
+    } catch (error) {
+      console.error('加载活动列表失败:', error);
+      if (page === 1) {
+        wx.showToast({
+          title: '加载活动列表失败',
+          icon: 'none'
+        });
+        this.setData({ 
+          isEventLoading: false
+        });
+      } else {
+        // 加载更多失败，移除刚添加的骨架屏
+    const remain = this.data.eventList.length - 2;
+        this.setData({
+          eventList: this.data.eventList.slice(0, remain),
+          isEventLoading: false
+        });
+      }
+    }
+  },
+
+  /**
+   * 格式化活动时间显示
+   */
+  formatEventTime: function(timeString) {
+    if (!timeString) return '';
+    return app.formatDateTime(timeString);
   },
 
   /**
@@ -187,16 +226,15 @@ Page({
   requestEventsByMonth: function(year, month) {
     this.setData({ isLoading: true });
     
-    const requestUrl = `${this.data.baseUrl}?mode=month&year=${year}&month=${month}`;
+    const requestUrl = `${this.data.requestUrl}?mode=month&year=${year}&month=${month}`;
 
     return this.request({
       url: requestUrl,
       method: 'GET'
     }).then(res => {
-      if (res.Flag === '4000') {
-        // 返回活动数据
-        const events = res.data || [];
-        return events;
+      if (res.Flag == '4000') {
+
+        return res;
       } else {
         wx.showToast({ 
           title: res.message || '获取活动数据失败', 
@@ -217,30 +255,48 @@ Page({
   },
 
   /**
+   * 获取活动的有效时间（优先使用actual时间，没有则使用pre时间）
+   * @param {string|null} actualTime - 实际时间
+   * @param {string} preTime - 预计时间
+   * @returns {string} 有效时间
+   */
+  getEffectiveTime: function(actualTime, preTime) {
+    return (actualTime && actualTime !== null) ? actualTime : preTime;
+  },
+
+  /**
    * 处理活动数据
+   * 时间处理规则：
+   * - 优先使用actual_startTime/actual_endTime（活动已开始/结束的实际时间）
+   * - 如果没有actual时间，则使用pre_startTime/pre_endTime（预计时间）
+   * - 这样可以显示活动的真实时间状态
    */
   processEvents: function(events) {
     // 对每个事件进行处理
     const result = events.map(event => {
 
-      // 处理封面图片
-      const images = event.process_images ? event.process_images.split(';').filter(url => url && url.trim()) : [];
-      event.cover_image = images.length > 0 ? images[0] : '';
+      // 处理封面图片 - 优先使用cover_url，如果没有则尝试event_imgs
+      event.cover_image = event.cover_url;
+
+      
+      // 获取有效的开始时间（优先使用actual_startTime，没有则使用pre_startTime）
+    const effectiveStartTime = this.getEffectiveTime(event.actual_startTime, event.pre_startTime);
       
       // 保存原始时间供排序和过滤使用
-      event.ori_start_time = event.start_time;
-      event.start_time = app.formatDateTime(event.start_time);   
+      event.ori_start_time = effectiveStartTime;
+      
+      // 格式化显示时间
+      event.start_time = app.formatDateTime(effectiveStartTime);
+      
       return event;
-
     });
     
-    // 按日期降序排序（最新的在前）
+    // 按日期降序排序（最新的在前）- 使用有效开始时间进行排序
     const sortedResult = result.sort((a, b) => {
         return new Date(b.ori_start_time) - new Date(a.ori_start_time);
     });
     
     return sortedResult;
-
   },
   
   /**
@@ -263,58 +319,64 @@ Page({
     }
     
     // 没有缓存，请求新数据
-    return this.requestEventsByMonth(year, month).then(events => {
-      const processedEvents = this.processEvents(events);
-      
+    return this.requestEventsByMonth(year, month).then(res => {
+      // 只有当res.records不为空时才处理数据
+    let processedEvents = [];
+      if (res.data && res.data.length > 0) {
+        processedEvents = this.processEvents(res.data);
+      }
+
       // 更新缓存
-      const updatedEventData = {...this.data.calendarEventData};
+    const updatedEventData = {...this.data.calendarEventData};
       updatedEventData[key] = processedEvents;
-      
+
       this.setData({
         calendarEventData: updatedEventData
       });
-      
+
       // 更新日历事件显示
-      this.updateCalendarEvents(processedEvents);
+    this.updateCalendarEvents(processedEvents);
     });
   },
   
   /**
    * 更新日历事件显示
+   * 使用processEvents函数处理后的ori_start_time字段
+   * 该字段已经按照actual_startTime优先，pre_startTime备用的规则处理过
    */
   updateCalendarEvents: function(events) {
     const calendarEvents = events.map(event => {
-      // 解析日期时间，获取时间戳
-      let dateStr = event.ori_start_time || event.start_time;
+      // 使用已经处理过的原始开始时间（有效开始时间）
+    let dateStr = event.startTime;
       let timestamp;
       
       try {
         // 尝试解析日期字符串
-        const date = new Date(dateStr);
-        
+    const date = new Date(dateStr);
+
         if (!isNaN(date.getTime())) {
           timestamp = date.getTime();
         } else {
           timestamp = new Date().getTime(); // 默认使用当前时间
-        }
+  }
       } catch (e) {
         timestamp = new Date().getTime(); // 出错时使用当前时间
-      }
+  }
       
       // 提取日期用于显示（仅日期，不包含月份）
-      const dateObj = new Date(timestamp);
+    const dateObj = new Date(timestamp);
       const day = dateObj.getDate();
       
       // 构建日历事件对象
       return {
         active_time: timestamp,
         active_title: event.title,
-        active_url: event.cover_image,
+        active_url: app.convertToThumbnailUrl(event.cover, 100),
         url: `/packageEvent/event-detail/index?eventId=${event.event_id}`,
-        day      // 只包含日期，不包含月份
-      };
+        day,      // 只包含日期，不包含月份
+  };
     });
-    
+
     this.setData({ calendarEvents });
   },
   
@@ -342,34 +404,27 @@ Page({
    * 生命周期函数--监听页面显示
    */
   onShow: function() {
-    // 设置底部标签栏（如果有）
+    // 设置底部标签栏高亮
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().init();
+      this.getTabBar().setActive(1);
     }
-    
-    // 根据当前Tab刷新数据（从其他页面返回时可能有数据更新）
+    // 根据当前标签页刷新对应的数据
     if (this.data.activeTab === 0) {
-      // 列表视图：重新加载初始数据
-      this.loadInitialTimelineData();
+      this.loadEventList(1);
     } else if (this.data.activeTab === 1) {
-      // 日历视图：强制刷新当前年月数据
       this.forceRefreshCalendar();
     }
   },
   
+
+
   /**
-   * 下拉刷新
+   * 列表滚动到底部加载更多
    */
-  onPullDownRefresh: function() {
-    // 根据当前标签页刷新对应的数据
+  onScrollToLower: function() {
     if (this.data.activeTab === 0) {
-      // 列表视图：刷新最新数据
-      this.loadInitialTimelineData();
-    } else {
-      // 日历视图：刷新当前显示月份数据
-      this.forceRefreshCalendar();
+      this.loadEventList(this.data.eventPage + 1);
     }
-    wx.stopPullDownRefresh();
   },
   
   /**
@@ -403,217 +458,52 @@ Page({
     }
   },
 
-  /**
-   * 点击加载更多按钮
-   */
-  onLoadMoreClick: function() {
-    // 防止重复加载或无数据可加载
-    if (this.data.isLoading || !this.data.hasMore) return;
-    
-    // 计算下一页
-    const nextPage = this.data.currentPage + 1;
-    
-    // 检查是否超出总页数
-    if (nextPage > this.data.totalPages) {
-      this.setData({ hasMore: false });
-      wx.showToast({
-        title: '没有更多数据了',
-        icon: 'none',
-        duration: 1500
-      });
-      return;
-    }
-    
-    // 加载下一页的数据
-    this.loadMoreData(nextPage);
-  },
   
-  /**
-   * 加载更多数据
-   */
-  loadMoreData: function(page) {
-    if (this.data.isLoading) return;
-    
-    this.setData({ isLoading: true });
-    
-    // 请求指定页码的数据
-    const requestUrl = `${this.data.baseUrl}?mode=page&page=${page}`;
-    
-    this.request({
-      url: requestUrl,
-      method: 'GET'
-    }).then(res => {
-      if (res.Flag === '4000') {
-        const events = res.data && res.data.records ? res.data.records : [];
-        const totalPages = res.data ? res.data.total_pages : this.data.totalPages;
-        const currentPage = res.data ? res.data.current_page : page;
-        
-        if (events && events.length > 0) {
-          // 处理新数据
-          const processedEvents = this.processEvents(events);
-          
-          // 将新数据追加到现有数据后
-          this.setData({
-            eventList: [...this.data.eventList, ...processedEvents],
-            hasMore: currentPage < totalPages,
-            totalPages: totalPages,
-            currentPage: currentPage
-          }, () => {
-            // 加载更多数据后，延迟更新月份显示
-            setTimeout(() => {
-              this.updateTopVisibleItemDate();
-            }, 100);
-          });
-          
-          wx.showToast({
-            title: `已加载${events.length}条记录`,
-            icon: 'none'
-          });
-        } else {
-          // 没有更多数据
-          this.setData({ 
-            hasMore: false,
-            currentPage: currentPage,
-            totalPages: totalPages
-          });
-          wx.showToast({
-            title: '没有更多数据了',
-            icon: 'none',
-            duration: 1500
-          });
-        }
-      } else {
-        console.error('请求错误:', res.message);
-        wx.showToast({
-          title: res.message || '加载更多数据失败',
-          icon: 'none'
-        });
-      }
-    }).catch(error => {
-      console.error('加载更多数据出错:', error);
-      wx.showToast({
-        title: '加载更多数据失败，请重试',
-        icon: 'none'
-      });
-    }).finally(() => {
-      this.setData({ isLoading: false });
-    });
-  },
-  
-  /**
-   * 页面滚动事件（备用方案）
-   */
-  onPageScroll: function(e) {
-    // 只在列表视图时处理
-    if (this.data.activeTab === 0) {
-      if (this.pageScrollTimer) {
-        clearTimeout(this.pageScrollTimer);
-      }
-      this.pageScrollTimer = setTimeout(() => {
-        this.updateTopVisibleItemDate();
-      }, 50);
-    }
-  },
   
   /**
    * 点击活动项跳转到详情页
    */
   onEventTap: function(e) {
-    if(e.currentTarget.dataset.user_managed)
-      {
-        wx.navigateTo({
-          url: `/packageEvent/event-manage/index?eventId=${e.currentTarget.dataset.event_id}`
-        });
-      }
-      else
-      {
-        wx.navigateTo({
-          url: `/packageEvent/event-detail/index?eventId=${e.currentTarget.dataset.event_id}`
-        });
-      }
-  },
-
-  /**
-   * 处理时间线滚动事件，更新顶部年月显示
-   */
-  onTimelineScroll: function(e) {
-    if (this.scrollTimer) {
-      clearTimeout(this.scrollTimer);
-    }
-    this.scrollTimer = setTimeout(() => {
-      this.updateTopVisibleItemDate();
-    }, 50);
-  },
-  
-  /**
-   * 更新顶部可见记录的日期显示
-   */
-  updateTopVisibleItemDate: function() {
-    // 检查是否在列表视图且有数据
-    if (this.data.activeTab !== 0 || !this.data.eventList || this.data.eventList.length === 0) {
-      return;
-    }
+    const eventId = e.currentTarget.dataset.event_id;
+    const userManaged = e.currentTarget.dataset.user_managed;
     
-    const query = wx.createSelectorQuery();
-    query.selectAll('.timeline-item').boundingClientRect();
-    query.exec(res => {
-      if (!res || !res[0] || res[0].length === 0) return;
-      
-      const visibleItems = res[0];
-      let targetIndex = -1;
-      
-      // 找到第一个可见的项目
-      for (let i = 0; i < visibleItems.length; i++) {
-        const item = visibleItems[i];
-        if (item.top >= 0 && item.bottom > 100) {
-          targetIndex = i;
-          break;
-        }
-      }
-      
-      // 如果没有找到，使用第一个项目
-      if (targetIndex === -1 && visibleItems.length > 0) {
-        targetIndex = 0;
-      }
-      
-      if (targetIndex >= 0 && this.data.eventList[targetIndex]) {
-        const item = this.data.eventList[targetIndex];
-        
-        if (item && item.ori_start_time) {
-          const date = new Date(item.ori_start_time);
-          const year = date.getFullYear();
-          const month = date.getMonth() + 1;
-          
-          // 只有变化时才更新
-          if (year !== this.data.listDisplayYear || month !== this.data.listDisplayMonth) {
-            this.setData({
-              listDisplayYear: year,
-              listDisplayMonth: month
-            });
-          }
-        }
-      }
-    });
+    // 判断是否是 user_joined 页面
+    const isUserJoined = this.data.requestUrl && this.data.requestUrl.includes('user_joined');
+    
+    if (userManaged) {
+      // 用户管理的活动，跳转到 event-manage
+      wx.navigateTo({
+        url: `/packageEvent/event-manage/index?eventId=${eventId}`
+      });
+    } else if (isUserJoined) {
+      // 用户参加的活动，跳转到 event-joined
+      wx.navigateTo({
+        url: `/packageEvent/event-joined/index?eventId=${eventId}`
+      });
+    } else {
+      // 其他活动，跳转到 event-detail
+      wx.navigateTo({
+        url: `/packageEvent/event-detail/index?eventId=${eventId}`
+      });
+    }
   },
 
   /**
-   * 显示月份选择器
+   * 预览活动图片
    */
-  showMonthPicker: function() {
-    this.setData({
-      monthPickerVisible: true,
-      monthPickerDate: new Date(this.data.currentDisplayYear, this.data.currentDisplayMonth - 1).getTime()
-    });
+  previewEventImage: function(e) {
+    const { eventId, index } = e.currentTarget.dataset;
+    const event = this.data.eventList.find(e => e.event_id === eventId);
+    
+    if (event && event.event_imgs) {
+      const images = event.event_imgs.map(img => img);
+      wx.previewImage({
+        current: images[index],
+        urls: images
+      });
+    }
   },
 
-  /**
-   * 关闭月份选择器
-   */
-  closeMonthPicker: function() {
-    this.setData({
-      monthPickerVisible: false
-    });
-  },
 
   /**
    * 确认月份选择
@@ -646,7 +536,7 @@ Page({
         method: options.method || 'GET',
         header: options.header || {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + this.data.token
+          'Authorization': 'Bearer ' + wx.getStorageSync('token')
         },
         data: options.data,
         success(res) {

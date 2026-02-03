@@ -1,0 +1,234 @@
+<!--pages/club/club-financial-stats/index.wxml-->
+<view class="container">
+  <view class="page-header">
+    <view class="title-group">
+      <view class="title">收支统计</view>
+      <view class="subtitle" wx:if="{{clubInfo.club_name}}">{{clubInfo.club_name}}</view>
+    </view>
+    <view class="header-actions">
+      <van-button 
+        type="primary" 
+        round 
+        size="small" 
+        icon="down" 
+        bindtap="downloadExcel"
+        loading="{{downloading}}"
+        class="download-btn"
+      >
+        下载Excel
+      </van-button>
+    </view>
+  </view>
+  
+  <view wx:if="{{loading}}" class="loading-container">
+    <van-loading size="24px" type="spinner" color="#df76b0" />
+    <view class="loading-text">正在加载数据...</view>
+  </view>
+  
+  <view wx:else class="content">
+    <!-- 总体统计卡片 -->
+    <view class="stats-overview">
+      <view class="stats-card">
+        <view class="stats-number">¥{{totalIncome}}</view>
+        <view class="stats-label">总收入</view>
+      </view>
+      <view class="stats-card">
+        <view class="stats-number">¥{{totalExpenses}}</view>
+        <view class="stats-label">总支出</view>
+      </view>
+      <view class="stats-card">
+        <view class="stats-number {{netBalance >= 0 ? 'positive' : 'negative'}}">¥{{netBalance}}</view>
+        <view class="stats-label">净收支</view>
+      </view>
+      <view class="stats-card">
+        <view class="stats-number">¥{{paygroupIncome}}</view>
+        <view class="stats-label">缴费收入</view>
+      </view>
+    </view>
+    
+    <!-- 图表展示区域 -->
+    <view class="charts-section" wx:if="{{!hideCharts}}">
+      <!-- 月度收入趋势图 -->
+      <view class="chart-container" wx:if="{{monthlyIncomeChart.length > 0}}">
+        <bar-chart 
+          data="{{monthlyIncomeChart}}" 
+          title="月度收入趋势"
+          height="{{280}}"
+          bar-color="#67c23a"
+          show-value="{{true}}"
+        />
+      </view>
+      
+      <!-- 月度支出趋势图 -->
+      <view class="chart-container" wx:if="{{monthlyExpenseChart.length > 0}}">
+        <bar-chart 
+          data="{{monthlyExpenseChart}}" 
+          title="月度支出趋势"
+          height="{{280}}"
+          bar-color="#f56c6c"
+          show-value="{{true}}"
+        />
+      </view>
+      
+      <!-- 收入构成饼图 -->
+      <view class="chart-container" wx:if="{{incomeChart.length > 0}}">
+        <pie-chart 
+          data="{{incomeChart}}" 
+          title="收入构成分布"
+          height="{{280}}"
+          colors="{{['#67c23a', '#5fb3d4', '#f4b844', '#9c88ff', '#df76b0']}}"
+        />
+      </view>
+      
+      <!-- 支出构成饼图 -->
+      <view class="chart-container" wx:if="{{expenseChart.length > 0}}">
+        <pie-chart 
+          data="{{expenseChart}}" 
+          title="支出构成分布"
+          height="{{280}}"
+          colors="{{['#f56c6c', '#e6a23c', '#909399', '#409eff', '#df76b0']}}"
+        />
+      </view>
+    </view>
+    
+    <!-- 收入明细列表 -->
+    <view class="list-section">
+      <view class="section-title">
+        <view class="title-text">收入明细</view>
+        <view class="title-desc">共{{incomeDetails.paygroups ? incomeDetails.paygroups.length : 0}}项</view>
+      </view>
+      
+      <view class="financial-list" wx:if="{{incomeDetails.paygroups && incomeDetails.paygroups.length > 0}}">
+        <view class="financial-item income" wx:for="{{incomeDetails.paygroups}}" wx:key="group_id">
+          <view class="financial-header">
+            <view class="financial-title">{{item.description || '缴费项目'}}</view>
+            <view class="financial-id">#{{item.group_id}}</view>
+          </view>
+          <view class="financial-info">
+            <view class="info-row">
+              <text class="info-label">应收金额:</text>
+              <text class="info-value">¥{{item.total_payment}}</text>
+            </view>
+            <view class="info-row">
+              <text class="info-label">已收金额:</text>
+              <text class="info-value amount">¥{{item.paid_amount}}</text>
+            </view>
+            <view class="info-row">
+              <text class="info-label">未收金额:</text>
+              <text class="info-value unpaid">¥{{item.unpaid_amount}}</text>
+            </view>
+            <view class="info-row">
+              <text class="info-label">创建日期:</text>
+              <text class="info-value">{{item.create_date}}</text>
+            </view>
+          </view>
+          <view class="financial-stats">
+            <view class="stat-item">
+              <text class="stat-value">{{item.participants_count}}</text>
+              <text class="stat-label">参与人数</text>
+            </view>
+            <view class="stat-item">
+              <text class="stat-value">{{item.paid_participants}}</text>
+              <text class="stat-label">已缴费</text>
+            </view>
+            <view class="stat-item">
+              <text class="stat-value">{{Math.round(item.paid_participants/item.participants_count*100) || 0}}%</text>
+              <text class="stat-label">缴费率</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      
+      <view wx:else class="empty-state">
+        <view class="empty-icon">💰</view>
+        <view class="empty-text">暂无收入数据</view>
+        <view class="empty-desc">该协会还没有收入记录</view>
+      </view>
+    </view>
+    
+    <!-- 支出明细列表 -->
+    <view class="list-section">
+      <view class="section-title">
+        <view class="title-text">支出明细</view>
+        <view class="title-desc">协会费用 + 活动费用</view>
+      </view>
+      
+      <view class="financial-list" wx:if="{{expenseDetails.club_fees || expenseDetails.event_costs}}">
+        <!-- 协会费用 -->
+        <view class="financial-item expense" wx:for="{{expenseDetails.club_fees}}" wx:key="fee_id" wx:if="{{expenseDetails.club_fees && expenseDetails.club_fees.length > 0}}">
+          <view class="financial-header">
+            <view class="financial-title">协会日常支出</view>
+            <view class="financial-id">#{{item.fee_id}}</view>
+          </view>
+          <view class="financial-info">
+            <view class="info-row">
+              <text class="info-label">支出金额:</text>
+              <text class="info-value amount">¥{{item.amount}}</text>
+            </view>
+            <view class="info-row">
+              <text class="info-label">支出日期:</text>
+              <text class="info-value">{{item.create_date}}</text>
+            </view>
+            <view class="info-row">
+              <text class="info-label">支出描述:</text>
+              <text class="info-value">{{item.description || '无描述'}}</text>
+            </view>
+          </view>
+        </view>
+        
+        <!-- 活动费用 -->
+        <view class="financial-item expense" wx:for="{{expenseDetails.event_costs}}" wx:key="event_id" wx:if="{{expenseDetails.event_costs && expenseDetails.event_costs.length > 0}}">
+          <view class="financial-header">
+            <view class="financial-title">{{item.title}}</view>
+            <view class="financial-id">#{{item.event_id}}</view>
+          </view>
+          <view class="financial-info">
+            <view class="info-row">
+              <text class="info-label">活动费用:</text>
+              <text class="info-value amount">¥{{item.amount}}</text>
+            </view>
+            <view class="info-row">
+              <text class="info-label">活动日期:</text>
+              <text class="info-value">{{item.date}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      
+      <view wx:else class="empty-state">
+        <view class="empty-icon">📊</view>
+        <view class="empty-text">暂无支出数据</view>
+        <view class="empty-desc">该协会还没有支出记录</view>
+      </view>
+    </view>
+    
+    <!-- 月度统计列表 -->
+    <view class="list-section" wx:if="{{monthlyStatistics.length > 0}}">
+      <view class="section-title">
+        <view class="title-text">月度统计</view>
+        <view class="title-desc">近{{monthlyStatistics.length}}个月</view>
+      </view>
+      
+      <view class="monthly-list">
+        <view class="monthly-item" wx:for="{{monthlyStatistics}}" wx:key="month">
+          <view class="monthly-header">
+            <view class="monthly-month">{{item.month}}</view>
+            <view class="monthly-balance {{item.net_balance >= 0 ? 'positive' : 'negative'}}">
+              {{item.net_balance >= 0 ? '+' : ''}}¥{{item.net_balance}}
+            </view>
+          </view>
+          <view class="monthly-details">
+            <view class="detail-item income">
+              <text class="detail-label">收入:</text>
+              <text class="detail-value">¥{{item.income}}</text>
+            </view>
+            <view class="detail-item expense">
+              <text class="detail-label">支出:</text>
+              <text class="detail-value">¥{{item.expenses}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view> 

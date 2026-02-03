@@ -1,0 +1,428 @@
+/* pages/club/club-financial-stats/index.wxss */
+.container {
+  padding: 0;
+  background: linear-gradient(135deg, #ffeef8 0%, #f8f0ff 100%);
+  min-height: 100vh;
+}
+
+.page-header {
+  padding: 30rpx 30rpx 20rpx;
+  background: linear-gradient(135deg, #df76b0 0%, #c157a0 100%);
+  box-shadow: 0 4rpx 20rpx rgba(223, 118, 176, 0.3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title-group {
+  flex: 1;
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
+}
+
+.subtitle {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 4rpx;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.download-btn {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: 2rpx solid rgba(255, 255, 255, 0.3) !important;
+  color: #fff !important;
+  backdrop-filter: blur(10rpx);
+}
+
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400rpx;
+}
+
+.loading-text {
+  margin-top: 20rpx;
+  font-size: 28rpx;
+  color: #df76b0;
+  font-weight: 500;
+}
+
+.content {
+  padding: 20rpx 0 30rpx;
+}
+
+/* 统计概览卡片 */
+.stats-overview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+  padding: 0 20rpx 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.stats-card {
+  background: linear-gradient(135deg, #fff 0%, #fef8fc 100%);
+  border-radius: 20rpx;
+  padding: 30rpx 20rpx;
+  text-align: center;
+  box-shadow: 0 8rpx 32rpx rgba(223, 118, 176, 0.15);
+  border: 1rpx solid rgba(223, 118, 176, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.stats-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6rpx;
+  background: linear-gradient(90deg, #df76b0, #9c88ff);
+}
+
+.stats-number {
+  font-size: 42rpx;
+  font-weight: 700;
+  color: #df76b0;
+  margin-bottom: 8rpx;
+  text-shadow: 0 2rpx 4rpx rgba(223, 118, 176, 0.1);
+}
+
+.stats-number.positive {
+  color: #67c23a;
+}
+
+.stats-number.negative {
+  color: #f56c6c;
+}
+
+.stats-label {
+  font-size: 22rpx;
+  color: #666;
+  font-weight: 500;
+}
+
+/* 图表区域 */
+.charts-section {
+  padding: 0 20rpx;
+}
+
+.chart-container {
+  background: linear-gradient(135deg, #fff 0%, #fef8fc 100%);
+  border-radius: 20rpx;
+  margin-bottom: 20rpx;
+  padding: 30rpx 20rpx;
+  box-shadow: 0 8rpx 32rpx rgba(223, 118, 176, 0.15);
+  border: 1rpx solid rgba(223, 118, 176, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.chart-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4rpx;
+  background: linear-gradient(90deg, #df76b0, #9c88ff, #5fb3d4);
+}
+
+/* 列表区域 */
+.list-section {
+  padding: 0 20rpx;
+  margin-top: 20rpx;
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 20rpx;
+  background: linear-gradient(135deg, #fff 0%, #fef8fc 100%);
+  border-radius: 16rpx 16rpx 0 0;
+  border: 1rpx solid rgba(223, 118, 176, 0.1);
+  border-bottom: none;
+  position: relative;
+}
+
+.section-title::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4rpx;
+  background: linear-gradient(90deg, #df76b0, #9c88ff);
+}
+
+.title-text {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.title-desc {
+  font-size: 24rpx;
+  color: #df76b0;
+  font-weight: 500;
+}
+
+.financial-list {
+  background: #fff;
+  border-radius: 0 0 16rpx 16rpx;
+  border: 1rpx solid rgba(223, 118, 176, 0.1);
+  border-top: none;
+  overflow: hidden;
+}
+
+.financial-item {
+  padding: 25rpx 20rpx;
+  border-bottom: 1rpx solid rgba(223, 118, 176, 0.1);
+  background: linear-gradient(135deg, #fff 0%, #fefafc 100%);
+  transition: all 0.3s ease;
+}
+
+.financial-item:last-child {
+  border-bottom: none;
+}
+
+.financial-item:hover {
+  background: linear-gradient(135deg, #fef8fc 0%, #f8f0ff 100%);
+  transform: translateX(10rpx);
+}
+
+.financial-item.income {
+  border-left: 6rpx solid #67c23a;
+}
+
+.financial-item.expense {
+  border-left: 6rpx solid #f56c6c;
+}
+
+.financial-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15rpx;
+}
+
+.financial-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+  margin-right: 20rpx;
+}
+
+.financial-id {
+  font-size: 22rpx;
+  color: #df76b0;
+  background: rgba(223, 118, 176, 0.1);
+  padding: 4rpx 12rpx;
+  border-radius: 10rpx;
+  font-weight: 500;
+}
+
+.financial-info {
+  margin-bottom: 15rpx;
+}
+
+.info-row {
+  display: flex;
+  margin-bottom: 8rpx;
+  align-items: center;
+}
+
+.info-label {
+  font-size: 24rpx;
+  color: #666;
+  min-width: 120rpx;
+  font-weight: 500;
+}
+
+.info-value {
+  font-size: 24rpx;
+  color: #333;
+  flex: 1;
+}
+
+.info-value.amount {
+  color: #67c23a;
+  font-weight: 600;
+}
+
+.info-value.unpaid {
+  color: #f56c6c;
+  font-weight: 600;
+}
+
+.financial-stats {
+  display: flex;
+  justify-content: space-around;
+  padding-top: 15rpx;
+  border-top: 1rpx solid rgba(223, 118, 176, 0.1);
+}
+
+.stat-item {
+  text-align: center;
+  flex: 1;
+}
+
+.stat-value {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #df76b0;
+  margin-bottom: 4rpx;
+}
+
+.stat-label {
+  font-size: 20rpx;
+  color: #666;
+  font-weight: 500;
+}
+
+/* 月度统计列表 */
+.monthly-list {
+  background: #fff;
+  border-radius: 0 0 16rpx 16rpx;
+  border: 1rpx solid rgba(223, 118, 176, 0.1);
+  border-top: none;
+  overflow: hidden;
+}
+
+.monthly-item {
+  padding: 25rpx 20rpx;
+  border-bottom: 1rpx solid rgba(223, 118, 176, 0.1);
+  background: linear-gradient(135deg, #fff 0%, #fefafc 100%);
+}
+
+.monthly-item:last-child {
+  border-bottom: none;
+}
+
+.monthly-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15rpx;
+}
+
+.monthly-month {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.monthly-balance {
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.monthly-balance.positive {
+  color: #67c23a;
+}
+
+.monthly-balance.negative {
+  color: #f56c6c;
+}
+
+.monthly-details {
+  display: flex;
+  justify-content: space-around;
+}
+
+.detail-item {
+  text-align: center;
+  flex: 1;
+}
+
+.detail-item.income .detail-label {
+  color: #67c23a;
+}
+
+.detail-item.expense .detail-label {
+  color: #f56c6c;
+}
+
+.detail-label {
+  font-size: 24rpx;
+  font-weight: 500;
+  margin-right: 10rpx;
+}
+
+.detail-value {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+/* 空状态 */
+.empty-state {
+  background: #fff;
+  border-radius: 0 0 16rpx 16rpx;
+  border: 1rpx solid rgba(223, 118, 176, 0.1);
+  border-top: none;
+  padding: 80rpx 40rpx;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  margin-bottom: 20rpx;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #666;
+  font-weight: 500;
+  margin-bottom: 10rpx;
+}
+
+.empty-desc {
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 响应式设计 */
+@media (max-width: 600rpx) {
+  .stats-overview {
+    grid-template-columns: 1fr;
+    gap: 15rpx;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15rpx;
+  }
+  
+  .header-actions {
+    align-self: flex-end;
+  }
+  
+  .monthly-details {
+    flex-direction: column;
+    gap: 10rpx;
+  }
+  
+  .detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+} 

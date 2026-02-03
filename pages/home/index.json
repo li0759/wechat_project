@@ -1,17 +1,34 @@
 {
   "usingComponents": {
-    "van-button": "@vant/weapp/button/index",
     "van-icon": "@vant/weapp/icon/index",
     "van-tab": "@vant/weapp/tab/index",
     "van-tabs": "@vant/weapp/tabs/index",
-    "van-card": "@vant/weapp/card/index",
-    "van-notice-bar": "@vant/weapp/notice-bar/index",
-    "van-grid": "@vant/weapp/grid/index",
-    "van-grid-item": "@vant/weapp/grid-item/index",
-    "van-cell": "@vant/weapp/cell/index",
-    "van-cell-group": "@vant/weapp/cell-group/index",
     "van-loading": "@vant/weapp/loading/index",
     "van-empty": "@vant/weapp/empty/index",
-    "van-swipe-cell": "@vant/weapp/swipe-cell/index"
+    "t-grid": "tdesign-miniprogram/grid/grid",
+    "t-grid-item": "tdesign-miniprogram/grid-item/grid-item",
+    "t-skeleton": "tdesign-miniprogram/skeleton/skeleton",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "isotope": "../../components/isotope/index",
+    "expandable-container": "../../components/expandable-container/index",
+    "expandable-container_fullscreen": "../../components/expandable-container_fullscreen/index",
+    "event-manage-panel": "/packageEvent/components/event-manage-panel/index",
+    "event-detail-panel": "/packageEvent/components/event-detail-panel/index",
+    "club-detail-panel": "/packageClub/components/club-detail-panel/index",
+    "club-manage-panel": "/packageClub/components/club-manage-panel/index",
+    "event-manage-skeleton": "/components/panel-skeleton/event-manage-skeleton/index",
+    "event-detail-skeleton": "/components/panel-skeleton/event-detail-skeleton/index",
+    "club-detail-skeleton": "/components/panel-skeleton/club-detail-skeleton/index",
+    "club-manage-skeleton": "/components/panel-skeleton/club-manage-skeleton/index",
+    "club-overview-panel": "/packageHome/components/club-overview-panel/index",
+    "club-overview-skeleton": "/components/panel-skeleton/club-overview-skeleton/index"
+  },
+  "navigationStyle": "custom",
+  "componentPlaceholder": {
+    "event-manage-panel": "event-manage-skeleton",
+    "event-detail-panel": "event-detail-skeleton",
+    "club-detail-panel": "club-detail-skeleton",
+    "club-manage-panel": "club-manage-skeleton",
+    "club-overview-panel": "club-overview-skeleton"
   }
 } 

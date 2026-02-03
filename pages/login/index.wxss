@@ -1,116 +1,316 @@
-/* 页面容器 */
 .container {
-  padding: 10rpx;
-  background: #f5f5f5;
+  padding: 60rpx 40rpx;
   min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
 }
 
-/* Logo */
 .logo {
   width: 200rpx;
   height: 200rpx;
-  margin-bottom: 0rpx;
+  margin-bottom: 40rpx;
 }
 
 .logo image {
   width: 100%;
   height: 100%;
-  border-radius: 10rpx;
+  border-radius: 20rpx;
 }
 
-/* 标题 */
 .subtitle {
-  font-size: 26rpx;
-  color: #666;
+  font-size: 36rpx;
+  color: white;
+  margin-bottom: 80rpx;
+  font-weight: bold;
+}
+
+/* 未登录状态 */
+.not-logged-in {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.login-tip {
+  margin-bottom: 10rpx;
+  padding: 10rpx;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20rpx;
+  backdrop-filter: blur(10rpx);
+}
+
+.login-tip text {
+  color: white;
+  font-size: 28rpx;
+  text-align: center;
+}
+
+/* 已登录状态 */
+.logged-in {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.user-info-card {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10rpx);
+  border-radius: 30rpx;
+  padding: 40rpx;
+  margin: 60rpx 0;
+  width: 600rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
+}
+
+.avatar {
+  width: 120rpx;
+  height: 120rpx;
+  margin-bottom: 30rpx;
+  position: relative;
+}
+
+.avatar image {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 4rpx solid rgba(255, 255, 255, 0.3);
+}
+
+/* 状态图标 */
+.status-icon {
+  position: absolute;
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20rpx;
+  font-weight: bold;
+}
+
+.status-icon.success {
+  background: #4caf50;
+  color: white;
+  top: -8rpx;
+  right: -8rpx;
+}
+
+.status-icon.inline {
+  position: static;
+  display: inline-flex;
+  width: 24rpx;
+  height: 24rpx;
+  font-size: 16rpx;
+  margin-left: 8rpx;
+  vertical-align: middle;
+}
+
+.info {
+  text-align: center;
+  width: 100%;
+}
+
+.name {
+  font-size: 36rpx;
+  color: white;
+  font-weight: bold;
   margin-bottom: 10rpx;
 }
 
-/* 登录按钮 */
-.login-btn {
-  width: 500rpx;
-  height: 80rpx;
-  background: #007aff;
+.department, .position {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 8rpx;
+}
+
+/* 手机号信息显示 */
+.mobile-info {
+  margin-top: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.mobile-label {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.mobile-value {
+  font-size: 26rpx;
   color: white;
-  border-radius: 8rpx;
+  font-weight: bold;
+}
+
+.mobile-placeholder {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+}
+
+/* 个人信息按钮区域 */
+.profile-buttons {
+  width: 600rpx;
+  margin: 20rpx 0;
+}
+
+.profile-section {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10rpx);
+  border-radius: 24rpx;
+  padding: 32rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
+}
+
+.section-title {
+  color: white;
+  font-size: 28rpx;
+  font-weight: bold;
+  text-align: center;
+  display: block;
+  margin-bottom: 24rpx;
+}
+
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.profile-btn {
+  width: 100%;
+  height: 80rpx;
+}
+
+.completed-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20rpx;
+  background: rgba(76, 175, 80, 0.2);
+  border-radius: 12rpx;
+  border: 2rpx solid rgba(76, 175, 80, 0.5);
+}
+
+.completed-text {
+  color: #4caf50;
+  font-size: 28rpx;
+  font-weight: bold;
+}
+
+/* 信息完整提示区域 */
+.complete-section {
+  width: 600rpx;
+  margin: 20rpx 0;
+}
+
+.complete-tip {
+  background: rgba(76, 175, 80, 0.2);
+  backdrop-filter: blur(10rpx);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  text-align: center;
+  border: 2rpx solid rgba(76, 175, 80, 0.3);
+}
+
+.complete-icon {
+  font-size: 40rpx;
+  margin-right: 12rpx;
+}
+
+.complete-text {
+  color: white;
+  font-size: 28rpx;
+  font-weight: bold;
+}
+
+.action-btn {
+  width: 500rpx;
+  height: 90rpx;
+  border-radius: 45rpx;
   font-size: 30rpx;
-  font-weight: normal;
-  margin-bottom: 10rpx;
+  font-weight: bold;
+  margin-bottom: 30rpx;
   border: none;
 }
 
-.login-btn:hover {
-  background: #0056cc;
+.action-btn::after {
+  border: none;
 }
 
+.action-btn.secondary {
+  background: transparent;
+  color: white;
+  border: 2rpx solid rgba(255, 255, 255, 0.5);
+}
 
-/* 用户列表标题 */
-.user-list-title {
-  font-size: 32rpx;
-  color: #333;
-  font-weight: bold;
-  margin-bottom: 0rpx;
+.action-btn:hover {
+  transform: translateY(-2rpx);
+  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.2);
+}
+
+.action-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* 开发者工具模式样式 */
+.dev-title {
+  color: white;
+  font-size: 28rpx;
   text-align: center;
+  margin-bottom: 20rpx;
+  opacity: 0.8;
 }
 
-/* 用户列表 */
-.user-list {
-  width: 100%;
-  max-height: 800rpx;
-  background: white;
-  border-radius: 8rpx;
-  padding: 0;
-  border: 1rpx solid #e0e0e0;
+.dev-user-list {
+  max-height: 60vh;
+  overflow: auto;
 }
 
-.no-data {
-  text-align: center;
-  color: #999;
-  padding: 40rpx 0;
-  font-size: 26rpx;
+.dev-user-item {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 10rpx;
+  margin-bottom: 10rpx;
+  padding: 12rpx;
 }
 
-.user-item {
+.dev-user-item--hover {
+  background: #f5f6fa;
+}
+
+.dev-user-item__left {
   display: flex;
   align-items: center;
-  padding: 15rpx 20rpx;
-  border-bottom: 1rpx solid #f0f0f0;
 }
 
-.user-item:last-child {
-  border-bottom: none;
+.dev-user-item__info {
+  margin-left: 12rpx;
 }
 
-.user-item:hover {
-  background-color: #f8f9fa;
-}
-
-.user-avatar {
-  width: 60rpx;
-  height: 60rpx;
-  margin-right: 15rpx;
-}
-
-.user-avatar image {
-  width: 100%;
-  height: 100%;
-  border-radius: 30rpx;
-}
-
-.user-info {
-  flex: 1;
-}
-
-.user-name {
+.dev-user-item__name {
   font-size: 28rpx;
-  font-weight: 500;
-  color: #333;
-  margin-bottom: 5rpx;
+  font-weight: 600;
 }
 
-.user-role-main {
-  font-size: 22rpx;
-  color: #666;
+.dev-user-item__tags {
+  margin-top: 4rpx;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+/* 禁用状态的按钮样式 */
+.t-button--disabled {
+  opacity: 0.6;
+  pointer-events: none;
 } 

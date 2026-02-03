@@ -1,0 +1,375 @@
+<view class="event-manage-panel">
+  <!-- 灰色蒙层 - 当活动被取消或协会被删除时显示 -->
+  <view wx:if="{{featuredEvent && (featuredEvent.is_cancelled || featuredEvent.club_deleted)}}" class="disabled-overlay">
+    <view class="disabled-overlay-content">
+      <t-icon name="info-circle" size="48" color="#fff" />
+      <text class="disabled-overlay-text">
+        {{featuredEvent.is_cancelled ? '活动已取消' : '协会已删除'}}
+      </text>
+      <text class="disabled-overlay-desc">此页面仅供查看，无法进行操作</text>
+    </view>
+  </view>
+
+  <!-- 活动状态显示 -->
+    <view wx:if="{{featuredEvent}}" class="event-status-header">
+      <view class="event-title-text">{{featuredEvent.title}}</view>
+      <view class="event-location-text">
+        <t-icon name="location" size="20rpx" />
+        <text>{{featuredEvent.location}}</text>
+      </view>
+      <view class="event-time-text" wx:if="{{featuredEvent.actual_endTime}}">
+        活动已结束 {{featuredEvent.actual_endTime}}
+      </view>
+      <view class="event-time-text" wx:elif="{{featuredEvent.actual_startTime}}">
+        活动进行中 {{featuredEvent.actual_startTime}}
+      </view>
+      <view class="event-time-text" wx:else>
+        预计开始 {{featuredEvent.pre_startTime}}
+      </view>
+    </view>
+
+  <!-- 主要内容 -->
+  <view wx:if="{{featuredEvent}}" class="content-container">
+    <!-- 选项卡 -->
+    <t-tabs 
+      animation="{{ { duration: 0.6 } }}"
+      value="{{currentTab}}" 
+      bind:change="onTabChange"
+      swipeable="{{true}}"
+    >
+    <!-- 时间线选项卡 -->
+    <t-tab-panel label="时间线" value="timeline" >
+      <scroll-view class="main-scroll" scroll-y="true" wx:if="{{currentTab === 'timeline'}}">
+        <view class="step-content">
+          <view class="card">
+            <view class="info-card steps-card">
+              <view class="card-title">活动进度</view>
+              <t-steps layout="vertical" current="{{stepsCurrent}}">
+                <!-- 预计开始 -->
+                <t-step-item
+                  title="预计开始"
+                  status="{{stepStatuses.preStart}}"
+                >
+                  <view slot="content">
+                    <view class="step-row">
+                      <text class="step-text">{{featuredEvent.pre_startTime}}</text>
+                    </view>
+                  </view>
+                </t-step-item>
+
+                <!-- 实际开始 -->
+                <t-step-item
+                  title="活动开始"
+                  status="{{stepStatuses.actualStart}}"
+                >
+                  <view slot="content">
+                    <view class="step-row">
+                      <text class="step-text" wx:if="{{featuredEvent.actual_startTime}}">{{featuredEvent.actual_startTime}}</text>
+                      <text class="step-text" wx:else>等待活动开始</text>
+                    </view>
+                  </view>
+                </t-step-item>
+
+                <!-- 打卡 -->
+                <t-step-item
+                  title="打卡签到"
+                  status="{{stepStatuses.clockin}}"
+                >
+                  <view slot="content">
+                    <view class="step-row {{canClockIn ? 'full' : 'split'}}">
+                      <view class="step-left">
+                        <t-button wx:if="{{canClockIn}}" size="normal" theme="primary" block bind:tap="onClockIn">点击打卡</t-button>
+                        <text wx:elif="{{featuredEvent.cur_user_clockin_date}}" class="step-text">打卡时间：{{featuredEvent.cur_user_clockin_date}}</text>
+                        <text wx:else class="step-text">活动开始后可打卡</text>
+                      </view>
+                    </view>
+                  </view>
+                </t-step-item>
+
+                <!-- 预计结束 -->
+                <t-step-item
+                  title="预计结束"
+                  status="{{stepStatuses.preEnd}}"
+                >
+                  <view slot="content">
+                    <view class="step-row">
+                      <text class="step-text">{{featuredEvent.pre_endTime}}</text>
+                    </view>
+                  </view>
+                </t-step-item>
+
+                <!-- 实际结束 -->
+                <t-step-item
+                  title="活动结束"
+                  status="{{stepStatuses.actualEnd}}"
+                >
+                  <view slot="content">
+                    <view class="step-row">
+                      <text class="step-text" wx:if="{{featuredEvent.actual_endTime}}">{{featuredEvent.actual_endTime}}</text>
+                      <text class="step-text" wx:else>等待活动结束</text>
+                    </view>
+                  </view>
+                </t-step-item>
+
+                <!-- 费用缴纳 -->
+                <t-step-item
+                  title="费用缴纳"
+                  status="{{stepStatuses.payment}}"
+                >
+                  <view slot="content">
+                    <view class="step-row {{canPay ? 'full' : 'split'}}">
+                      <view class="step-left">
+                        <t-button wx:if="{{canPay}}" size="normal" theme="warning" block bind:tap="onPayment">缴纳费用</t-button>
+                        <text wx:else class="step-text">暂无需缴费</text>
+                      </view>
+                    </view>
+                  </view>
+                </t-step-item>
+
+              </t-steps>
+            </view>
+          </view>
+        </view>
+
+        <!-- 底部填充 -->
+        <view class="footer-space"></view>
+      </scroll-view>
+    </t-tab-panel>
+
+    <!-- 动态管理选项卡 -->
+    <t-tab-panel label="我的动态" value="moments" >
+      <scroll-view class="main-scroll" scroll-y="true" wx:if="{{currentTab === 'moments'}}" bindscrolltolower="onMomentsScrollToLower">
+        <view class="step-content">
+          <!-- 动态列表 -->
+          <view class="moments-container" wx:if="{{currentTab === 'moments'}}">
+            <!-- 动态列表（包含骨架屏和真实内容） -->
+            <view wx:if="{{momentsList.length > 0}}" class="moments-list">
+              <view wx:for="{{momentsList}}" wx:key="moment_id" class="moment-item">
+                <!-- 骨架屏 -->
+                <view wx:if="{{item.loading}}" class="moment-skeleton">
+                  <!-- 上半部分：左边头像 + 右边姓名 -->
+                  <view class="skeleton-header">
+                    <view class="skeleton-avatar"></view>
+                    <view class="skeleton-user-info">
+                      <view class="skeleton-username"></view>
+                      <view class="skeleton-time"></view>
+                    </view>
+                  </view>
+                  
+                  <!-- 下半部分：固定3张图片占位 -->
+                  <view class="skeleton-images-grid">
+                    <view class="skeleton-image-item"></view>
+                    <view class="skeleton-image-item"></view>
+                    <view class="skeleton-image-item"></view>
+                  </view>
+                </view>
+                
+                <!-- 真实内容 -->
+                <view wx:else>
+                <!-- 用户信息区 -->
+                <view class="moment-header" bind:dblclick="toggleLike" data-moment-id="{{item.momentID}}" data-is-liked="{{item.is_liked}}">
+                  <view class="user-info">
+                    <t-image 
+                      src="{{item.creator.avatar}}" 
+                      width="80rpx" 
+                      height="80rpx" 
+                      shape="circle"
+                      mode="aspectFill"
+                      error="default"
+                    />
+                    <view class="user-details">
+                      <text class="username">{{item.creator.userName}}</text>
+                      <text class="time">{{item.create_time}}</text>
+                    </view>
+                    <!-- 右上角"..."按钮 - 只显示本人发布的动态 -->
+                    <view wx:if="{{item.is_my_moment}}" class="moment-ops" catchtap="toggleMomentOps" data-id="{{item.momentID}}">
+                      <t-icon name="more" size="20" />
+                      <view wx:if="{{momentOpsVisible && currentActionMomentId == item.momentID}}" class="moment-ops-menu" catchtap="noop">
+                        <view class="moment-ops-item" catchtap="deleteMoment" data-id="{{item.momentID}}">删除</view>
+                      </view>
+                    </view>
+                  </view>
+                </view>
+                
+                <!-- 动态内容 -->
+                <view class="moment-content">
+                  <text class="moment-text" wx:if="{{item.description}}">{{item.description}}</text>
+
+                  <!-- 图片展示 -->
+                  <view class="moment-images" wx:if="{{item.image_files && item.image_files.length > 0}}">
+                    <view class="images-grid">
+                      <t-image
+                        wx:for="{{item.image_files}}" 
+                        wx:for-item="img"
+                        wx:key="file_id"
+                        src="{{img.fileUrl}}"
+                        width="220rpx"
+                        height="220rpx"
+                        mode="aspectFill"
+                        bind:tap="previewMomentImage"
+                        data-moment-id="{{item.momentID}}"
+                        data-index="{{index}}"
+                        style="margin: 8rpx; border-radius: 12rpx;"
+                      />
+                    </view>
+                  </view>
+                </view>
+                
+                <!-- 底部容器 -->
+                <view class="moment-footer">
+                  <!-- 话题链接 -->
+                  <view class="topic-links" wx:if="{{item.ref_club || item.ref_event}}">
+                    <view wx:if="{{item.ref_club}}" class="topic-link" bind:tap="navigateToClub" data-id="{{item.ref_club_ID}}">
+                      #{{item.ref_club.clubName}} 
+                    </view>
+                    <view wx:if="{{item.ref_event}}" class="topic-link" bind:tap="navigateToEvent" data-id="{{item.ref_event_ID}}">
+                      #{{item.ref_event.title}} 
+                    </view>
+                  </view>
+                  
+                  <!-- 操作按钮 -->
+                  <view class="moment-actions">
+                    <view class="action-buttons">
+                      <view 
+                        class="like-button {{item.is_liked ? 'liked' : ''}}"
+                        bind:tap="toggleLike"           
+                        data-is-liked="{{item.is_liked}}"
+                        data-moment-id="{{item.momentID}}"
+                      >
+                        <t-icon 
+                          name="{{item.is_liked ? 'heart-filled' : 'heart'}}" 
+                          size="40rpx" 
+                          color="{{item.is_liked ? '#ff6b9d' : '#999'}}"
+                        />
+                        <view class="like-count" wx:if="{{item.like_count > 0}}">{{item.like_count}}</view>
+                      </view>
+                    </view>
+                  </view>
+                </view>
+                </view>
+              </view>
+            </view>
+            
+            <!-- 空状态显示：只在成功获取数据但数据为空时显示 -->
+            <view wx:elif="{{isEmpty}}" class="empty-state">
+              <t-icon name="chat" size="120rpx" color="#ddd" />
+              <text class="empty-text">暂无动态</text>
+              <text class="empty-desc">还没有发布动态哦</text>
+            </view>
+          </view>
+        </view>
+        
+        <!-- 底部填充 -->
+        <view class="footer-space"></view>
+      </scroll-view>
+    </t-tab-panel>
+  </t-tabs>
+
+  <!-- 添加动态浮动按钮 -->
+  <view 
+    class="add-moment-fab" 
+    wx:if="{{currentTab === 'moments'}}"
+    bind:tap="showAddMomentDialog"
+  >
+    <t-icon name="add" size="48rpx" color="#fff" />
+  </view>
+
+  <!-- 添加动态弹窗 -->
+  <t-popup 
+    visible="{{showAddMomentPopup}}" 
+    placement="bottom" 
+    close-on-overlay-click="{{false}}"
+    bind:visible-change="onAddMomentPopupChange"
+  >
+    <view class="popup-block">
+      <view class="header">
+        <view class="btn btn--cancel" bind:tap="cancelAddMoment">取消</view>
+        <view class="title">发布动态</view>
+        <view 
+          class="btn btn--confirm {{addMomentForm.description && !addMomentForm.isUploading ? '' : 'disabled'}}" 
+          bind:tap="confirmAddMoment"
+        >
+          {{addMomentForm.isUploading ? '发布中...' : '发布'}}
+        </view>
+      </view>
+      
+      <view class="popup-content">
+        <!-- 文字内容 -->
+        <view class="form-item">
+          <view class="form-label">动态内容</view>
+          <textarea
+            class="moment-textarea"
+            placeholder="分享一下这个活动吧..."
+            value="{{addMomentForm.description}}"
+            bind:input="onMomentDescInput"
+            maxlength="500"
+            auto-height
+          />
+          <text class="char-count">{{addMomentForm.description.length}}/500</text>
+        </view>
+        
+        <!-- 图片上传 -->
+        <view class="form-item">
+          <view class="form-label">添加图片</view>
+          <t-upload
+            files="{{addMomentForm.uploadFiles}}"
+            max="9"
+            multiple="{{true}}"
+            grid-config="{{uploadGridConfig}}"
+            bind:add="onMomentImageAdd"
+            bind:remove="onMomentImageRemove"
+            disabled="{{addMomentForm.isUploading}}"
+          />
+        </view>
+      </view>
+    </view>
+  </t-popup>
+
+  <!-- 图片预览器 -->
+  <t-image-viewer 
+    images="{{previewImages}}" 
+    visible="{{showMomentImageViewer}}" 
+    initial-index="{{previewIndex}}" 
+    bind:close="onCloseMomentImageViewer"
+  />
+
+  <!-- 缴费弹窗 -->
+  <t-popup 
+    visible="{{ showPaymentDialog }}" 
+    placement="center"
+    round="{{ true }}"
+    bind:visible-change="onPaymentDialogVisibleChange"
+    close-on-overlay-click="{{ true }}"
+  >
+    <view class="payment-dialog">
+      <view class="dialog-header">
+        <text class="dialog-title">缴纳活动费用</text>
+      </view>
+      <view class="payment-input-container">
+        <t-input
+          value="{{ paymentAmount }}"
+          placeholder="请输入缴费金额"
+          type="number"
+          bind:change="onPaymentAmountChange"
+        />
+      </view>
+      <view class="dialog-actions">
+        <t-button theme="default" variant="outline" size="large" shape="round" bind:tap="closePaymentDialog" class="dialog-button">
+          取消
+        </t-button>
+        <t-button theme="primary" variant="base" size="large" shape="round" bind:tap="confirmPayment" class="dialog-button">
+          确认
+        </t-button>
+      </view>
+    </view>
+  </t-popup>
+
+  </view>
+
+  <!-- 加载中状态 -->
+  <view class="loading-container" wx:if="{{isLoading}}">
+    <t-loading theme="circular" size="40rpx" color="#ff6b9d" />
+    <text class="loading-text">加载中...</text>
+  </view>
+</view>
+

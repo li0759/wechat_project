@@ -1,0 +1,18 @@
+{
+  "component": true,
+  "usingComponents": {
+    "t-tabs": "tdesign-miniprogram/tabs/tabs",
+    "t-tab-panel": "tdesign-miniprogram/tab-panel/tab-panel",
+    "t-steps": "tdesign-miniprogram/steps/steps",
+    "t-step-item": "tdesign-miniprogram/step-item/step-item",
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-input": "tdesign-miniprogram/input/input",
+    "t-image": "tdesign-miniprogram/image/image",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-loading": "tdesign-miniprogram/loading/loading",
+    "t-upload": "tdesign-miniprogram/upload/upload",
+    "t-popup": "tdesign-miniprogram/popup/popup",
+    "t-image-viewer": "tdesign-miniprogram/image-viewer/image-viewer"
+  }
+}
+

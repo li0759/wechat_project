@@ -2,254 +2,519 @@ const app = getApp();
 
 Page({
   data: {
-    userList: [], // 用户列表数据
-    isLoggedIn: false, // 登录状态
-    userInfo: null // 当前用户信息
+    isLoggedIn: false,
+    userInfo: null,
+    isInDevTools: false,
+    devUsers: [],
+    default_avatar:app.globalData.static_url+'/assets/default_avatar.webp',
+    logo_url:app.globalData.static_url+'/assets/logo.png',
+    userInfo_complete: false // 是否可进入主页（头像和手机号都具备）
   },
-  
-  onLoad: function() {
-    // 页面加载时获取用户列表
-    this.getUserList();
-    // 检查登录状态
-    this.checkLoginStatus();
+
+  onLoad: function (options) {
+    this.setData({
+      isInDevTools: typeof __wxConfig !== 'undefined' && __wxConfig.platform === 'devtools'
+    });
+    if (this.data.isInDevTools) {
+      this.loadDevUsers();
+    }
+   // app.checkLoginStatus();
   },
-  
-  onShow: function() {
-    // 页面显示时检查登录状态
-    this.checkLoginStatus();
-  },
-  
-  // 检查登录状态
-  checkLoginStatus() {
-    const token = wx.getStorageSync('token');
-    const userInfo = wx.getStorageSync('userInfo');
-    
-    if (token && userInfo) {
-      this.setData({
-        isLoggedIn: true,
-        userInfo: userInfo
-      });
-    } else {
-      this.setData({
-        isLoggedIn: false,
-        userInfo: null
+
+  onShow: function () {
+    if(wx.getStorageSync('token')){
+      const token = wx.getStorageSync('token');
+      wx.request({
+        url: app.globalData.request_url + '/auth/verify_token',
+        method: 'POST',
+        header: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        data: { token: token },
+        success: (res) => {
+          if (res.statusCode == 200 && res.data.valid) {
+            const userInfo = res.data.user;
+            wx.setStorageSync('userInfo', userInfo);
+            wx.setStorageSync('token', res.data.new_token);
+            this.setData({
+              userInfo: userInfo,
+            });
+            if(res.data.user.avatar && res.data.user.phone){
+              this.setData({
+                isLoggedIn: true,
+                userInfo_complete: true
+              });
+              setTimeout(() => {
+                wx.switchTab({ url: '/pages/home/index' });
+              }, 1000);
+            }
+            else{
+              this.setData({
+                userInfor_complete: false,
+                isLoggedIn: false
+              });
+            }
+          } else {
+            // Token 无效，清除本地存储并跳转登录页
+            wx.removeStorageSync('token');
+            wx.removeStorageSync('userInfo');
+            this.setData({
+              isLoggedIn: false,
+              userInfo_complete: false
+            });
+          }
+        },
+        fail: (err) => {
+          wx.removeStorageSync('token');
+          wx.removeStorageSync('userInfo');
+          this.setData({
+            isLoggedIn: false,
+            userInfo_complete: false
+          });
+        },
       });
     }
+
+
   },
-  
-  // 获取用户列表
-  getUserList() {
+
+
+  // 企业微信登录
+  handleWecomLogin() {
+    wx.showLoading({ title: '正在登录...' });
+    
+    wx.qy.login({
+      success: (res) => {
+        if (res.code) {
+          this.sendLoginData(res.code);
+        }
+      },
+      fail: () => {
+        wx.hideLoading();
+        wx.showToast({ title: '登录失败', icon: 'none' });
+      }
+    });
+  },
+
+  // 发送登录数据到服务端
+  sendLoginData(code) {
     wx.request({
-      url: app.globalData.request_url + `/user/list_weak`,
+      url: app.globalData.request_url + '/auth/qy/code2session',
+      method: 'POST',
+      header: { 'content-type': 'application/json' },
+      data: { code: code },
+      success: (res) => {
+        wx.hideLoading();
+        const { token, user } = res.data || {};
+        if (token && user) {
+          // 保存登录信息
+          wx.setStorageSync('token', token);
+          wx.setStorageSync('userInfo', user);
+          wx.setStorageSync('userId', user.id);
+          
+          this.setData({
+            isLoggedIn: true,
+            userInfo: user,
+          });
+          if(user.avatar && user.phone){
+            this.setData({
+              userInfo_complete: true
+            });
+            wx.showToast({
+              title: '登录成功',
+              icon: 'success',
+              duration: 800
+            });
+            setTimeout(() => {
+              //wx.switchTab({ url: '/pages/home/index' });
+              console.log('navigateBack');
+              wx.navigateBack({fail: (err) => {
+                console.log(err);
+                wx.switchTab({ url: '/pages/home/index' });
+              }});
+            }, 1000);
+          }
+          else{
+            this.setData({
+              userInfo_complete: false
+            });
+            console.log('登录成功，请完善信息');
+            wx.showToast({
+              title: '登录成功，请完善信息',
+              icon: 'success',
+              duration: 1500
+            });
+          }
+        } else {
+          wx.showToast({ title: '登录失败', icon: 'none' });
+        }
+      },
+      fail: () => {
+        wx.hideLoading();
+        wx.showToast({ title: '登录失败', icon: 'none' });
+      }
+    });
+  },
+
+  handleLogout() {
+    wx.showModal({
+      title: '确认',
+      content: '确定要退出登录吗？',
+      success: (res) => {
+        if (res.confirm) {
+          wx.removeStorageSync('token');
+          wx.removeStorageSync('userInfo');
+          wx.removeStorageSync('userId');
+          this.setData({
+            isLoggedIn: false,
+            userInfo: null,
+            hasPhone: false,
+            hasAvatar: false,
+            userInfo_complete: false
+          });
+          wx.showToast({
+            title: '已退出登录',
+            icon: 'success'
+          });
+        }
+      }
+    });
+  },
+
+  // 加载开发者工具模式用户列表
+  loadDevUsers() {
+    wx.request({
+      url: app.globalData.request_url + '/user/list_weak',
       method: 'GET',
       success: (res) => {
-        if (res.data && res.data.data) {
-          // 处理用户数据，确保角色信息正确显示
-          const processedUserList = res.data.data.map(user => {
-            return {
-              ...user,
-              // 确保角色显示信息存在
-              roles_join: user.roles.join('、'),
-              // 确保社团信息存在
-              admin_clubs: user.admin_clubs || [],
-              member_clubs: user.member_clubs || [],
-              total_club_count: user.total_club_count || 0
-            };
-          });
+        const list = (res.data && res.data.data) || [];
+        this.setData({ devUsers: list });
+      }
+    });
+  },
+
+  // 开发者工具模式：弱登录
+  handleWeakLogin(e) {
+    const userId = e.currentTarget.dataset.userid;
+    if (!userId) return;
+    
+    wx.showLoading({ title: '正在登录...' });
+    wx.request({
+      url: app.globalData.request_url + '/auth/loginweak',
+      method: 'POST',
+      header: { 'content-type': 'application/json' },
+      data: { userId },
+      success: (res) => {
+        wx.hideLoading();
+        const { token, user } = res.data || {};
+        if (token && user) {
+          wx.setStorageSync('token', token);
+          wx.setStorageSync('userInfo', user);
+          wx.setStorageSync('userId', user.id);
           this.setData({
-            userList: processedUserList
+            isLoggedIn: true,
+            userInfo: user,
+          });
+          if(user.avatar && user.phone){
+            this.setData({
+              userInfo_complete: true
+            });
+            wx.showToast({
+              title: '登录成功',
+              icon: 'success',
+              duration: 800
+            });
+            setTimeout(() => {
+              //wx.switchTab({ url: '/pages/home/index' });
+              console.log('navigateBack');
+              wx.navigateBack({fail: (err) => {
+                console.log(err);
+                wx.switchTab({ url: '/pages/home/index' });
+              }});
+            }, 1000);
+          }
+          else{
+            this.setData({
+              userInfo_complete: false
+            });
+            console.log('登录成功，请完善信息');
+            wx.showToast({
+              title: '登录成功，请完善信息',
+              icon: 'success',
+              duration: 1500
+            });
+          }
+        } else {
+          wx.showToast({ title: '登录失败', icon: 'none' });
+        }
+      },
+      fail: () => {
+        wx.hideLoading();
+        wx.showToast({ title: '登录失败', icon: 'none' });
+      }
+    });
+  },
+
+  // 更新用户手机号
+  updateUserPhone(encryptedData, iv) {
+    wx.showLoading({ title: '正在更新手机号...' });
+    wx.request({
+      url: app.globalData.request_url + '/auth/update_phone',
+      method: 'POST',
+      header: { 
+        'content-type': 'application/json',
+        'Authorization': 'Bearer ' + wx.getStorageSync('token')
+      },
+      data: { encryptedData: encryptedData, iv: iv },
+      success: (res) => {
+        wx.hideLoading();
+        console.log(res);
+        if (res.data && res.data.success) {
+          wx.showToast({
+            title: '手机号更新成功',
+            icon: 'success',
+            duration: 1500
+          });          
+          // 获取最新用户信息以同步mobile并更新状态
+    this.fetchLatestUserInfo(() => {
+            if(this.data.userInfo.avatar && this.data.userInfo.phone){
+              this.setData({
+                userInfo_complete: true
+              });
+              setTimeout(() => {
+                //wx.switchTab({ url: '/pages/home/index' });
+                wx.navigateBack();
+              }, 1000);
+            }
+            else{
+              this.setData({
+                userInfo_complete: false
+              });
+            }
           });
         } else {
           wx.showToast({
-            title: '获取用户列表失败',
-            icon: 'none'
+            title: '手机号更新失败',
+            icon: 'none',
+            duration: 2000
           });
         }
       },
       fail: () => {
+        wx.hideLoading();
         wx.showToast({
-          title: '网络错误，请重试',
-          icon: 'none'
+          title: '手机号更新失败',
+          icon: 'none',
+          duration: 2000
         });
       }
     });
   },
 
-  
-  // 选择用户登录
-  selectUserLogin(e) {
-    const wecomUserID = e.currentTarget.dataset.wecomuserid;
-    
-    if (!wecomUserID) {
-      wx.showToast({
-        title: '用户wecomUserID信息错误',
-        icon: 'none'
-      });
-      return;
-    }
-    
-    wx.showLoading({
-      title: '登录中...'
-    });
-    
-    // 发送弱登录请求
+  // 更新用户头像
+  updateUserAvatar(fileID) {
+    console.log(fileID);
+    wx.showLoading({ title: '正在更新头像...' });
     wx.request({
-      url: app.globalData.request_url + `/auth/login_weak`,
+      url: app.globalData.request_url + '/auth/update_avatar',
       method: 'POST',
-      data: {
-        wecomUserID: wecomUserID
+      header: { 
+        'content-type': 'application/json',
+        'Authorization': 'Bearer ' + wx.getStorageSync('token')
       },
-      header: {
-        "Content-Type": "application/json"
-      },
+      data: { fileID: fileID },
       success: (res) => {
-        if (res.data && res.data.access_token) {
-          // 存储登录信息
-          wx.setStorageSync('token', res.data.access_token);
-          wx.setStorageSync('userInfo', res.data.user);
-          wx.setStorageSync('userId', res.data.user.id);
-          
-          wx.hideLoading();
-          wx.showToast({
-            title: '登录成功',
-            icon: 'success',
-            duration: 1500,
-            success: () => {
-              setTimeout(() => {
-                // 跳转到首页
-                wx.switchTab({
-                  url: `/pages/home/index`
-                });
-              }, 1500);
-            }
-          });
-        } else {
-          wx.hideLoading();
-          wx.showToast({
-            title: res.data.message || res.data.msg || '登录失败',
-            icon: 'none'
-          });
-        }
-      },
-      fail: (error) => {
         wx.hideLoading();
-        wx.showToast({
-          title: '网络错误，请重试',
-          icon: 'none'
-        });
-        console.error('登录失败：', error);
-      }
-    });
-  },
-  
-  // 微信一键登录
-  handleLogin() {
-    // 首先获取用户信息授权（必须在用户点击事件中直接调用）
-    wx.getUserProfile({
-      desc: '用于完善用户资料和身份认证', // 必填，描述获取用户信息的用途
-      success: (userres) => {
-        console.log('获取到的用户信息:', userres);
-        
-        // 获取用户信息成功后，再获取登录凭证
-        wx.login({
-          success: (logres) => {
-            var platUserInfoMap = {}
-            platUserInfoMap["encryptedData"] = userres.encryptedData;
-            platUserInfoMap["iv"] = userres.iv;
-            
-            // 发送登录请求
-            this.sendLoginRequest(logres.code, platUserInfoMap);
-          },
-          fail: (error) => {
-            console.error('微信登录失败:', error);
-            wx.showToast({
-              title: '微信登录失败，请重试',
-              icon: 'none'
-            });
-          }
-        });
-      },
-      fail: (error) => {
-        console.error('获取用户信息失败:', error);
-        wx.showModal({
-          title: '授权提示',
-          content: '需要获取您的微信信息进行身份认证，请重新点击登录按钮',
-          showCancel: false,
-          success: (res) => {
-            if (res.confirm) {
-              // 用户点击确定后，可以引导用户重新点击登录按钮
-            }
-          }
-        });
-      }
-    });
-  },
-  
-  // 发送登录请求的独立方法
-  sendLoginRequest(code, platUserInfoMap) {
-    wx.request({
-      url: app.globalData.request_url + `/auth/wxlogin`,
-      method: 'POST',
-      data: {
-        platCode: code,
-        platUserInfoMap: platUserInfoMap,
-      },
-      header: {
-        "Content-Type": "application/json"
-      },
-      dataType: 'json',
-      success: (response) => {
-        console.log('登录响应:', response.data);
-        
-        if (response.data.message == '登录成功') {
-          // 存储登录态和完整用户信息
-          wx.setStorageSync('token', response.data.token);
-          wx.setStorageSync('userInfo', response.data.data);
-          wx.setStorageSync('userId', response.data.data.id);
-          
-          // 更新页面状态
-          this.setData({
-            isLoggedIn: true,
-            userInfo: response.data.data
-          });
-          
-          // 显示登录成功信息
+        if (res.data && res.data.success) {
           wx.showToast({
-            title: '登录成功',
+            title: '头像更新成功',
             icon: 'success',
             duration: 1500
           });
-
-          if (response.data.isNewUser) {
-            // 新用户跳转到注册页面
-            setTimeout(() => {
-              wx.navigateTo({
-                url: `/pages/common_user/register/index`
+          
+          // 头像更新成功后，获取最新用户信息并更新状态
+    this.fetchLatestUserInfo(() => {
+            if(this.data.userInfo.avatar && this.data.userInfo.phone){
+              this.setData({
+                userInfo_complete: true
               });
-            }, 1500);
-          } else {
-            // 老用户直接跳转到首页
-            setTimeout(() => {
-              wx.switchTab({ 
-                url: `/pages/home/index`
+              setTimeout(() => {
+                //wx.switchTab({ url: '/pages/home/index' });
+                wx.navigateBack();
+              }, 1000);
+            }
+            else{
+              this.setData({
+                userInfo_complete: false
               });
-            }, 1500);
-          }
+            }
+          });
         } else {
-          console.log('登录失败:', response.data);
           wx.showToast({
-            title: response.data.message || '登录失败，请重试',
-            icon: 'none'
+            title: '头像更新失败',
+            icon: 'none',
+            duration: 2000
           });
         }
       },
-      fail: (error) => {
-        console.error('登录请求失败:', error);
+      fail: () => {
+        wx.hideLoading();
         wx.showToast({
-          title: '网络错误，请重试',
-          icon: 'none'
+          title: '头像更新失败',
+          icon: 'none',
+          duration: 2000
         });
       }
     });
-  }
+  },
+
+  // 获取最新用户信息
+  fetchLatestUserInfo(callback) {
+    const userId = wx.getStorageSync('userId');
+    const token = wx.getStorageSync('token');
+    
+    if (!userId || !token) {
+      console.log('缺少用户ID或token');
+      if (typeof callback === 'function') callback();
+      return;
+    }
+    
+    wx.request({
+      url: app.globalData.request_url + `/user/${userId}`,
+      method: 'GET',
+      header: {
+        'Authorization': 'Bearer ' + token
+      },
+      success: (res) => {
+        if (res.data.Flag == '4000') {
+          const userInfo = res.data.data;
+          // 更新本地存储和页面数据
+          wx.setStorageSync('userInfo', userInfo);
+          this.setData({
+            userInfo: userInfo
+          });
+          console.log('用户信息更新成功:', userInfo);
+        } else {
+          console.log('获取用户信息失败:', res.data);
+        }
+        if (typeof callback === 'function') callback();
+      },
+      fail: (err) => {
+        console.log('获取用户信息请求失败:', err);
+        if (typeof callback === 'function') callback();
+      }
+    });
+  },
+
+  // 获取手机号
+  handleGetMobile() {
+    if (this.data.hasPhone) return; // 已有手机号，不重复获取
+    
+    wx.showLoading({ title: '正在获取手机号...' });
+    
+    wx.qy.getMobile({
+      success: (res) => {
+        wx.hideLoading();
+        const encryptedData = res.encryptedData;
+        const iv = res.iv;
+        console.log(encryptedData, iv);
+        if (encryptedData) {
+          this.updateUserPhone(encryptedData, iv);
+        }
+      },
+      fail: (err) => {
+        wx.hideLoading();
+        console.log('获取手机号失败:', err);
+        
+        if (err.errCode === 42013) {
+          wx.showModal({
+            title: '获取失败',
+            content: '登录凭证已过期，请重新登录',
+            showCancel: false,
+            confirmText: '确定'
+          });
+        } else {
+          wx.showToast({ 
+            title: '获取手机号失败', 
+            icon: 'none',
+            duration: 2000
+          });
+        }
+      }
+    });
+  },
+
+  // 获取头像
+  handleGetAvatar() {
+    if (this.data.hasAvatar) return; // 已有头像，不重复获取 
+    
+    wx.showLoading({ title: '正在获取头像...' });
+    
+    wx.qy.getAvatar({
+      success: (res) => {
+        wx.hideLoading();
+        const avatar = res.avatar;
+        if (avatar) {
+          console.log('获取到头像URL:', avatar);
+          this.uploadAvatar(avatar);
+        } else {
+          wx.showToast({ 
+            title: '未获取到头像', 
+            icon: 'none',
+            duration: 2000
+          });
+        }
+      },
+      fail: (err) => {
+        wx.hideLoading();
+        console.log('获取头像失败:', err);
+        
+        if (err.errCode === 42013) {
+          wx.showModal({
+            title: '获取失败',
+            content: '登录凭证已过期，请重新登录',
+            showCancel: false,
+            confirmText: '确定'
+          });
+        } else {
+          wx.showToast({ 
+            title: '获取头像失败', 
+            icon: 'none',
+            duration: 2000
+          });
+        }
+      }
+    });
+  },
+
+  // 上传头像到后台
+  uploadAvatar(avatarUrl) {
+  // 上传头像到后台
+    wx.request({
+      url: app.globalData.request_url + '/file/create_by_url',
+      method: 'POST',
+      header: {
+        'Authorization': 'Bearer ' + wx.getStorageSync('token')
+      },
+      data: {
+        url: avatarUrl
+      },
+      success: (res) => {
+        if (res.data.Flag == '4000') {
+          console.log(res.data.data.file_id);
+          this.updateUserAvatar(res.data.data.file_id);
+        }
+      },
+      fail: (err) => {
+        console.log(err);
+        wx.showToast({
+          title: '上传头像失败',
+          icon: 'none',
+          duration: 2000
+        });
+      }
+    });
+  },
+  
 });

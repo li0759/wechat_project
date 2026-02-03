@@ -1,0 +1,182 @@
+.container {
+  padding: 24rpx;
+  padding-top: 24rpx;
+  background-color: #f7f8fa;
+  min-height: 100vh;
+}
+
+/* 主题色定义 */
+:root {
+  --primary-color: rgb(223, 118, 176);
+}
+
+.applications-list {
+  padding-bottom: 30rpx;
+}
+
+.application-item {
+  margin-bottom: 16rpx;
+  border-radius: 12rpx;
+  overflow: hidden;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+  background-color: #fff;
+}
+
+/* 折叠状态的摘要信息 */
+.application-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 24rpx;
+  background-color: #fff;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.application-summary:hover {
+  background-color: #fafbfc;
+}
+
+.summary-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.user-avatar-small {
+  width: 50rpx;
+  height: 50rpx;
+  border-radius: 50%;
+  margin-right: 16rpx;
+  border: 2rpx solid #fff;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.user-name {
+  font-size: 30rpx;
+  font-weight: 500;
+  color: #333;
+}
+
+.summary-right {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+/* 摘要状态样式 */
+.summary-status {
+  font-size: 26rpx;
+  font-weight: bold;
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+/* 摘要按钮样式 */
+.summary-btn {
+  width: 80rpx !important;
+  height: 48rpx !important;
+  font-size: 22rpx !important;
+  flex-shrink: 0;
+}
+
+/* 撤回按钮样式 */
+.withdraw-btn {
+  background-color: rgb(255, 87, 34) !important;
+  border-color: rgb(255, 87, 34) !important;
+}
+
+/* 展开箭头 */
+.expand-arrow {
+  font-size: 32rpx !important;
+  color: #999 !important;
+  margin-left: 12rpx;
+  transition: transform 0.3s ease;
+}
+
+/* 详细信息区域 */
+.application-details {
+  border-top: 1rpx solid #f0f0f0;
+  background-color: #fafbfc;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 500rpx;
+  }
+}
+
+/* 统一cell样式 */
+.van-cell {
+  padding: 12rpx 24rpx !important;
+  font-size: 28rpx;
+  background-color: transparent !important;
+}
+
+.van-cell__title {
+  color: #666 !important;
+  font-size: 26rpx !important;
+  min-width: 120rpx;
+}
+
+.van-cell__value {
+  color: #333 !important;
+  font-size: 28rpx !important;
+  font-weight: 500;
+}
+
+.van-empty {
+  padding: 60rpx 0;
+}
+
+/* 状态颜色 */
+.status-pending {
+  color: #faad14 !important;
+  font-weight: bold;
+}
+
+.status-approved {
+  color: rgb(223, 118, 176) !important;
+  font-weight: bold;
+}
+
+.status-rejected {
+  color: #f5222d !important;
+  font-weight: bold;
+}
+
+/* 添加按钮主题色 */
+.primary-btn {
+  background-color: rgb(223, 118, 176) !important;
+  border-color: rgb(223, 118, 176) !important;
+}
+
+/* 圆角按钮样式 */
+.van-button--round {
+  border-radius: 999rpx !important;
+}
+
+/* 覆盖van-button默认样式 */
+.van-button {
+  font-weight: 500 !important;
+}
+
+/* 禁用样式 */
+.van-button--disabled {
+  opacity: 0.5 !important;
+}
+
+/* 增强视觉层次 */
+.application-item:hover {
+  transform: translateY(-2rpx);
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.12);
+  transition: all 0.3s ease;
+} 

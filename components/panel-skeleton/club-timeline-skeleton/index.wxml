@@ -1,0 +1,49 @@
+<view class="skeleton-container">
+  <!-- 顶部标签和年月显示 -->
+  <view class="skeleton-header">
+    <view class="skeleton-tabs-row">
+      <view class="skeleton-tab-left">
+        <t-skeleton theme="avatar" rowCol="{{[[{width: '100rpx', height: '100rpx', borderRadius: '50%'}]]}}" />
+        <t-skeleton theme="text" rowCol="{{[[{width: '120rpx', height: '28rpx'}]]}}" />
+      </view>
+      <view class="skeleton-date">
+        <t-skeleton theme="text" rowCol="{{[[{width: '180rpx', height: '40rpx'}]]}}" />
+      </view>
+      <view class="skeleton-tab-right">
+        <t-skeleton theme="avatar" rowCol="{{[[{width: '100rpx', height: '100rpx', borderRadius: '50%'}]]}}" />
+        <t-skeleton theme="text" rowCol="{{[[{width: '120rpx', height: '28rpx'}]]}}" />
+      </view>
+    </view>
+  </view>
+
+  <!-- 时间线列表骨架 - 左右两列布局 -->
+  <view class="skeleton-timeline">
+    <!-- 左侧列 -->
+    <view class="skeleton-timeline-column skeleton-column-left">
+      <view class="skeleton-timeline-item" wx:for="{{[1,2,3,4,5]}}" wx:key="*this">
+        <view class="skeleton-item-content">
+          <view class="skeleton-item-image">
+            <t-skeleton theme="rect" rowCol="{{[[{width: '120rpx', height: '120rpx', borderRadius: '12rpx'}]]}}" />
+          </view>
+          <view class="skeleton-item-info">
+            <t-skeleton theme="text" rowCol="{{[[{width: '180rpx', height: '36rpx'}], [{width: '80rpx', height: '28rpx'}], [{width: '140rpx', height: '24rpx'}]]}}" />
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 右侧列 -->
+    <view class="skeleton-timeline-column skeleton-column-right">
+      <view class="skeleton-timeline-item" wx:for="{{[1,2,3,4,5]}}" wx:key="*this">
+        <view class="skeleton-item-content">
+          <view class="skeleton-item-image">
+            <t-skeleton theme="rect" rowCol="{{[[{width: '120rpx', height: '120rpx', borderRadius: '12rpx'}]]}}" />
+          </view>
+          <view class="skeleton-item-info">
+            <t-skeleton theme="text" rowCol="{{[[{width: '180rpx', height: '36rpx'}], [{width: '80rpx', height: '28rpx'}], [{width: '140rpx', height: '24rpx'}]]}}" />
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

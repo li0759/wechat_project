@@ -1,0 +1,29 @@
+{
+  "component": true,
+  "usingComponents": {
+    "van-icon": "@vant/weapp/icon/index",
+    "van-empty": "@vant/weapp/empty/index",
+    "van-button": "@vant/weapp/button/index",
+    "van-tab": "@vant/weapp/tab/index",
+    "van-tabs": "@vant/weapp/tabs/index",
+    "van-popup": "@vant/weapp/popup/index",
+    "van-datetime-picker": "@vant/weapp/datetime-picker/index",
+    "calendar": "/components/calendar/calendar",
+    "t-image": "tdesign-miniprogram/image/image",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-loading": "tdesign-miniprogram/loading/loading",
+    "t-skeleton": "tdesign-miniprogram/skeleton/skeleton",
+    "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",
+    "event-manage-panel": "/packageEvent/components/event-manage-panel/index",
+    "event-manage-skeleton": "/components/panel-skeleton/event-manage-skeleton/index",
+    "event-detail-panel": "/packageEvent/components/event-detail-panel/index",
+    "event-detail-skeleton": "/components/panel-skeleton/event-detail-skeleton/index",
+    "event-joined-panel": "/packageEvent/components/event-joined-panel/index",
+    "event-joined-skeleton": "/components/panel-skeleton/event-joined-skeleton/index"
+  },
+  "componentPlaceholder": {
+    "event-manage-panel": "event-manage-skeleton",
+    "event-detail-panel": "event-detail-skeleton",
+    "event-joined-panel": "event-joined-skeleton"
+  }
+}

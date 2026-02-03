@@ -1,0 +1,193 @@
+<view class="club-joined-panel">
+  <!-- 灰色蒙层 - 当协会被删除时显示 -->
+  <view wx:if="{{club && club.isDelete}}" class="disabled-overlay">
+    <view class="disabled-overlay-content">
+      <t-icon name="info-circle" size="48" color="#fff" />
+      <text class="disabled-overlay-text">协会已删除</text>
+      <text class="disabled-overlay-desc">此页面仅供查看，无法进行操作</text>
+    </view>
+  </view>
+
+  <!-- 主内容 -->
+  <scroll-view 
+    wx:if="{{!isLoading && club}}"
+    class="page-scroll" 
+    scroll-y="{{true}}"
+    bindscrolltolower="onScrollToLower"
+    enhanced="{{true}}"
+  >
+    <!-- 1. 协会基本信息区域 -->
+    <view class="club-info-section">
+      <!-- 会员头像网格 -->
+      <view class="members-grid" wx:if="{{clubMembers.length > 0}}">
+        <view wx:for="{{clubMembers}}" wx:key="user_id" class="member-avatar-item">
+          <t-image 
+            src="{{item.avatar}}" 
+            width="72rpx"
+            height="72rpx"
+            mode="aspectFill"
+            shape="circle"
+            error="default"
+          />
+        </view>
+      </view>
+      
+      <!-- 协会人数 -->
+      <view class="member-count">
+        <t-icon name="usergroup" size="32rpx" color="#666" />
+        <text>{{club.member_count || 0}}人</text>
+      </view>
+    </view>
+
+    <!-- 2. 最近一次活动或当前正在进行的活动 -->
+    <view class="featured-event-section">
+      <!-- 有活动时显示 -->
+      <view wx:if="{{featuredEvent}}" 
+        class="featured-event-card"
+        bindtap="viewEventDetail"
+        data-event-id="{{featuredEvent.event_id}}"
+      >
+        <!-- 地图背景 -->
+        <view class="event-map-bg" wx:if="{{featuredEvent.mapImageUrl}}">
+          <image class="map-bg-image" src="{{featuredEvent.mapImageUrl}}" mode="aspectFill" />
+          <view class="map-fade-left"></view>
+          <view class="map-fade-bottom"></view>
+          <view class="map-fade-corner"></view>
+        </view>
+        
+        <!-- 活动信息内容 -->
+        <view class="event-content">
+          <view class="event-title">{{featuredEvent.title}}</view>
+          <view class="event-desc" wx:if="{{featuredEvent.content}}">{{featuredEvent.content}}</view>
+          
+          <view class="event-meta">
+            <view class="meta-row" wx:if="{{featuredEvent.pre_startTime}}">
+              <t-icon name="time" size="28rpx" color="#666" />
+              <text class="meta-text">{{featuredEvent.pre_startTime}}</text>
+            </view>
+            <view class="meta-row" wx:if="{{featuredEvent.location}}">
+              <t-icon name="location" size="28rpx" color="#666" />
+              <text class="meta-text">{{featuredEvent.location}}</text>
+            </view>
+            <view class="meta-row">
+              <t-icon name="usergroup" size="28rpx" color="#666" />
+              <text class="meta-text">{{featuredEvent.join_count || 0}}人参与</text>
+            </view>
+          </view>
+          
+          <!-- 状态和按钮 -->
+          <view class="event-action-row">
+            <view class="event-status {{featuredEvent.statusClass}}">
+              {{featuredEvent.statusText}}
+            </view>
+            <t-button 
+              wx:if="{{featuredEvent.showButton}}"
+              size="small" 
+              theme="{{featuredEvent.buttonTheme}}" 
+              bindtap="onEventAction"
+              catchtap="onEventAction"
+              data-event-id="{{featuredEvent.event_id}}"
+              data-action="{{featuredEvent.buttonAction}}"
+            >
+              {{featuredEvent.buttonText}}
+            </t-button>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 没有活动时显示占位 -->
+      <view wx:else class="featured-event-placeholder">
+        <t-icon name="calendar" size="80rpx" color="#ddd" />
+        <text class="placeholder-text">暂无最近活动</text>
+      </view>
+    </view>
+
+    <!-- 3. 活动列表 -->
+    <view class="events-list-section">
+      <!-- 活动列表容器 -->
+      <view class="events-container">
+        <!-- 活动列表（包含骨架屏和真实内容） -->
+        <view wx:if="{{eventsList.length > 0}}" class="events-list">
+          <view wx:for="{{eventsList}}" wx:key="event_id" class="event-item">
+            <!-- 骨架屏 -->
+            <view wx:if="{{item.loading}}" class="inline-skeleton-card">
+              <!-- 主内容：左边封面 + 右边信息 -->
+              <view class="inline-skeleton-content">
+                <!-- 左边封面 -->
+                <t-skeleton animation="gradient" rowCol="{{[{ width: '150rpx', height: '150rpx', borderRadius: '8rpx' }]}}" />
+                <!-- 右边信息 -->
+                <view class="inline-skeleton-info">
+                  <!-- 活动标题 -->
+                  <t-skeleton animation="gradient" rowCol="{{[{ width: '200rpx', height: '28rpx', marginBottom: '8rpx' }]}}" />
+                  <!-- 时间信息 -->
+                  <t-skeleton animation="gradient" rowCol="{{[{ width: '180rpx', height: '22rpx', marginBottom: '8rpx' }]}}" />
+                  <!-- 描述 -->
+                  <t-skeleton animation="gradient" rowCol="{{[{ width: '250rpx', height: '22rpx' }]}}" />
+                </view>
+              </view>
+            </view>
+            
+            <!-- 真实内容 -->
+            <view wx:else bind:tap="viewEventDetail" data-event-id="{{item.event_id}}">
+              <!-- 主内容：左边封面 + 右边信息 -->
+              <view class="event-main-content">
+                <!-- 左边：活动封面 -->
+                <view class="event-cover-wrapper">
+                  <t-image 
+                    src="{{item.cover_url_thumb}}" 
+                    width="150rpx" 
+                    height="150rpx" 
+                    mode="aspectFill"
+                    error="default"
+                    style="border-radius: 8rpx;"
+                  />
+                </view>
+                
+                <!-- 右边：活动信息 -->
+                <view class="event-info-wrapper">
+                  <text class="event-title">{{item.title}}</text>
+                  <text class="event-time" wx:if="{{item.actual_startTime}}">
+                    <t-icon name="time" size="24rpx" color="#52c41a" />
+                    实际开始：{{item.actual_startTime}}
+                  </text>
+                  <text class="event-time" wx:else>
+                    <t-icon name="time" size="24rpx" color="#ff6b9d" />
+                    预计开始：{{item.pre_startTime}}
+                  </text>
+                  <text class="event-description">{{item.content}}</text>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+        
+        <!-- 空状态显示 -->
+        <view wx:elif="{{eventsList.length === 0 && eventsEmpty}}" class="empty-state">
+          <t-icon name="calendar" size="120rpx" color="#ddd" />
+          <text class="empty-text">暂无活动</text>
+          <text class="empty-desc">该协会还没有活动哦</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 底部安全距离 -->
+    <view class="bottom-safe-area"></view>
+  </scroll-view>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-actions" wx:if="{{!isLoading && club}}">
+    <view class="action-left">
+      <view class="action-btn secondary" bindtap="viewClubDetail">
+        <t-icon name="info-circle" size="40rpx" color="#666" />
+        <text>协会详情</text>
+      </view>
+    </view>
+    
+    <view class="action-right">
+      <view class="action-btn danger" bindtap="quitClub">
+        <t-icon name="close-circle" size="40rpx" color="#ff4d4f" />
+        <text>退出协会</text>
+      </view>
+    </view>
+  </view>
+</view>

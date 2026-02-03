@@ -1,0 +1,136 @@
+/* components/expandable-container/index.wxss */
+/* 新版：遮罩层 + clip-path弹窗 + 涟漪挖空动画 */
+
+/* 触发器容器 */
+.expandable-wrapper {
+  position: relative;
+  display: inline-block;
+  box-sizing: border-box;
+}
+
+.trigger-content {
+  display: inline-block;
+  position: relative;
+}
+
+/* 全屏灰暗遮罩层 */
+.expandable-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+/* 不使用 root-portal 时的 fixed 定位样式 */
+.expandable-overlay-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.popup-container-fixed {
+  position: fixed;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 弹窗容器 - clip-path控制可见区域 */
+.popup-container {
+  overflow: hidden;
+  will-change: clip-path;
+}
+
+/* 弹窗实际内容 */
+.popup-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* 涟漪遮罩层 - 挡住弹窗内容 */
+.ripple-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--mask-color, #6750A4);
+  z-index: 9999;
+  border-radius: inherit;
+  pointer-events: none;
+  will-change: background;
+}
+
+/* 涟漪展开动画 - 从中心向四边挖空 */
+.ripple-mask.ripple-reveal {
+  animation: rippleReveal 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* 涟漪收缩动画 - 从四边向中心填充 */
+.ripple-mask.ripple-collapse {
+  animation: rippleCollapse 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.ripple-mask.ripple-complete {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 展开：从中心向四边挖空 - 20帧 */
+@keyframes rippleReveal {
+  0% { background: radial-gradient(circle at center, transparent 0%, var(--mask-color) 0%); }
+  5% { background: radial-gradient(circle at center, transparent 5%, var(--mask-color) 5%); }
+  10% { background: radial-gradient(circle at center, transparent 10%, var(--mask-color) 10%); }
+  15% { background: radial-gradient(circle at center, transparent 15%, var(--mask-color) 15%); }
+  20% { background: radial-gradient(circle at center, transparent 20%, var(--mask-color) 20%); }
+  25% { background: radial-gradient(circle at center, transparent 25%, var(--mask-color) 25%); }
+  30% { background: radial-gradient(circle at center, transparent 30%, var(--mask-color) 30%); }
+  35% { background: radial-gradient(circle at center, transparent 35%, var(--mask-color) 35%); }
+  40% { background: radial-gradient(circle at center, transparent 40%, var(--mask-color) 40%); }
+  45% { background: radial-gradient(circle at center, transparent 45%, var(--mask-color) 45%); }
+  50% { background: radial-gradient(circle at center, transparent 50%, var(--mask-color) 50%); }
+  55% { background: radial-gradient(circle at center, transparent 55%, var(--mask-color) 55%); }
+  60% { background: radial-gradient(circle at center, transparent 60%, var(--mask-color) 60%); }
+  65% { background: radial-gradient(circle at center, transparent 65%, var(--mask-color) 65%); }
+  70% { background: radial-gradient(circle at center, transparent 70%, var(--mask-color) 70%); }
+  75% { background: radial-gradient(circle at center, transparent 75%, var(--mask-color) 75%); }
+  80% { background: radial-gradient(circle at center, transparent 80%, var(--mask-color) 80%); }
+  85% { background: radial-gradient(circle at center, transparent 85%, var(--mask-color) 85%); }
+  90% { background: radial-gradient(circle at center, transparent 90%, var(--mask-color) 90%); }
+  95% { background: radial-gradient(circle at center, transparent 95%, var(--mask-color) 95%); }
+  100% { background: radial-gradient(circle at center, transparent 100%, var(--mask-color) 100%); }
+}
+
+/* 收缩：从四边向中心填充 - 20帧 */
+@keyframes rippleCollapse {
+  0% { background: radial-gradient(circle at center, transparent 100%, var(--mask-color) 100%); }
+  5% { background: radial-gradient(circle at center, transparent 95%, var(--mask-color) 95%); }
+  10% { background: radial-gradient(circle at center, transparent 90%, var(--mask-color) 90%); }
+  15% { background: radial-gradient(circle at center, transparent 85%, var(--mask-color) 85%); }
+  20% { background: radial-gradient(circle at center, transparent 80%, var(--mask-color) 80%); }
+  25% { background: radial-gradient(circle at center, transparent 75%, var(--mask-color) 75%); }
+  30% { background: radial-gradient(circle at center, transparent 70%, var(--mask-color) 70%); }
+  35% { background: radial-gradient(circle at center, transparent 65%, var(--mask-color) 65%); }
+  40% { background: radial-gradient(circle at center, transparent 60%, var(--mask-color) 60%); }
+  45% { background: radial-gradient(circle at center, transparent 55%, var(--mask-color) 55%); }
+  50% { background: radial-gradient(circle at center, transparent 50%, var(--mask-color) 50%); }
+  55% { background: radial-gradient(circle at center, transparent 45%, var(--mask-color) 45%); }
+  60% { background: radial-gradient(circle at center, transparent 40%, var(--mask-color) 40%); }
+  65% { background: radial-gradient(circle at center, transparent 35%, var(--mask-color) 35%); }
+  70% { background: radial-gradient(circle at center, transparent 30%, var(--mask-color) 30%); }
+  75% { background: radial-gradient(circle at center, transparent 25%, var(--mask-color) 25%); }
+  80% { background: radial-gradient(circle at center, transparent 20%, var(--mask-color) 20%); }
+  85% { background: radial-gradient(circle at center, transparent 15%, var(--mask-color) 15%); }
+  90% { background: radial-gradient(circle at center, transparent 10%, var(--mask-color) 10%); }
+  95% { background: radial-gradient(circle at center, transparent 5%, var(--mask-color) 5%); }
+  100% { background: radial-gradient(circle at center, transparent 0%, var(--mask-color) 0%); }
+}

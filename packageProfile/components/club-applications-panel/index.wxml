@@ -1,0 +1,99 @@
+<view class="container">
+  <view class="applications-list">
+    <block wx:if="{{allApplications.length > 0}}">
+      <view wx:for="{{allApplications}}" wx:key="index" class="application-item">
+        <!-- 折叠状态的基础信息 -->
+        <view class="application-summary" bind:tap="toggleExpand" data-index="{{index}}">
+          <view class="summary-left">
+            <image class="user-avatar-small" src="{{item.appliced_user_avartor || '/assets/images/default-avatar.png'}}" mode="aspectFill"></image>
+            <view class="user-name">{{item.appliced_user_name}}</view>
+          </view>
+          <view class="summary-right">
+            <!-- 待审批状态显示操作按钮 -->
+            <block wx:if="{{!item.processedDate}}">
+              <van-button 
+                round 
+                color="rgb(223, 118, 176)" 
+                size="mini" 
+                bind:click="showApproveDialog" 
+                data-applicationid="{{item.applicationID}}"
+                custom-class="summary-btn primary-btn"
+                catch:tap="stopPropagation"
+              >批准</van-button>
+              <van-button 
+                round 
+                color="rgb(153, 153, 153)" 
+                size="mini" 
+                bind:click="showRejectDialog" 
+                data-applicationid="{{item.applicationID}}"
+                custom-class="summary-btn"
+                catch:tap="stopPropagation"
+              >拒绝</van-button>
+            </block>
+            <!-- 已处理状态显示状态 -->
+            <view wx:else class="summary-status {{item.approved ? 'status-approved' : 'status-rejected'}}">
+              {{item.approved ? '已批准' : '已拒绝'}}
+            </view>
+            <!-- 展开箭头 -->
+            <van-icon name="{{item.expanded ? 'arrow-up' : 'arrow-down'}}" class="expand-arrow" />
+          </view>
+        </view>
+        
+        <!-- 展开状态的详细信息 -->
+        <view class="application-details" wx:if="{{item.expanded}}">
+          <van-cell-group>
+            <van-cell title="申请时间" value="{{item.applicatedDate}}" />
+            <van-cell title="协会名称" value="{{item.club_name}}" />
+            <block wx:if="{{item.processedDate}}">
+              <van-cell title="处理人" value="{{item.processed_user_name}}" />
+              <van-cell title="处理时间" value="{{item.processedDate}}" />
+              <van-cell wx:if="{{item.opinion}}" title="处理意见" value="{{item.opinion}}" />
+            </block>
+          </van-cell-group>
+        </view>
+      </view>
+    </block>
+    <van-empty wx:else description="暂无申请记录" />
+  </view>
+
+<!-- 批准对话框 -->
+<van-dialog
+  use-slot
+  title="批准申请"
+  show="{{ showApproveDialog }}"
+  show-cancel-button
+  bind:confirm="handleApprove"
+  bind:close="closeDialog"
+  confirm-button-color="rgb(223, 118, 176)"
+>
+  <van-field
+    model:value="{{ approveOpinion }}"
+    placeholder="请输入批准意见（选填）"
+    border="{{ false }}"
+    maxlength="200"
+    type="textarea"
+    autosize
+  />
+</van-dialog>
+
+<!-- 拒绝对话框 -->
+<van-dialog
+  use-slot
+  title="拒绝申请"
+  show="{{ showRejectDialog }}"
+  show-cancel-button
+  bind:confirm="handleReject"
+  bind:close="closeDialog"
+  confirm-button-color="rgb(223, 118, 176)"
+>
+  <van-field
+    model:value="{{ rejectOpinion }}"
+    placeholder="请输入拒绝理由（必填）"
+    border="{{ false }}"
+    maxlength="200"
+    type="textarea"
+    autosize
+    required
+  />
+</van-dialog>
+</view> 

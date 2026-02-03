@@ -116,7 +116,7 @@ Page({
     // 模拟网络延迟
     setTimeout(() => {
       // 过滤匹配的建议
-      const suggestions = this.data.mockSuggestions.filter(item => 
+    const suggestions = this.data.mockSuggestions.filter(item => 
         item.title.toLowerCase().includes(keyword.toLowerCase()) ||
         item.description.toLowerCase().includes(keyword.toLowerCase())
       );
@@ -133,7 +133,7 @@ Page({
     this.addLog(`选择建议: "${value}" (${item.tag})`);
     
     // 根据类型执行不同操作
-    switch (item.extra?.type) {
+  switch (item.extra?.type) {
       case 'user':
         wx.showModal({
           title: '用户详情',

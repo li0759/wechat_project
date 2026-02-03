@@ -1,214 +1,537 @@
 <!--pages/profile/index.wxml-->
 <view class="container">
-  <!-- 头部用户信息 -->
-  <view class="header">
-    <view class="user-card">
-      <image class="avatar" src="{{userInfo.avatar}}" mode="aspectFill"></image>
-      <view class="user-info">
-        <view class="name">{{userInfo.username || '未登录'}}</view>
-        <view class="role">{{userInfo.roles_join}}</view>
-      </view>
-    </view>
-  </view>
-  
-  <!-- 功能列表 -->
-  <view class="function-list">
-    <!-- 普通用户和管理员都有的功能 -->
-    <view class="function-group">
-      <view class="function-title">个人中心</view>
-      <view class="function-grid">
-        <view class="grid-item" bindtap="navigateToUserInfo">
-          <view class="grid-icon">
-            <van-icon name="user-o" size="24px" color="rgb(223, 118, 176)" />
-            <view class="badge" wx:if="{{false}}">0</view>
-          </view>
-          <view class="grid-text">个人信息</view>
-        </view>
-        
-        <view class="grid-item" bindtap="navigateToJoinedClubs">
-          <view class="grid-icon">
-            <van-icon name="friends-o" size="24px" color="rgb(223, 118, 176)" />
-            <view class="badge" wx:if="{{statistics.joinedClubs > 0}}">{{statistics.joinedClubs}}</view>
-          </view>
-          <view class="grid-text">我的协会</view>
-        </view>
-        
-        <view class="grid-item" bindtap="navigateToJoinedEvents">
-          <view class="grid-icon">
-            <van-icon name="calendar-o" size="24px" color="rgb(223, 118, 176)" />
-            <view class="badge" wx:if="{{statistics.joinedEvents > 0}}">{{statistics.joinedEvents}}</view>
-          </view>
-          <view class="grid-text">我的活动</view>
-        </view>
-        
-        <view class="grid-item" bindtap="navigateToApplications">
-          <view class="grid-icon">
-            <van-icon name="records" size="24px" color="rgb(223, 118, 176)" />
-            <view class="badge" wx:if="{{statistics.pendingApplications > 0}}">{{statistics.pendingApplications}}</view>
-          </view>
-          <view class="grid-text">入会申请</view>
-        </view>       
-        
-        <view class="grid-item" bindtap="navigateToPaypersonal">
-          <view class="grid-icon">
-            <van-icon name="balance-pay" size="24px" color="rgb(223, 118, 176)" />
-            <view class="badge" wx:if="{{statistics.unpaidPayments > 0}}">{{statistics.unpaidPayments}}</view>
-          </view>
-          <view class="grid-text">我的缴费</view>
+  <scroll-view scroll-y="true" class="scroll-container">
+    <!-- 头部用户信息 -->
+    <view class="header">
+      <view class="user-card">
+        <image class="avatar" src="{{userInfo.avatar}}" mode="aspectFill"></image>
+        <view class="user-info">
+          <view class="name">{{userInfo.username || '未登录'}}</view>
+          <view class="role">{{userInfo.roles_join}}</view>
         </view>
       </view>
-    </view>
-    
-    <!-- 超级用户特有功能 -->
-    <view class="function-group" wx:if="{{isSuperUser}}">
-      <view class="function-title">超会管理</view>
-      <view class="function-grid">
-        <view class="grid-item" bindtap="navigateToCreateClub">
-          <view class="grid-icon">
-            <van-icon name="add-square" size="24px" color="rgb(223, 118, 176)" />
-            <view class="badge" wx:if="{{false}}">0</view>
-          </view>
-          <view class="grid-text">创建协会</view>
-        </view>
-        
-        <view class="grid-item" bindtap="navigateToEventDataDisplay">
-          <view class="grid-icon">
-            <van-icon name="bar-chart-o" size="24px" color="rgb(223, 118, 176)" />
-            <view class="badge" wx:if="{{false}}">0</view>
-          </view>
-          <view class="grid-text">活动数据</view>
-        </view>
-        
-        <view class="grid-item" bindtap="navigateToUserDataDisplay">
-          <view class="grid-icon">
-            <van-icon name="friends-o" size="24px" color="rgb(223, 118, 176)" />
-            <view class="badge" wx:if="{{false}}">0</view>
-          </view>
-          <view class="grid-text">用户数据</view>
-        </view>
-      </view>
-    </view>
-    
-    <!-- 管理员特有功能 -->
-    <view class="function-group" wx:if="{{isClubAdmin}}">
-      <view class="function-title">管理功能</view>
       
-      <!-- 按社团分组显示管理功能 -->
-      <view wx:for="{{managedClubs}}" wx:key="id" class="club-management-row">
-        <view class="club-title">{{item.club_name}}</view>
-        
-        <!-- 活动跟踪部分，显示未完结活动 -->
-        <view class="event-tracking-section" wx:if="{{item.activities && item.activities_count > 0}}">
-          <view class="tracking-title">活动跟踪</view>
-          <view class="tracking-list">
-            <view class="tracking-item" wx:for="{{item.activities}}" wx:key="id" wx:for-item="event" bindtap="navigateToEventTracking" data-event_id="{{event.event_id}}">
-              <view class="tracking-status status-{{event.status}}"></view>
-              <view class="tracking-info">
-                <view class="tracking-name">{{event.title}}</view>
-                
-                <!-- 新增的活动详情行 -->
-                <view class="tracking-details">
-                  <!-- 开始时间 -->
-                  <view class="tracking-detail-item">
-                    <van-icon name="clock-o" size="18px" color="rgb(223, 118, 176)" />
-                    <text>{{event.is_started ? '已开始' : event.start_time}}</text>
-                  </view>
-              
-                  <!-- 打卡人数 -->
-                  <view class="tracking-detail-item">
-                    <van-icon name="success" size="18px" color="rgb(223, 118, 176)" />
-                    <text>{{event.checkin_count || 0}}人</text>
-                  </view>
-                  <!-- 分隔斜杠 -->
-                  <text class="slash">/</text>
-                  <!-- 参加人数 -->
-                  <view class="tracking-detail-item">
-                    <van-icon name="friends-o" size="18px" color="rgb(223, 118, 176)" />
-                    <text>{{event.participant_count || 0}}人</text>
-                  </view>
-                </view>
-              </view>
-
+      <!-- 添加统计信息 -->
+      <view class="statistics">
+        <view class="stat-item">
+          <view class="stat-num">{{statistics.joinedClubs}}</view>
+          <view class="stat-label">协会</view>
+          <!-- 添加分隔线元素 -->
+          <view class="stat-item-divider"></view>
+        </view>
+        <view class="stat-item">
+          <view class="stat-num">{{statistics.joinedEvents}}</view>
+          <view class="stat-label">活动</view>
+          <!-- 添加分隔线元素 -->
+          <view class="stat-item-divider"></view>
+        </view>
+        <view class="stat-item">
+          <view class="stat-num">{{statistics.unpaidPayments}}</view>
+          <view class="stat-label">待缴费</view>
+          <!-- 添加分隔线元素 -->
+          <view class="stat-item-divider"></view>
+        </view>
+      </view>
+    </view>
+ 
+    <!-- 功能列表 -->
+    <view class="function-list">
+      <!-- 普通用户和管理员都有的功能 -->
+      <view class="function-group">
+        <view class="function-title">个人中心</view>
+        <view class="function-grid">
+          <view class="grid-item {{activeGridItem === 0 ? 'grid-item-active' : ''}}" 
+                bindtap="navigateToUserInfo" 
+                bindtouchstart="handleGridItemTouchStart" 
+                bindtouchend="handleGridItemTouchEnd" 
+                data-index="0">
+            <view class="grid-icon">
+              <van-icon name="user-o" size="24px" color="rgb(223, 118, 176)" />
+              <view class="badge" wx:if="{{false}}">0</view>
             </view>
+            <view class="grid-text">个人信息</view>
+          </view>
+          
+          <view class="grid-item {{activeGridItem === 1 ? 'grid-item-active' : ''}}" 
+                bindtap="navigateToJoinedClubs" 
+                bindtouchstart="handleGridItemTouchStart" 
+                bindtouchend="handleGridItemTouchEnd" 
+                data-index="1">
+            <view class="grid-icon">
+              <van-icon name="friends-o" size="24px" color="rgb(223, 118, 176)" />
+              <view class="badge" wx:if="{{statistics.joinedClubs > 0}}">{{statistics.joinedClubs}}</view>
+            </view>
+            <view class="grid-text">我的协会</view>
+          </view>
+          
+          <view class="grid-item {{activeGridItem === 2 ? 'grid-item-active' : ''}}" 
+                bindtap="navigateToMyApplications" 
+                bindtouchstart="handleGridItemTouchStart" 
+                bindtouchend="handleGridItemTouchEnd" 
+                data-index="2">
+            <view class="grid-icon">
+              <van-icon name="records" size="24px" color="rgb(223, 118, 176)" />
+              <view class="badge" wx:if="{{statistics.pendingApplications > 0}}">{{statistics.pendingApplications}}</view>
+            </view>
+            <view class="grid-text">入会申请</view>
+          </view>
+          
+          <view class="grid-item {{activeGridItem === 3 ? 'grid-item-active' : ''}}" 
+                bindtap="navigateToPaypersonal" 
+                bindtouchstart="handleGridItemTouchStart" 
+                bindtouchend="handleGridItemTouchEnd" 
+                data-index="3">
+            <view class="grid-icon">
+              <van-icon name="balance-pay" size="24px" color="rgb(223, 118, 176)" />
+              <view class="badge" wx:if="{{statistics.unpaidPayments > 0}}">{{statistics.unpaidPayments}}</view>
+            </view>
+            <view class="grid-text">我的缴费</view>
           </view>
         </view>
-        
+      </view>
+
+      <!-- 我的活动栏 -->
+      <view class="function-group">
+        <view class="function-title-row">
+          <view class="function-title">我的活动</view>
+          <view class="title-action" bindtap="navigateToMyEvents" data-type="all">
+            <t-icon name="view-list" size="20px" color="rgb(223, 118, 176)" />
+          </view>
+        </view>
         <view class="function-grid">
-          <view class="grid-item" bindtap="navigateToClubmanage" data-club_id="{{item.club_id}}">
+          <view class="grid-item {{activeGridItem === 10 ? 'grid-item-active' : ''}}" 
+                bindtap="navigateToMyEvents" 
+                bindtouchstart="handleGridItemTouchStart" 
+                bindtouchend="handleGridItemTouchEnd" 
+                data-type="prego"
+                data-index="10">
             <view class="grid-icon">
-              <van-icon name="cluster-o" size="24px" color="rgb(223, 118, 176)" />
-              <view class="badge" wx:if="{{false}}">0</view>
+              <t-icon name="calendar-event" size="24px" color="rgb(223, 118, 176)" />
+              <view class="badge" wx:if="{{statistics.pregoEvents > 0}}">{{statistics.pregoEvents}}</view>
             </view>
-            <view class="grid-text">管理协会</view>
+            <view class="grid-text">预计开始</view>
           </view>
           
-          <view class="grid-item" bindtap="navigateToClubMembers" data-club_id="{{item.club_id}}">
+          <view class="grid-item {{activeGridItem === 11 ? 'grid-item-active' : ''}}" 
+                bindtap="navigateToMyEvents" 
+                bindtouchstart="handleGridItemTouchStart" 
+                bindtouchend="handleGridItemTouchEnd" 
+                data-type="going"
+                data-index="11">
             <view class="grid-icon">
-              <van-icon name="manager-o" size="24px" color="rgb(223, 118, 176)" />
-              <view class="badge" wx:if="{{false}}">0</view>
+              <t-icon name="cardmembership" size="24px" color="rgb(223, 118, 176)" />
+              <view class="badge" wx:if="{{statistics.goingEvents > 0}}">{{statistics.goingEvents}}</view>
             </view>
-            <view class="grid-text">成员管理</view>
+            <view class="grid-text">正在进行</view>
           </view>
           
-          <view class="grid-item" bindtap="navigateToCreateEvent" data-club_id="{{item.club_id}}">
+          <view class="grid-item {{activeGridItem === 12 ? 'grid-item-active' : ''}}" 
+                bindtap="navigateToMyEvents" 
+                bindtouchstart="handleGridItemTouchStart" 
+                bindtouchend="handleGridItemTouchEnd" 
+                data-type="ended"
+                data-index="12">
+            <view class="grid-icon">
+              <t-icon name="calendar-2" size="24px" color="rgb(223, 118, 176)" />
+              <view class="badge" wx:if="{{statistics.endedEvents > 0}}">{{statistics.endedEvents}}</view>
+            </view>
+            <view class="grid-text">已结束</view>
+          </view>
+          
+          <view class="grid-item {{activeGridItem === 13 ? 'grid-item-active' : ''}}" 
+                bindtap="navigateToMyEvents" 
+                bindtouchstart="handleGridItemTouchStart" 
+                bindtouchend="handleGridItemTouchEnd" 
+                data-type="quit"
+                data-index="13">
+            <view class="grid-icon">
+              <t-icon name="close-rectangle" size="24px" color="rgb(223, 118, 176)" />
+            </view>
+            <view class="grid-text">已退出</view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 我管理的活动栏 (Task 8.1) -->
+      <view class="function-group" wx:if="{{isClubAdmin}}">
+        <view class="function-title-row">
+          <view class="function-title">我管理的活动</view>
+          <view class="title-action" bindtap="showAllManagedEvents">
+            <t-icon name="view-list" size="20px" color="rgb(223, 118, 176)" />
+          </view>
+        </view>
+        <view class="function-grid">
+          <view class="grid-item {{activeGridItem === 20 ? 'grid-item-active' : ''}}" 
+                bindtap="showPregoEvents" 
+                bindtouchstart="handleGridItemTouchStart" 
+                bindtouchend="handleGridItemTouchEnd" 
+                data-index="20">
+            <view class="grid-icon">
+              <t-icon name="calendar-event" size="24px" color="rgb(223, 118, 176)" />
+              <view class="badge" wx:if="{{statistics.managedPregoEvents > 0}}">{{statistics.managedPregoEvents}}</view>
+            </view>
+            <view class="grid-text">预计开始</view>
+          </view>
+          
+          <view class="grid-item {{activeGridItem === 21 ? 'grid-item-active' : ''}}" 
+                bindtap="showGoingEvents" 
+                bindtouchstart="handleGridItemTouchStart" 
+                bindtouchend="handleGridItemTouchEnd" 
+                data-index="21">
+            <view class="grid-icon">
+              <t-icon name="cardmembership" size="24px" color="rgb(223, 118, 176)" />
+              <view class="badge" wx:if="{{statistics.managedGoingEvents > 0}}">{{statistics.managedGoingEvents}}</view>
+            </view>
+            <view class="grid-text">正在进行</view>
+          </view>
+          
+          <view class="grid-item {{activeGridItem === 22 ? 'grid-item-active' : ''}}" 
+                bindtap="showEndedEvents" 
+                bindtouchstart="handleGridItemTouchStart" 
+                bindtouchend="handleGridItemTouchEnd" 
+                data-index="22">
+            <view class="grid-icon">
+              <t-icon name="calendar-2" size="24px" color="rgb(223, 118, 176)" />
+            </view>
+            <view class="grid-text">已结束</view>
+          </view>
+          
+          <view class="grid-item {{activeGridItem === 23 ? 'grid-item-active' : ''}}" 
+                bindtap="showCancelledEvents" 
+                bindtouchstart="handleGridItemTouchStart" 
+                bindtouchend="handleGridItemTouchEnd" 
+                data-index="23">
+            <view class="grid-icon">
+              <t-icon name="close-rectangle" size="24px" color="rgb(223, 118, 176)" />
+            </view>
+            <view class="grid-text">已取消</view>
+          </view>
+          
+          <view class="grid-item {{activeGridItem === 25 ? 'grid-item-active' : ''}}" 
+                bindtouchstart="onCreatePopupTouchStart" 
+                bindtouchend="navigateToCreateEvent" 
+                data-type="event-create"
+                data-index="25">
             <view class="grid-icon">
               <van-icon name="add-o" size="24px" color="rgb(223, 118, 176)" />
-              <view class="badge" wx:if="{{false}}">0</view>
             </view>
             <view class="grid-text">创建活动</view>
           </view>
-          
-          <view class="grid-item" bindtap="navigateToClubApplications" data-club_id="{{item.club_id}}">
-            <view class="grid-icon">
-              <van-icon name="description" size="24px" color="rgb(223, 118, 176)" />
-              <view class="badge" wx:if="{{item.pending_applications > 0}}">{{item.pending_applications}}</view>
-            </view>
-            <view class="grid-text">入会审批</view>
-          </view>
-          <view class="grid-item" bindtap="navigateToClubEvent" data-club_id="{{item.club_id}}" data-club_name="{{item.club_name}}">
-            <view class="grid-icon">
-              <van-icon name="calendar-o" size="24px" color="rgb(223, 118, 176)" />
-              <view class="badge"  wx:if="{{item.activities_count > 0}}">{{item.activities_count}}</view>
-            </view>
-            <view class="grid-text">活动管理</view>
-          </view>
-          <view class="grid-item" bindtap="navigateToClubTimeline" data-club_id="{{item.club_id}}">
-            <view class="grid-icon">
-              <van-icon name="balance-list-o" size="24px" color="rgb(223, 118, 176)" />
-              <view class="badge" wx:if="{{false}}">0</view>
-            </view>
-            <view class="grid-text">协会收支</view>
-          </view>
         </view>
-        <view class="club-divider" wx:if="{{index < managedClubs.length - 1}}"></view>
       </view>
       
-      <!-- 如果没有管理的协会 -->
-      <view class="no-clubs" wx:if="{{managedClubs.length === 0}}">
-        <view>您目前没有管理的协会</view>
+      <!-- 超级用户特有功能 -->
+      <view class="function-group" wx:if="{{userInfo.isSuperUser}}">
+        <view class="function-title">超会管理</view>
+        <view class="function-grid">
+          <view class="grid-item" bindtouchstart="onCreatePopupTouchStart" bindtouchend="navigateToCreateClub" data-type="club-create">
+            <view class="grid-icon">
+              <van-icon name="add-square" size="24px" color="rgb(223, 118, 176)" />
+              <view class="badge" wx:if="{{false}}">0</view>
+            </view>
+            <view class="grid-text">创建协会</view>
+          </view>
+
+          <view class="grid-item" bindtap="navigateToAllClubs">
+            <view class="grid-icon">
+              <van-icon name="friends-o" size="24px" color="rgb(223, 118, 176)" />
+              <view class="badge" wx:if="{{false}}">0</view>
+            </view>
+            <view class="grid-text">所有协会</view>
+          </view>
+
+          <view class="grid-item" bindtap="navigateToShowAllClubsEvents">
+            <view class="grid-icon">
+              <van-icon name="bar-chart-o" size="24px" color="rgb(223, 118, 176)" />
+              <view class="badge" wx:if="{{false}}">0</view>
+            </view>
+            <view class="grid-text">活动数据</view>
+          </view>
+          
+          <view class="grid-item" bindtap="navigateToShowAllClubsUsers">
+            <view class="grid-icon">
+              <van-icon name="friends-o" size="24px" color="rgb(223, 118, 176)" />
+              <view class="badge" wx:if="{{false}}">0</view>
+            </view>
+            <view class="grid-text">用户数据</view>
+          </view>
+        </view>
       </view>
-    </view>
-    
-    <!-- 系统功能 -->
-    <view class="function-group">
-      <view class="function-title">系统</view>
-      <view class="function-items">
-        <view class="function-item" bindtap="navigateToSettings">
-          <view class="item-icon"><van-icon name="setting-o" size="24px" color="#757575" /></view>
-          <view class="item-text">设置</view>
-          <view class="item-arrow"><van-icon name="arrow" /></view>
+      
+      <!-- 管理员特有功能 -->
+      <view class="function-group" wx:if="{{isClubAdmin}}">
+        <view class="function-title">管理功能</view>
+        
+        <!-- 按协会分组显示管理功能 -->
+        <view wx:for="{{managedClubs}}" wx:key="id" class="club-management-row">
+          <view class="club-title">{{item.club_name}}</view>
+          
+          <view class="function-grid">
+            <view class="grid-item" 
+              bindtouchstart="onManagePopupTouchStart" 
+              bindtouchend="openManagePopup" 
+              data-popup-type="club-manage" 
+              data-popup-id="{{item.club_id}}">
+              <view class="grid-icon">
+                <van-icon name="cluster-o" size="24px" color="rgb(223, 118, 176)" />
+                <view class="badge" wx:if="{{false}}">0</view>
+              </view>
+              <view class="grid-text">管理协会</view>
+            </view>
+            <view class="grid-item" bindtap="navigateToShowClubEvents" data-club_id="{{item.club_id}}">
+              <view class="grid-icon">
+                <van-icon name="bar-chart-o" size="24px" color="rgb(223, 118, 176)" />
+                <view class="badge" wx:if="{{false}}">0</view>
+              </view>
+              <view class="grid-text">活动统计</view>
+            </view>        
+            <view class="grid-item" bindtap="navigateToClubMembers" data-club_id="{{item.club_id}}">
+              <view class="grid-icon">
+                <van-icon name="manager-o" size="24px" color="rgb(223, 118, 176)" />
+                <view class="badge" wx:if="{{false}}">0</view>
+              </view>
+              <view class="grid-text">成员管理</view>
+            </view>
+            
+            <view class="grid-item" bindtap="navigateToClubApplications" data-club_id="{{item.club_id}}">
+              <view class="grid-icon">
+                <van-icon name="description" size="24px" color="rgb(223, 118, 176)" />
+                <view class="badge" wx:if="{{item.pending_applications > 0}}">{{item.pending_applications}}</view>
+              </view>
+              <view class="grid-text">入会审批</view>
+            </view>
+            <view class="grid-item" bindtap="navigateToClubTimeline" data-club_id="{{item.club_id}}">
+              <view class="grid-icon">
+                <van-icon name="balance-list-o" size="24px" color="rgb(223, 118, 176)" />
+                <view class="badge" wx:if="{{false}}">0</view>
+              </view>
+              <view class="grid-text">协会收支</view>
+            </view>
+            
+            <view class="grid-item" bindtap="navigateToClubFinancial" data-club_id="{{item.club_id}}" data-club_name="{{item.club_name}}">
+              <view class="grid-icon">
+                <van-icon name="chart-trending-o" size="24px" color="rgb(223, 118, 176)" />
+                <view class="badge" wx:if="{{false}}">0</view>
+              </view>
+              <view class="grid-text">收支统计</view>
+            </view>
+          </view>
+          <view class="club-divider" wx:if="{{index < managedClubs.length - 1}}"></view>
         </view>
-        <view class="function-item" bindtap="navigateToAbout">
-          <view class="item-icon"><van-icon name="info-o" size="24px" color="#757575" /></view>
-          <view class="item-text">关于</view>
-          <view class="item-arrow"><van-icon name="arrow" /></view>
+        
+        <!-- 如果没有管理的协会 -->
+        <view class="no-clubs" wx:if="{{managedClubs.length === 0}}">
+          <view>您目前没有管理的协会</view>
         </view>
-        <view class="function-item logout" bindtap="handleLogout">
+      </view>
+      
+      <!-- 系统功能 -->
+      <view class="function-group">
+        <view class="function-item logout {{activeFunctionItem === 2 ? 'function-item-active' : ''}}" 
+              bindtap="handleLogout" 
+              bindtouchstart="handleFunctionItemTouchStart" 
+              bindtouchend="handleFunctionItemTouchEnd" 
+              data-index="2" 
+              list-item>
           <view class="item-icon"><van-icon name="close" size="24px" color="#ff5252" /></view>
           <view class="item-text">退出登录</view>
-          <view class="item-arrow"><van-icon name="arrow" /></view>
         </view>
       </view>
     </view>
-  </view>
+  </scroll-view>
+
+  <!-- 全局全屏弹窗 - 统一管理所有 panel -->
+  <expandable-container_fullscreen 
+    wx:if="{{globalPopup.visible}}"
+    id="globalFullscreenPopup"
+    bg-color="{{globalPopup.bgColor}}"
+    fullscreen-sheet-bg-color="{{globalPopup.sheetBgColor}}"
+    fullscreen-top-padding="{{0}}"
+    bind:collapse="onGlobalPopupCollapse"
+    bind:contentReady="onGlobalPopupContentReady"
+  >
+    <view slot="trigger"></view>
+    <view slot="content" class="popup-content-wrapper" style="border-radius: 30px 30px; overflow: hidden;">
+      <!-- 骨架屏 - 覆盖在 panel 上面 -->
+      <view wx:if="{{globalPopup.loading}}" style="position: absolute; top: 30rpx; left: 0; right: 0; bottom: 0; z-index: 999; background: #ffffff;">
+        <club-create-skeleton wx:if="{{globalPopup.type === 'club-create'}}" />
+        <event-create-skeleton wx:if="{{globalPopup.type === 'event-create'}}" />
+        <event-manage-skeleton wx:if="{{globalPopup.type === 'event-manage'}}" />
+        <event-manage-skeleton wx:if="{{globalPopup.type === 'event-joined'}}" />
+        <club-manage-skeleton wx:if="{{globalPopup.type === 'club-manage'}}" />
+        <club-members-skeleton wx:if="{{globalPopup.type === 'club-members'}}" />
+        <events-skeleton wx:if="{{globalPopup.type === 'events'}}" />
+        <clubs-skeleton wx:if="{{globalPopup.type === 'clubs'}}" />
+        <club-applications-skeleton wx:if="{{globalPopup.type === 'club-applications'}}" />
+        <my-applications-skeleton wx:if="{{globalPopup.type === 'my-applications'}}" />
+        <all-club-events-skeleton wx:if="{{globalPopup.type === 'all-club-events'}}" />
+        <all-club-users-skeleton wx:if="{{globalPopup.type === 'all-club-users'}}" />
+        <club-events-skeleton wx:if="{{globalPopup.type === 'club-events'}}" />
+        <club-timeline-skeleton wx:if="{{globalPopup.type === 'club-timeline'}}" />
+        <club-financial-skeleton wx:if="{{globalPopup.type === 'club-financial'}}" />
+        <paypersonal-skeleton wx:if="{{globalPopup.type === 'paypersonal'}}" />
+        <user-info-skeleton wx:if="{{globalPopup.type === 'user-info'}}" />
+      </view>
+
+      <!-- 真实 panel 组件 - 延迟渲染 -->
+      <block wx:if="{{globalPopup.renderPanel}}">
+        <!-- Club Create Panel -->
+        <club-create-panel
+          wx:if="{{globalPopup.type === 'club-create'}}"
+          id="clubCreatePanel"
+          bind:loaded="onGlobalPopupLoaded"
+          bind:create-success="onPanelCreateSuccess"
+          bind:create-error="onPanelCreateError"
+          bind:close="closeGlobalPopup"
+        />
+
+        <!-- Event Create Panel -->
+        <event-create-panel
+          wx:if="{{globalPopup.type === 'event-create'}}"
+          id="eventCreatePanel"
+          club-id="{{globalPopup.clubId}}"
+          bind:loaded="onGlobalPopupLoaded"
+          bind:create-success="onPanelCreateSuccess"
+          bind:create-error="onPanelCreateError"
+          bind:close="closeGlobalPopup"
+        />
+
+        <!-- Event Manage Panel -->
+        <event-manage-panel 
+          wx:if="{{globalPopup.type === 'event-manage'}}"
+          id="profileEventManagePanel" 
+          event-id="{{globalPopup.id}}" 
+          bind:update="onManagePanelUpdate"
+          bind:loaded="onGlobalPopupLoaded"
+        />
+
+        <!-- Event Joined Panel -->
+        <event-joined-panel 
+          wx:if="{{globalPopup.type === 'event-joined'}}"
+          id="profileEventJoinedPanel" 
+          event-id="{{globalPopup.id}}" 
+          bind:update="onManagePanelUpdate"
+          bind:loaded="onGlobalPopupLoaded"
+        />
+
+        <!-- Club Manage Panel -->
+        <club-manage-panel 
+          wx:if="{{globalPopup.type === 'club-manage'}}"
+          id="profileClubManagePanel" 
+          club-id="{{globalPopup.id}}" 
+          bind:update="onManagePanelUpdate" 
+          bind:dissolved="onClubDissolved"
+          bind:loaded="onGlobalPopupLoaded"
+        />
+
+        <!-- Club Members Panel -->
+        <club-members-panel 
+          wx:if="{{globalPopup.type === 'club-members'}}"
+          id="clubMembersPanel" 
+          club-id="{{globalPopup.id}}" 
+          bind:loaded="onGlobalPopupLoaded"
+          bind:close="closeGlobalPopup"
+        />
+
+        <!-- Events Panel (通用：我的活动 / 协会活动管理) -->
+        <events-panel 
+          wx:if="{{globalPopup.type === 'events'}}"
+          id="eventsPanel" 
+          requestUrl="{{globalPopup.data.requestUrl}}" 
+          bind:loaded="onGlobalPopupLoaded"
+          bind:update="onEventsPanelUpdate"
+          bind:close="closeGlobalPopup"
+        />
+
+        <!-- Clubs Panel (通用：我的协会 / 所有协会) -->
+        <clubs-panel 
+          wx:if="{{globalPopup.type === 'clubs'}}"
+          id="clubsPanel" 
+          requestUrl="{{globalPopup.data.requestUrl}}" 
+          bind:loaded="onGlobalPopupLoaded"
+          bind:close="closeGlobalPopup"
+        />
+
+        <!-- Club Applications Panel -->
+        <club-applications-panel 
+          wx:if="{{globalPopup.type === 'club-applications'}}"
+          id="clubApplicationsPanel" 
+          clubId="{{globalPopup.data.clubId}}" 
+          bind:loaded="onGlobalPopupLoaded"
+          bind:update="onManagePanelUpdate"
+          bind:close="closeGlobalPopup"
+        />
+
+        <!-- My Applications Panel -->
+        <my-applications-panel 
+          wx:if="{{globalPopup.type === 'my-applications'}}"
+          id="myApplicationsPanel" 
+          bind:loaded="onGlobalPopupLoaded"
+          bind:update="onManagePanelUpdate"
+          bind:close="closeGlobalPopup"
+        />
+
+        <!-- All Club Events Panel (活动数据) -->
+        <all-club-events-panel 
+          wx:if="{{globalPopup.type === 'all-club-events'}}"
+          id="allClubEventsPanel" 
+          bind:loaded="onGlobalPopupLoaded"
+          bind:close="closeGlobalPopup"
+        />
+
+        <!-- All Club Users Panel (用户数据) -->
+        <all-club-users-panel 
+          wx:if="{{globalPopup.type === 'all-club-users'}}"
+          id="allClubUsersPanel" 
+          bind:loaded="onGlobalPopupLoaded"
+          bind:close="closeGlobalPopup"
+        />
+
+        <!-- Club Events Panel (活动统计) -->
+        <club-events-panel 
+          wx:if="{{globalPopup.type === 'club-events'}}"
+          id="clubEventsPanel" 
+          clubId="{{globalPopup.data.clubId}}" 
+          bind:loaded="onGlobalPopupLoaded"
+          bind:close="closeGlobalPopup"
+        />
+
+        <!-- Club Timeline Panel (协会收支) -->
+        <club-timeline-panel 
+          wx:if="{{globalPopup.type === 'club-timeline'}}"
+          id="clubTimelinePanel" 
+          clubId="{{globalPopup.data.clubId}}" 
+          bind:loaded="onGlobalPopupLoaded"
+          bind:close="closeGlobalPopup"
+        />
+
+        <!-- Club Financial Panel (收支统计) -->
+        <club-financial-panel 
+          wx:if="{{globalPopup.type === 'club-financial'}}"
+          id="clubFinancialPanel" 
+          clubId="{{globalPopup.data.clubId}}" 
+          bind:loaded="onGlobalPopupLoaded"
+          bind:close="closeGlobalPopup"
+        />
+
+        <!-- Paypersonal Panel (我的缴费) -->
+        <paypersonal-panel 
+          wx:if="{{globalPopup.type === 'paypersonal'}}"
+          id="paypersonalPanel" 
+          bind:loaded="onGlobalPopupLoaded"
+          bind:close="closeGlobalPopup"
+        />
+
+        <!-- User Info Panel (个人信息) -->
+        <user-info-panel 
+          wx:if="{{globalPopup.type === 'user-info'}}"
+          id="userInfoPanel" 
+          user-id="{{globalPopup.id}}" 
+          bind:loaded="onGlobalPopupLoaded"
+          bind:update="onUserInfoPanelUpdate"
+          bind:close="closeGlobalPopup"
+        />
+      </block>
+    </view>
+  </expandable-container_fullscreen>
 </view>

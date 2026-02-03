@@ -1,19 +1,33 @@
 # SearchSuggest 搜索建议组件
 
-一个功能完整的搜索建议组件，支持自动补全、搜索历史、防抖搜索等功能。
+一个功能完整的搜索建议组件，基于 **TDesign** 组件库构建，支持自动补全、搜索历史、防抖搜索等功能。
 
 ## 功能特色
 
 - 🔍 **智能搜索**：支持实时搜索建议和自动补全
 - 📝 **搜索历史**：自动保存和管理搜索历史记录
 - ⚡ **防抖优化**：避免频繁请求，提升性能
-- 🎨 **美观界面**：现代化设计，支持多种主题
+- 🎨 **TDesign设计**：基于TDesign组件库，界面现代化统一
 - 📱 **响应式**：适配不同屏幕尺寸
 - 🔧 **高度可配置**：丰富的配置选项
 
+## 技术栈
+
+- **UI组件库**: TDesign Miniprogram
+- **主要组件**: t-icon, t-cell, t-cell-group, t-loading, t-tag, t-button, t-empty
+- **渲染引擎**: Skyline (Glass-Easel)
+
 ## 安装使用
 
-### 1. 引入组件
+### 1. 环境要求
+
+确保项目中已安装 TDesign Miniprogram：
+
+```bash
+npm install tdesign-miniprogram
+```
+
+### 2. 引入组件
 
 在页面的 `.json` 文件中引入组件：
 
@@ -25,14 +39,37 @@
 }
 ```
 
-### 2. 基础用法
+### 3. 基础用法
 
 ```html
 <!-- 基础搜索框 -->
 <search-suggest 
   placeholder="搜索用户、协会..."
+  themeColor="#ff6b9d"
+  shape="round"
   bind:search="onSearch"
   bind:fetchSuggestions="onFetchSuggestions"
+/>
+```
+
+### 4. 完整用法示例
+
+```html
+<!-- 完整功能搜索框 -->
+<search-suggest 
+  id="userSearchSuggest"
+  placeholder="搜索用户姓名、手机号、邮箱..."
+  themeColor="#ff6b9d"
+  shape="round"
+  enableAutocomplete="{{true}}"
+  showHistory="{{true}}"
+  maxSuggestions="{{8}}"
+  debounceTime="{{300}}"
+  minSearchLength="{{1}}"
+  bind:search="onUserSearch"
+  bind:fetchSuggestions="onFetchUserSuggestions"
+  bind:select="onSelectUserSuggestion"
+  bind:historySelect="onUserHistorySelect"
 />
 ```
 

@@ -1,0 +1,63 @@
+<view class="isotope-container" style="width: {{width}}; height: {{computedHeight || height}}; position: relative; background: {{backgroundColor || background}};">
+  <!-- 图片层 -->
+  <view
+    wx:for="{{itemsWithPosition}}"
+    wx:key="id"
+    class="isotope-item-wrapper {{item._isPending ? 'isotope-item-pending' : ''}} {{item.status ? 'isotope-item-status-' + item.status : ''}}"
+    style="position: absolute; left: {{item.x}}rpx; top: {{item.y}}rpx; width: {{item.width}}rpx; height: {{item.height + (showLabel ? labelHeight : 0)}}rpx; transition: {{item._noTransition ? 'none' : 'all ' + transitionDuration}}; opacity: {{item.opacity !== undefined ? item.opacity : (item.loaded ? 1 : 0)}}; transform: translate3d({{item.translateX || 0}}rpx, {{item.translateY || 0}}rpx, 0);"
+    bindtouchstart="onItemTouchStart"
+    bindtouchend="onItemTouchEnd"
+    data-index="{{index}}"
+    data-id="{{item.id}}"
+    data-item="{{item}}"
+  >
+    <!-- 图片区域 -->
+    <view class="isotope-item-image" style="width: 100%; height: {{item.height}}rpx; {{imageStyleStr ? imageStyleStr + ';' : ''}} {{item._isPending ? 'border: 4rpx solid rgba(0,0,0,0.28); box-sizing: border-box;' : ''}} overflow: hidden; position: relative;">
+      <t-image
+        wx:if="{{!hideImages && !item.error}}"
+        class="isotope-item"
+        style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;"
+        src="{{item.image}}"
+        mode="aspectFill"
+        data-index="{{index}}"
+        data-id="{{item.id}}"
+        bindload="onImageLoad"
+        binderror="onImageError"
+        lazy="{{true}}"
+      />
+      <!-- 加载失败时显示默认图片 -->
+      <image
+        wx:if="{{!hideImages && item.error}}"
+        class="isotope-item"
+        style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;"
+        src="{{defaultAvatarUrl}}"
+        mode="aspectFill"
+      />
+      <!-- 待审批成员的时钟图标 -->
+      <view wx:if="{{item._isPending}}" class="isotope-pending-clock">
+        <t-icon name="time" size="16" color="#fff" />
+      </view>
+    </view>
+    <!-- 快速操作按钮：移到图片容器外面，避免被 overflow: hidden 切割 -->
+    <view 
+      wx:if="{{item.quickActionBtn}}" 
+      class="isotope-quick-btn {{item.quickActionBtn.className}}"
+      catchtap="onQuickActionTap"
+      catchtouchend="noop"
+      data-item="{{item}}"
+    >
+      <t-icon 
+        name="{{item.quickActionBtn.icon}}" 
+        size="{{item.quickActionBtn.size || 18}}" 
+        color="{{item.quickActionBtn.color || '#fff'}}" 
+      />
+    </view>
+    <!-- 标签区域 -->
+    <view 
+      wx:if="{{showLabel && item.label}}" 
+      class="isotope-item-label"
+      style="width: 100%; height: {{labelHeight}}rpx; {{labelStyleStr}}"
+    >{{item.label}}</view>
+  </view>
+</view>
+

@@ -1,0 +1,202 @@
+/* Panel容器 */
+.club-panel-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #f7f8fa;
+}
+
+/* 协会列表滚动区域 */
+.clubs-scroll {
+  flex: 1;
+  height: 100vh;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* 协会容器 */
+.clubs-container {
+  padding: 24rpx;
+  padding-top: 24rpx;
+  min-height: 60vh;
+}
+
+/* 协会列表 */
+.clubs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+/* 协会项 */
+.club-item {
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 16rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+}
+
+/* 协会上部分：协会名称 */
+.club-name-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+  padding-bottom: 8rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.club-name {
+  font-size: 24rpx;
+  color: #666;
+  font-weight: 500;
+}
+
+/* 协会下部分：左边封面 + 右边信息 */
+.club-main-content {
+  display: flex;
+  gap: 12rpx;
+}
+
+.club-cover-wrapper {
+  flex-shrink: 0;
+}
+
+.club-info-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+  justify-content: flex-start;
+}
+
+.club-title {
+  font-size: 28rpx;
+  line-height: 1.3;
+  color: #333;
+  font-weight: 600;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.club-president {
+  font-size: 22rpx;
+  color: #999;
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.club-description {
+  font-size: 22rpx;
+  color: #999;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 协会状态标签 */
+.club-status {
+  display: flex;
+  gap: 8rpx;
+}
+
+.status-tag {
+  padding: 6rpx 12rpx;
+  border-radius: 16rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+  color: white;
+}
+
+.status-tag.deleted {
+  background: #999;
+}
+
+/* 灰色蒙层效果 */
+.club-item {
+  position: relative;
+}
+
+.club-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.club-overlay text {
+  color: white;
+  font-size: 28rpx;
+  font-weight: 600;
+  padding: 12rpx 24rpx;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 8rpx;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 40rpx;
+  color: #999;
+}
+
+.empty-text {
+  font-size: 32rpx;
+  margin-top: 24rpx;
+  color: #999;
+}
+
+.empty-desc {
+  font-size: 26rpx;
+  margin-top: 8rpx;
+  color: #ccc;
+}
+
+/* 底部安全距离 */
+.bottom-safe-area {
+  height: 40rpx;
+}
+
+
+/* ========== 内联骨架屏样式 ========== */
+
+.inline-skeleton-card {
+  /* 继承 club-item 的样式 */
+}
+
+.inline-skeleton-header {
+  margin-bottom: 12rpx;
+  padding-bottom: 8rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.inline-skeleton-content {
+  display: flex;
+  gap: 12rpx;
+}
+
+.inline-skeleton-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}

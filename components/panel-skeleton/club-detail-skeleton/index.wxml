@@ -1,0 +1,55 @@
+<view class="popup-skeleton">
+  <!-- 导航栏 - 横向3个tab -->
+  <view style="display: flex; gap: 30rpx; padding: 20rpx 30rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '56rpx', borderRadius: '28rpx' }]}}" />
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '40rpx' }]}}" />
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '40rpx' }]}}" />
+  </view>
+  <!-- 协会信息标题 -->
+  <view style="padding: 20rpx 30rpx 16rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '140rpx', height: '44rpx' }]}}" />
+  </view>
+  <!-- 封面图 -->
+  <view style="padding: 0 30rpx 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '400rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  <!-- 缩略图指示器 -->
+  <view style="display: flex; gap: 16rpx; padding: 0 30rpx 20rpx; justify-content: center;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '80rpx', borderRadius: '8rpx' }]}}" />
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '80rpx', borderRadius: '8rpx' }]}}" />
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '80rpx', borderRadius: '8rpx' }]}}" />
+  </view>
+  <!-- 协会名称 -->
+  <view style="padding: 0 30rpx 16rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '50%', height: '52rpx' }]}}" />
+  </view>
+  <!-- 描述 -->
+  <view style="padding: 0 30rpx 24rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '32rpx' }, { width: '80%', height: '32rpx', marginTop: '12rpx' }]}}" />
+  </view>
+  <!-- 会长行 -->
+  <view style="padding: 0 30rpx 20rpx; display: flex; align-items: center; gap: 16rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '32rpx', height: '32rpx' }]}}" />
+    <view style="flex: 1; display: flex; align-items: center; gap: 12rpx;">
+      <t-skeleton animation="gradient" rowCol="{{[{ width: '60rpx', height: '28rpx' }]}}" />
+      <t-skeleton animation="gradient" rowCol="{{[{ width: '60rpx', height: '60rpx', borderRadius: '50%' }]}}" />
+      <t-skeleton animation="gradient" rowCol="{{[{ width: '100rpx', height: '32rpx' }]}}" />
+    </view>
+  </view>
+  <!-- 成员数量行 -->
+  <view style="padding: 0 30rpx 20rpx; display: flex; align-items: center; gap: 16rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '32rpx', height: '32rpx' }]}}" />
+    <view style="flex: 1; display: flex; flex-direction: column; gap: 8rpx;">
+      <t-skeleton animation="gradient" rowCol="{{[{ width: '100rpx', height: '28rpx' }]}}" />
+      <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '32rpx' }]}}" />
+    </view>
+  </view>
+  <!-- 近期活动行 -->
+  <view style="padding: 0 30rpx 20rpx; display: flex; align-items: center; gap: 16rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '32rpx', height: '32rpx' }]}}" />
+    <view style="flex: 1; display: flex; flex-direction: column; gap: 8rpx;">
+      <t-skeleton animation="gradient" rowCol="{{[{ width: '100rpx', height: '28rpx' }]}}" />
+      <t-skeleton animation="gradient" rowCol="{{[{ width: '60rpx', height: '32rpx' }]}}" />
+    </view>
+  </view>
+</view>

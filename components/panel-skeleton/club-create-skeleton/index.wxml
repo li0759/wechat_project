@@ -1,0 +1,26 @@
+<view class="popup-skeleton">
+  <!-- 协会名称输入框 -->
+  <view style="padding: 20rpx 30rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '100rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  <!-- 协会简介输入框 -->
+  <view style="padding: 0 30rpx 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '200rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  <!-- 封面上传区域 -->
+  <view style="padding: 0 30rpx 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '350rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  <!-- 会长选择区域 -->
+  <view style="padding: 0 30rpx 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '120rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  <!-- 成员添加区域 -->
+  <view style="padding: 0 30rpx 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '200rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  <!-- 提交按钮 -->
+  <view style="padding: 0 30rpx 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '88rpx', borderRadius: '44rpx' }]}}" />
+  </view>
+</view>

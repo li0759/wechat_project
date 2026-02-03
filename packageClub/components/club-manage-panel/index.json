@@ -1,0 +1,34 @@
+{
+  "component": true,
+  "usingComponents": {
+    "t-image": "tdesign-miniprogram/image/image",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-loading": "tdesign-miniprogram/loading/loading",
+    "t-empty": "tdesign-miniprogram/empty/empty",
+    "t-grid": "tdesign-miniprogram/grid/grid",
+    "t-grid-item": "tdesign-miniprogram/grid-item/grid-item",
+    "t-image-viewer": "tdesign-miniprogram/image-viewer/image-viewer",
+    "t-tabs": "tdesign-miniprogram/tabs/tabs",
+    "t-tab-panel": "tdesign-miniprogram/tab-panel/tab-panel",
+    "t-textarea": "tdesign-miniprogram/textarea/textarea",
+    "t-collapse": "tdesign-miniprogram/collapse/collapse",
+    "t-collapse-panel": "tdesign-miniprogram/collapse-panel/collapse-panel",
+    "t-cell": "tdesign-miniprogram/cell/cell",
+    "t-cell-group": "tdesign-miniprogram/cell-group/cell-group",
+    "t-avatar": "tdesign-miniprogram/avatar/avatar",
+    "isotope": "/components/isotope/index",
+    "expandable-container": "/components/expandable-container/index",
+    "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",
+    "addressbook-tree": "/components/addressbook-tree/index",
+    "search-suggest": "/components/search_suggest/index",
+    "event-create-panel": "/packageEvent/components/event-create-panel/index",
+    "event-create-skeleton": "/components/panel-skeleton/event-create-skeleton/index",
+    "event-manage-panel": "/packageEvent/components/event-manage-panel/index",
+    "event-manage-skeleton": "/components/panel-skeleton/event-manage-skeleton/index"
+  },
+  "componentPlaceholder": {
+    "event-create-panel": "event-create-skeleton",
+    "event-manage-panel": "event-manage-skeleton"
+  }
+}

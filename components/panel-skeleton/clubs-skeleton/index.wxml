@@ -1,0 +1,77 @@
+<!-- 通用协会列表骨架屏 -->
+<view class="skeleton-container">
+  <!-- 协会列表骨架 -->
+  <view class="skeleton-list">
+    <!-- 协会卡片 1 -->
+    <view class="skeleton-club-card">
+      <!-- 顶部协会名称行 -->
+      <view class="skeleton-club-header">
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '150rpx', height: '24rpx' }]}}" />
+      </view>
+      <!-- 主内容：左边封面 + 右边信息 -->
+      <view class="skeleton-club-content">
+        <!-- 左边封面 -->
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '150rpx', height: '150rpx', borderRadius: '8rpx' }]}}" />
+        <!-- 右边信息 -->
+        <view class="skeleton-club-info">
+          <!-- 协会标题 -->
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '200rpx', height: '28rpx', marginBottom: '8rpx' }]}}" />
+          <!-- 会长信息 -->
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '140rpx', height: '22rpx', marginBottom: '8rpx' }]}}" />
+          <!-- 简介第一行 -->
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '22rpx', marginBottom: '4rpx' }]}}" />
+          <!-- 简介第二行 -->
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '80%', height: '22rpx' }]}}" />
+        </view>
+      </view>
+    </view>
+
+    <!-- 协会卡片 2 -->
+    <view class="skeleton-club-card">
+      <view class="skeleton-club-header">
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '180rpx', height: '24rpx' }]}}" />
+      </view>
+      <view class="skeleton-club-content">
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '150rpx', height: '150rpx', borderRadius: '8rpx' }]}}" />
+        <view class="skeleton-club-info">
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '220rpx', height: '28rpx', marginBottom: '8rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '130rpx', height: '22rpx', marginBottom: '8rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '22rpx', marginBottom: '4rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '70%', height: '22rpx' }]}}" />
+        </view>
+      </view>
+    </view>
+
+    <!-- 协会卡片 3 -->
+    <view class="skeleton-club-card">
+      <view class="skeleton-club-header">
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '160rpx', height: '24rpx' }]}}" />
+      </view>
+      <view class="skeleton-club-content">
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '150rpx', height: '150rpx', borderRadius: '8rpx' }]}}" />
+        <view class="skeleton-club-info">
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '210rpx', height: '28rpx', marginBottom: '8rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '150rpx', height: '22rpx', marginBottom: '8rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '22rpx', marginBottom: '4rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '85%', height: '22rpx' }]}}" />
+        </view>
+      </view>
+    </view>
+
+    <!-- 协会卡片 4 -->
+    <view class="skeleton-club-card">
+      <view class="skeleton-club-header">
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '140rpx', height: '24rpx' }]}}" />
+      </view>
+      <view class="skeleton-club-content">
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '150rpx', height: '150rpx', borderRadius: '8rpx' }]}}" />
+        <view class="skeleton-club-info">
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '190rpx', height: '28rpx', marginBottom: '8rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '145rpx', height: '22rpx', marginBottom: '8rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '22rpx', marginBottom: '4rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '75%', height: '22rpx' }]}}" />
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

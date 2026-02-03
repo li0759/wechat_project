@@ -1,0 +1,24 @@
+{
+  "component": true,
+  "usingComponents": {
+    "van-slider": "@vant/weapp/slider/index",
+    "van-switch": "@vant/weapp/switch/index",
+    "van-datetime-picker": "@vant/weapp/datetime-picker/index",
+    "t-input": "tdesign-miniprogram/input/input",
+    "t-textarea": "tdesign-miniprogram/textarea/textarea",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-loading": "tdesign-miniprogram/loading/loading",
+    "t-date-time-picker": "tdesign-miniprogram/date-time-picker/date-time-picker",
+    "t-tag": "tdesign-miniprogram/tag/tag",
+    "t-empty": "tdesign-miniprogram/empty/empty",
+    "t-upload": "tdesign-miniprogram/upload/upload",
+    "t-image": "tdesign-miniprogram/image/image",
+    "t-grid": "tdesign-miniprogram/grid/grid",
+    "t-grid-item": "tdesign-miniprogram/grid-item/grid-item",
+    "expandable-container": "/components/expandable-container/index",
+    "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",
+    "isotope": "/components/isotope/index",
+    "addressbook-tree": "/components/addressbook-tree/index"
+  }
+}

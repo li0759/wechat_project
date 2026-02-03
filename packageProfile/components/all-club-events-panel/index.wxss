@@ -1,0 +1,320 @@
+/* pages/profile/all-club-events/index.wxss */
+.container {
+  padding: 0;
+  background: linear-gradient(135deg, #ffeef8 0%, #f8f0ff 100%);
+  min-height: 100vh;
+}
+
+.page-header {
+  padding: 30rpx 30rpx 20rpx;
+  background: linear-gradient(135deg, #df76b0 0%, #c157a0 100%);
+  box-shadow: 0 4rpx 20rpx rgba(223, 118, 176, 0.3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.download-btn {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: 2rpx solid rgba(255, 255, 255, 0.3) !important;
+  color: #fff !important;
+  backdrop-filter: blur(10rpx);
+}
+
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400rpx;
+}
+
+.loading-text {
+  margin-top: 20rpx;
+  font-size: 28rpx;
+  color: #df76b0;
+  font-weight: 500;
+}
+
+.content {
+  padding: 20rpx 0 30rpx;
+}
+
+/* 统计概览卡片 */
+.stats-overview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+  padding: 0 20rpx 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.stats-card {
+  background: linear-gradient(135deg, #fff 0%, #fef8fc 100%);
+  border-radius: 20rpx;
+  padding: 30rpx 20rpx;
+  text-align: center;
+  box-shadow: 0 8rpx 32rpx rgba(223, 118, 176, 0.15);
+  border: 1rpx solid rgba(223, 118, 176, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.stats-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6rpx;
+  background: linear-gradient(90deg, #df76b0, #9c88ff);
+}
+
+.stats-number {
+  font-size: 42rpx;
+  font-weight: 700;
+  color: #df76b0;
+  margin-bottom: 8rpx;
+  text-shadow: 0 2rpx 4rpx rgba(223, 118, 176, 0.1);
+}
+
+.stats-label {
+  font-size: 22rpx;
+  color: #666;
+  font-weight: 500;
+}
+
+/* 图表区域 */
+.charts-section {
+  padding: 0 20rpx;
+}
+
+.chart-container {
+  background: linear-gradient(135deg, #fff 0%, #fef8fc 100%);
+  border-radius: 20rpx;
+  margin-bottom: 20rpx;
+  padding: 30rpx 20rpx;
+  box-shadow: 0 8rpx 32rpx rgba(223, 118, 176, 0.15);
+  border: 1rpx solid rgba(223, 118, 176, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.chart-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4rpx;
+  background: linear-gradient(90deg, #df76b0, #9c88ff, #5fb3d4);
+}
+
+/* 列表区域 */
+.list-section {
+  padding: 0 20rpx;
+  margin-top: 20rpx;
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 20rpx;
+  background: linear-gradient(135deg, #fff 0%, #fef8fc 100%);
+  border-radius: 16rpx 16rpx 0 0;
+  border: 1rpx solid rgba(223, 118, 176, 0.1);
+  border-bottom: none;
+  position: relative;
+}
+
+.section-title::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4rpx;
+  background: linear-gradient(90deg, #df76b0, #9c88ff);
+}
+
+.title-text {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.title-desc {
+  font-size: 24rpx;
+  color: #df76b0;
+  font-weight: 500;
+}
+
+.event-list {
+  background: #fff;
+  border-radius: 0 0 16rpx 16rpx;
+  border: 1rpx solid rgba(223, 118, 176, 0.1);
+  border-top: none;
+  overflow: hidden;
+}
+
+.event-item {
+  padding: 25rpx 20rpx;
+  border-bottom: 1rpx solid rgba(223, 118, 176, 0.1);
+  background: linear-gradient(135deg, #fff 0%, #fefafc 100%);
+  transition: all 0.3s ease;
+}
+
+.event-item:last-child {
+  border-bottom: none;
+}
+
+.event-item:hover {
+  background: linear-gradient(135deg, #fef8fc 0%, #f8f0ff 100%);
+  transform: translateX(10rpx);
+}
+
+.event-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15rpx;
+}
+
+.event-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+  margin-right: 20rpx;
+}
+
+.event-club {
+  font-size: 22rpx;
+  color: #df76b0;
+  background: rgba(223, 118, 176, 0.1);
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+  font-weight: 500;
+}
+
+.event-info {
+  margin-bottom: 15rpx;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8rpx;
+}
+
+.info-row:last-child {
+  margin-bottom: 0;
+}
+
+.info-label {
+  font-size: 24rpx;
+  color: #999;
+  width: 80rpx;
+  flex-shrink: 0;
+}
+
+.info-value {
+  font-size: 24rpx;
+  color: #666;
+  flex: 1;
+}
+
+.info-value.budget {
+  color: #f4b844;
+  font-weight: 600;
+}
+
+.event-stats {
+  display: flex;
+  justify-content: space-around;
+  padding-top: 15rpx;
+  border-top: 1rpx solid rgba(223, 118, 176, 0.1);
+}
+
+.stat-item {
+  text-align: center;
+  flex: 1;
+}
+
+.stat-value {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #df76b0;
+  margin-bottom: 4rpx;
+}
+
+.stat-label {
+  font-size: 20rpx;
+  color: #999;
+}
+
+/* 响应式设计 */
+@media (max-width: 750rpx) {
+  .stats-overview {
+    grid-template-columns: 1fr;
+  }
+  
+  .event-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .event-club {
+    margin-top: 8rpx;
+  }
+}
+
+/* 动画效果 */
+.stats-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.chart-container {
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.event-item {
+  animation: fadeInLeft 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+} 

@@ -49,13 +49,18 @@ var Dialog = function (options) {
         var dialog = context.selectComponent(options.selector);
         delete options.context;
         delete options.selector;
-        dialog.setData(__assign({ callback: function (action, instance) {
-                action === 'confirm' ? resolve(instance) : reject(instance);
-            } }, options));
-        wx.nextTick(function () {
-            dialog.setData({ show: true });
-        });
-        queue.push(dialog);
+        if (dialog) {
+            dialog.setData(__assign({ callback: function (action, instance) {
+                    action === 'confirm' ? resolve(instance) : reject(instance);
+                } }, options));
+            wx.nextTick(function () {
+                dialog.setData({ show: true });
+            });
+            queue.push(dialog);
+        }
+        else {
+            console.warn('未找到 van-dialog 节点，请确认 selector 及 context 是否正确');
+        }
     });
 };
 Dialog.alert = function (options) { return Dialog(options); };

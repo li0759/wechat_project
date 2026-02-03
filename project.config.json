@@ -1,6 +1,6 @@
 {
   "compileType": "miniprogram",
-  "libVersion": "trial",
+  "libVersion": "3.8.11",
   "packOptions": {
     "ignore": [],
     "include": []
@@ -12,6 +12,8 @@
     "minified": true,
     "enhance": true,
     "showShadowRootInWxmlPanel": true,
+    "useCompilerModule": true,
+    "skylineRenderEnable": true,
     "packNpmRelationList": [
       {
         "packageJsonPath": "./package.json",
@@ -23,15 +25,16 @@
       "disablePlugins": [],
       "outputPath": ""
     },
-    "useCompilerPlugins": false
+    "useCompilerPlugins": false,
+    "compileWorklet": true
   },
   "condition": {},
   "editorSetting": {
     "tabIndent": "auto",
     "tabSize": 2
   },
-  "appid": "wxdd0c019563891a72",
+  "appid": "wx276aa58e55b3f649",
   "simulatorPluginLibVersion": {
-    "qywx_simulator_plugin": "2.20.3"
+    "qywx_simulator_plugin": "2.27.3"
   }
 }

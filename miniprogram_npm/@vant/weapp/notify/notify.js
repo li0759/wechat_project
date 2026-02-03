@@ -43,10 +43,12 @@ function Notify(options) {
     var notify = context.selectComponent(options.selector);
     delete options.context;
     delete options.selector;
-    notify.setData(options);
-    notify.show();
-    return notify;
-
+    if (notify) {
+        notify.setData(options);
+        notify.show();
+        return notify;
+    }
+    console.warn('未找到 van-notify 节点，请确认 selector 及 context 是否正确');
 }
 exports.default = Notify;
 Notify.clear = function (options) {

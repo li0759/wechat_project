@@ -2,15 +2,11 @@
   "dependencies": {
     "@babel/runtime": "^7.26.10",
     "@vant/weapp": "^1.11.7",
-    "core-js": "^3.41.0",
     "miniprogram-api-promise": "^1.0.4",
-    "tdesign-miniprogram": "^1.8.5",
-    "wux-weapp": "^3.11.3",
-    "wx-drag-img": "^0.1.3"
+    "tdesign-miniprogram": "^1.9.7"
   },
   "devDependencies": {
     "@babel/core": "^7.23.9",
-    "@babel/preset-env": "^7.23.9",
-    "@babel/runtime-corejs3": "^7.23.9"
+    "@babel/preset-env": "^7.23.9"
   }
 }

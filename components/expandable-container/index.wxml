@@ -1,0 +1,37 @@
+<!--components/expandable-container/index.wxml-->
+<!-- 新版：遮罩层 + 弹窗(clip-path控制) + 涟漪遮罩层 -->
+<!-- 注意：不使用 root-portal，因为真机上可能被禁用 -->
+
+<!-- 触发器 -->
+<view class="expandable-wrapper" catchtap="handleTriggerTap">
+  <view class="trigger-content">
+    <slot name="trigger"></slot>
+  </view>
+</view>
+
+<!-- 1. 全屏灰暗遮罩层 -->
+<view 
+  wx:if="{{isExpanded || isExpanding}}"
+  class="expandable-overlay expandable-overlay-fixed"
+  style="z-index: {{effectiveZIndex}};"
+  catchtap="handleOverlayTap"
+></view>
+
+<!-- 2. 弹窗容器（通过clip-path控制可见区域） -->
+<view 
+  wx:if="{{clipVisible}}"
+  class="popup-container popup-container-fixed"
+  style="{{popupStyle}}{{clipStyle}}"
+  catchtap="handleContentTap"
+>
+  <!-- 3. 涟漪遮罩层（挡住弹窗内容，从中心向四边挖空） -->
+  <view 
+    class="ripple-mask {{rippleMaskClass}}"
+    style="--mask-color: {{bgColor}};"
+  ></view>
+  
+  <!-- 4. 弹窗实际内容 -->
+  <view class="popup-content">
+    <slot name="content"></slot>
+  </view>
+</view>

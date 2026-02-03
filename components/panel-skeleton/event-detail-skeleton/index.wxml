@@ -1,0 +1,46 @@
+<view class="popup-skeleton">
+  <!-- 导航栏 - 横向4个tab -->
+  <view style="display: flex; gap: 30rpx; padding: 20rpx 30rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '56rpx', borderRadius: '28rpx' }]}}" />
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '60rpx', height: '40rpx' }]}}" />
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '60rpx', height: '40rpx' }]}}" />
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '60rpx', height: '40rpx' }]}}" />
+  </view>
+  <!-- 活动信息标题 -->
+  <view style="padding: 20rpx 30rpx 16rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '140rpx', height: '44rpx' }]}}" />
+  </view>
+  <!-- 封面图 -->
+  <view style="padding: 0 30rpx 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '400rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  <!-- 标题 -->
+  <view style="padding: 0 30rpx 16rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '70%', height: '52rpx' }]}}" />
+  </view>
+  <!-- 描述 -->
+  <view style="padding: 0 30rpx 24rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '32rpx' }, { width: '100%', height: '32rpx', marginTop: '12rpx' }, { width: '80%', height: '32rpx', marginTop: '12rpx' }]}}" />
+  </view>
+  <!-- 预计时间行 -->
+  <view style="padding: 0 30rpx 20rpx; display: flex; align-items: flex-start; gap: 16rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '40rpx', height: '40rpx', borderRadius: '50%' }]}}" />
+    <view style="flex: 1;">
+      <t-skeleton animation="gradient" rowCol="{{[{ width: '100rpx', height: '28rpx' }, { width: '320rpx', height: '32rpx', marginTop: '8rpx' }]}}" />
+    </view>
+  </view>
+  <!-- 活动地点行 -->
+  <view style="padding: 0 30rpx 20rpx; display: flex; align-items: flex-start; gap: 16rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '40rpx', height: '40rpx', borderRadius: '50%' }]}}" />
+    <view style="flex: 1;">
+      <t-skeleton animation="gradient" rowCol="{{[{ width: '100rpx', height: '28rpx' }, { width: '200rpx', height: '32rpx', marginTop: '8rpx' }]}}" />
+    </view>
+  </view>
+  <!-- 参与情况行 -->
+  <view style="padding: 0 30rpx 20rpx; display: flex; align-items: flex-start; gap: 16rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '40rpx', height: '40rpx', borderRadius: '50%' }]}}" />
+    <view style="flex: 1;">
+      <t-skeleton animation="gradient" rowCol="{{[{ width: '100rpx', height: '28rpx' }, { width: '240rpx', height: '32rpx', marginTop: '8rpx' }]}}" />
+    </view>
+  </view>
+</view>

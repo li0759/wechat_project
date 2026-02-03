@@ -1,16 +1,15 @@
-Component({
+﻿Component({
   /**
-   * 组件的属性列表
-   */
+   * 组件的属性列表   */
   properties: {
     // 搜索框占位符
     placeholder: {
       type: String,
-      value: '请输入搜索内容...'
+      value: '请输入搜索内容..'
     },
     
-    // 搜索值
-    value: {
+    // 搜索数
+      value: {
       type: String,
       value: '',
       observer: 'onValueChange'
@@ -46,8 +45,8 @@ Component({
       value: 1
     },
     
-    // 最大显示建议数量
-    maxSuggestions: {
+    // 最大显示建议数数
+      maxSuggestions: {
       type: Number,
       value: 10
     },
@@ -58,8 +57,8 @@ Component({
       value: true
     },
     
-    // 最大历史记录数量
-    maxHistoryCount: {
+    // 最大历史记录数数
+      maxHistoryCount: {
       type: Number,
       value: 10
     },
@@ -76,34 +75,33 @@ Component({
       value: true
     },
     
-    // 自定义样式类名
-    customClass: {
+    // 自定义样式类数
+      customClass: {
       type: String,
       value: ''
     },
     
-    // 自定义样式
-    customStyle: {
+    // 自定义样数
+      customStyle: {
       type: String,
       value: ''
     },
     
-    // 搜索框形状 round | square
+    // 搜索框形?round | square
     shape: {
       type: String,
       value: 'round'
     },
     
-    // 主题色
-    themeColor: {
+    // 主题数
+      themeColor: {
       type: String,
       value: '#ff6b9d'
     }
   },
 
   /**
-   * 组件的初始数据
-   */
+   * 组件的初始数据   */
   data: {
     inputValue: '',
     suggestions: [],
@@ -111,27 +109,106 @@ Component({
     showSuggestions: false,
     isLoading: false,
     focused: false,
-    debounceTimer: null
+    debounceTimer: null,
+    // 添加激活状态数数
+      activeStates: {
+      clearButton: false,
+      searchButton: false,
+      clearHistoryBtn: false,
+      suggestionItems: {},
+      historyItems: {},
+      deleteHistoryBtns: {}
+    }
   },
 
   /**
-   * 组件的方法列表
-   */
+   * 组件的方法列表   */
   methods: {
     /**
-     * 输入值变化监听
+     * 按钮触摸开始事件处理     */
+    onButtonTouchStart(e) {
+      const button = e.currentTarget.dataset.button;
+      const index = e.currentTarget.dataset.index;
+      const activeStates = { ...this.data.activeStates };
+      
+      if (button === 'clear') {
+        activeStates.clearButton = true;
+      } else if (button === 'search') {
+        activeStates.searchButton = true;
+      } else if (button === 'clearHistory') {
+        activeStates.clearHistoryBtn = true;
+      } else if (button === 'deleteHistory' && index !== undefined) {
+        activeStates.deleteHistoryBtns[index] = true;
+      }
+      
+      this.setData({ activeStates });
+    },
+
+    /**
+     * 按钮触摸结束事件处理
      */
+    onButtonTouchEnd(e) {
+      const button = e.currentTarget.dataset.button;
+      const index = e.currentTarget.dataset.index;
+      const activeStates = { ...this.data.activeStates };
+      
+      if (button === 'clear') {
+        activeStates.clearButton = false;
+      } else if (button === 'search') {
+        activeStates.searchButton = false;
+      } else if (button === 'clearHistory') {
+        activeStates.clearHistoryBtn = false;
+      } else if (button === 'deleteHistory' && index !== undefined) {
+        activeStates.deleteHistoryBtns[index] = false;
+      }
+      
+      this.setData({ activeStates });
+    },
+
+    /**
+     * 列表项触摸开始事件处理     */
+    onItemTouchStart(e) {
+      const type = e.currentTarget.dataset.type;
+      const index = e.currentTarget.dataset.index;
+      const activeStates = { ...this.data.activeStates };
+      
+      if (type === 'suggestion' && index !== undefined) {
+        activeStates.suggestionItems[index] = true;
+      } else if (type === 'history' && index !== undefined) {
+        activeStates.historyItems[index] = true;
+      }
+      
+      this.setData({ activeStates });
+    },
+
+    /**
+     * 列表项触摸结束事件处理     */
+    onItemTouchEnd(e) {
+      const type = e.currentTarget.dataset.type;
+      const index = e.currentTarget.dataset.index;
+      const activeStates = { ...this.data.activeStates };
+      
+      if (type === 'suggestion' && index !== undefined) {
+        activeStates.suggestionItems[index] = false;
+      } else if (type === 'history' && index !== undefined) {
+        activeStates.historyItems[index] = false;
+      }
+      
+      this.setData({ activeStates });
+    },
+    
+    /**
+     * 输入值变化监?     */
     onValueChange(newVal) {
       this.setData({ inputValue: newVal });
     },
 
     /**
-     * 输入框获得焦点
-     */
+     * 输入框获得焦?     */
     onInputFocus() {
       this.setData({ focused: true });
       
-      // 如果输入框为空且启用历史记录，显示历史记录
+      // 如果输入框为空且启用历史记录，显示历史记数
       if (!this.data.inputValue && this.data.showHistory) {
         this.loadSearchHistory();
         this.setData({ showSuggestions: true });
@@ -139,8 +216,7 @@ Component({
     },
 
     /**
-     * 输入框失去焦点
-     */
+     * 输入框失去焦?     */
     onInputBlur() {
       // 延迟隐藏建议框，避免点击建议项时立即隐藏
       setTimeout(() => {
@@ -159,9 +235,9 @@ Component({
       this.setData({ inputValue: value });
       
       // 触发外部输入事件
-      this.triggerEvent('input', { value });
+    this.triggerEvent('input', { value });
       
-      // 如果启用自动补全，进行搜索建议
+      // 如果启用自动补全，进行搜索建数
       if (this.data.enableAutocomplete) {
         this.handleAutocomplete(value);
       }
@@ -172,12 +248,12 @@ Component({
      */
     handleAutocomplete(value) {
       // 清除之前的防抖定时器
-      if (this.data.debounceTimer) {
+    if (this.data.debounceTimer) {
         clearTimeout(this.data.debounceTimer);
       }
 
       // 如果输入长度小于最小搜索长度，隐藏建议
-      if (value.length < this.data.minSearchLength) {
+    if (value.length < this.data.minSearchLength) {
         this.setData({ 
           showSuggestions: false,
           suggestions: []
@@ -185,7 +261,7 @@ Component({
         return;
       }
 
-      // 设置防抖定时器
+      // 设置防抖定时数
       const timer = setTimeout(() => {
         this.fetchSuggestions(value);
       }, this.data.debounceTime);
@@ -200,7 +276,7 @@ Component({
       this.setData({ isLoading: true });
       
       // 触发外部获取建议事件
-      this.triggerEvent('fetchSuggestions', { 
+    this.triggerEvent('fetchSuggestions', { 
         keyword,
         callback: this.onSuggestionsReceived.bind(this)
       });
@@ -220,8 +296,7 @@ Component({
     },
 
     /**
-     * 点击建议项
-     */
+     * 点击建议?     */
     onSuggestionTap(e) {
       const { item, index } = e.currentTarget.dataset;
       const value = item.text || item.title || item;
@@ -231,23 +306,22 @@ Component({
         showSuggestions: false
       });
       
-      // 添加到搜索历史
+      // 添加到搜索历数
       this.addToSearchHistory(value);
       
       // 触发选择事件
-      this.triggerEvent('select', { 
+    this.triggerEvent('select', { 
         value, 
         item, 
         index 
       });
       
       // 触发搜索事件
-      this.triggerSearch(value);
+    this.triggerSearch(value);
     },
 
     /**
-     * 点击历史记录项
-     */
+     * 点击历史记录?     */
     onHistoryTap(e) {
       const { item, index } = e.currentTarget.dataset;
       
@@ -257,18 +331,17 @@ Component({
       });
       
       // 触发选择事件
-      this.triggerEvent('historySelect', { 
+    this.triggerEvent('historySelect', { 
         value: item, 
         index 
       });
       
       // 触发搜索事件
-      this.triggerSearch(item);
+    this.triggerSearch(item);
     },
 
     /**
-     * 删除历史记录项
-     */
+     * 删除历史记录?     */
     onDeleteHistory(e) {
       e.stopPropagation();
       const { index } = e.currentTarget.dataset;
@@ -310,8 +383,7 @@ Component({
     },
 
     /**
-     * 清空输入框
-     */
+     * 清空输入?     */
     onClearInput() {
       this.setData({ 
         inputValue: '',
@@ -330,9 +402,7 @@ Component({
       try {
         const history = wx.getStorageSync(this.data.historyStorageKey) || [];
         this.setData({ searchHistory: history });
-      } catch (error) {
-        console.warn('加载搜索历史失败:', error);
-        this.setData({ searchHistory: [] });
+      } catch (error) {        this.setData({ searchHistory: [] });
       }
     },
 
@@ -342,30 +412,27 @@ Component({
     saveSearchHistory(history) {
       try {
         wx.setStorageSync(this.data.historyStorageKey, history);
-      } catch (error) {
-        console.warn('保存搜索历史失败:', error);
-      }
+      } catch (error) {      }
     },
 
     /**
-     * 添加到搜索历史
-     */
+     * 添加到搜索历?     */
     addToSearchHistory(keyword) {
       if (!keyword || !this.data.showHistory) return;
       
       let history = [...this.data.searchHistory];
       
-      // 移除重复项
+      // 移除重复数
       const existIndex = history.indexOf(keyword);
-      if (existIndex > -1) {
+    if (existIndex > -1) {
         history.splice(existIndex, 1);
       }
       
-      // 添加到开头
+      // 添加到开数
       history.unshift(keyword);
       
       // 限制数量
-      if (history.length > this.data.maxHistoryCount) {
+    if (history.length > this.data.maxHistoryCount) {
         history = history.slice(0, this.data.maxHistoryCount);
       }
       
@@ -381,23 +448,20 @@ Component({
     },
 
     /**
-     * 获取当前输入值（外部调用）
-     */
+     * 获取当前输入值（外部调用?     */
     getValue() {
       return this.data.inputValue;
     },
 
     /**
-     * 设置输入值（外部调用）
-     */
+     * 设置输入值（外部调用?     */
     setValue(value) {
       this.setData({ inputValue: value });
       this.triggerEvent('input', { value });
     },
 
     /**
-     * 清空组件状态（外部调用）
-     */
+     * 清空组件状态（外部调用?     */
     clear() {
       this.onClearInput();
     },
@@ -421,8 +485,8 @@ Component({
   },
 
   detached() {
-    // 清理定时器
-    if (this.data.debounceTimer) {
+    // 清理定时数
+      if (this.data.debounceTimer) {
       clearTimeout(this.data.debounceTimer);
     }
   }

@@ -1,0 +1,106 @@
+<!--packageProfile/components/all-club-users-panel/index.wxml-->
+<view class="container">
+  <view class="page-header">
+    <view class="title">会员数据</view>
+    <view class="header-actions">
+      <van-button 
+        type="primary" 
+        round 
+        size="small" 
+        icon="down" 
+        bindtap="downloadExcel"
+        loading="{{downloading}}"
+        class="download-btn"
+      >
+        下载Excel
+      </van-button>
+    </view>
+  </view>
+  
+  <view wx:if="{{loading}}" class="loading-container">
+    <van-loading size="24px" type="spinner" color="#df76b0" />
+    <view class="loading-text">正在加载数据...</view>
+  </view>
+  
+  <view wx:else class="content">
+    <!-- 总体统计卡片 -->
+    <view class="stats-overview">
+      <view class="stats-card">
+        <view class="stats-number">{{totalClubs}}</view>
+        <view class="stats-label">协会总数</view>
+      </view>
+      <view class="stats-card">
+        <view class="stats-number">{{totalMembers}}</view>
+        <view class="stats-label">会员总数</view>
+      </view>
+      <view class="stats-card">
+        <view class="stats-number">{{Math.round(totalMembers/totalClubs * 100)/100 || 0}}</view>
+        <view class="stats-label">平均人数</view>
+      </view>
+    </view>
+    
+    <!-- 图表展示区域 -->
+    <view class="charts-section" wx:if="{{!hideCharts}}">
+      <!-- 协会会员数量柱状图 -->
+      <view class="chart-container">
+        <bar-chart 
+          data="{{clubMemberChart}}" 
+          title="各协会会员数量分布"
+          height="{{300}}"
+          bar-color="#df76b0"
+          show-value="{{true}}"
+        />
+      </view>
+      
+      <!-- 会员性别比例饼图 -->
+      <view class="chart-container" wx:if="{{genderChart.length > 0}}">
+        <pie-chart 
+          data="{{genderChart}}" 
+          title="会员性别分布"
+          height="{{280}}"
+          colors="{{['#df76b0', '#9c88ff', '#f4b844']}}"
+        />
+      </view>
+      
+      <!-- 单位分布图 -->
+      <view class="chart-container" wx:if="{{unitChart.length > 0}}">
+        <pie-chart 
+          data="{{unitChart}}" 
+          title="会员单位分布（前8名）"
+          height="{{280}}"
+          colors="{{['#df76b0', '#9c88ff', '#5fb3d4', '#f4b844', '#67c23a', '#ff5722', '#e91e63', '#9e9e9e']}}"
+        />
+      </view>
+    </view>
+    
+    <!-- 详细列表 -->
+    <view class="list-section">
+      <view class="section-title">
+        <view class="title-text">协会详情</view>
+        <view class="title-desc">共{{clubs.length}}个协会</view>
+      </view>
+      
+      <view class="club-list">
+        <view class="club-item" wx:for="{{clubs}}" wx:key="club_id">
+          <view class="club-info">
+            <view class="club-name">{{item.club_name}}</view>
+            <view class="club-stats">
+              <text class="member-count">{{item.member_count}}人</text>
+            </view>
+          </view>
+          <view class="club-action">
+            <van-button 
+              type="default" 
+              size="mini" 
+              round
+              bindtap="viewClubDetail"
+              data-club-id="{{item.club_id}}"
+            >
+              查看详情
+            </van-button>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view> 

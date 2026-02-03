@@ -1,0 +1,35 @@
+.bar-chart-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20rpx;
+  background: #fff;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+  margin-bottom: 20rpx;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+.chart-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20rpx;
+  text-align: center;
+}
+
+.chart-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+.bar-canvas {
+  width: 100%;
+  border-radius: 8rpx;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+} 

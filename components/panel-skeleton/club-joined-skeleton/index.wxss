@@ -1,0 +1,61 @@
+.popup-skeleton {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f3e3f3ff;
+}
+
+/* 1. 协会基本信息区域 */
+.skeleton-club-info {
+  background: #fff;
+  padding: 48rpx 32rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.skeleton-members-row {
+  display: flex;
+  justify-content: center;
+  gap: 16rpx;
+  flex-wrap: wrap;
+}
+
+.skeleton-member-count {
+  display: flex;
+  justify-content: center;
+}
+
+/* 2. 最近活动区域 */
+.skeleton-featured-section {
+  background: #fff;
+  padding: 32rpx;
+}
+
+.skeleton-featured-card {
+  width: 100%;
+}
+
+/* 3. 活动列表区域 */
+.skeleton-events-section {
+  background: #fff;
+  padding: 0 32rpx 32rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.skeleton-event-item {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  display: flex;
+  gap: 16rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.skeleton-event-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}

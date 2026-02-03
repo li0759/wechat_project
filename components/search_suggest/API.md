@@ -2,7 +2,13 @@
 
 ## 概述
 
-搜索建议组件需要后台提供搜索建议数据，本文档详细说明了接口的请求和响应格式。
+搜索建议组件基于 **TDesign Miniprogram** 组件库构建，需要后台提供搜索建议数据，本文档详细说明了接口的请求和响应格式。
+
+## 技术说明
+
+- **UI组件库**: TDesign Miniprogram
+- **图标系统**: TDesign Icon
+- **数据格式**: 与之前版本完全兼容，无需更改后台接口
 
 ## 搜索建议接口
 
@@ -55,7 +61,7 @@ wx.request({
         "title": "张三",
         "text": "张三",
         "description": "计算机科学与技术专业 · 大三学生",
-        "icon": "manager-o",
+        "icon": "user",
         "iconColor": "#ff6b9d",
         "tag": "用户",
         "extra": {
@@ -69,7 +75,7 @@ wx.request({
         "id": "club_001",
         "title": "计算机协会",
         "description": "专注于计算机技术交流与学习的学生组织",
-        "icon": "cluster-o",
+        "icon": "usergroup",
         "iconColor": "#1890ff",
         "tag": "协会",
         "extra": {

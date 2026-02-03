@@ -1,0 +1,24 @@
+{
+  "component": true,
+  "usingComponents": {
+    "van-loading": "@vant/weapp/loading/index",
+    "t-skeleton": "tdesign-miniprogram/skeleton/skeleton",
+    "t-empty": "tdesign-miniprogram/empty/empty",
+    "isotope": "/components/isotope/index",
+    "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",
+    "club-detail-panel": "/packageClub/components/club-detail-panel/index",
+    "club-manage-panel": "/packageClub/components/club-manage-panel/index",
+    "event-detail-panel": "/packageEvent/components/event-detail-panel/index",
+    "event-manage-panel": "/packageEvent/components/event-manage-panel/index",
+    "club-detail-skeleton": "/components/panel-skeleton/club-detail-skeleton/index",
+    "club-manage-skeleton": "/components/panel-skeleton/club-manage-skeleton/index",
+    "event-detail-skeleton": "/components/panel-skeleton/event-detail-skeleton/index",
+    "event-manage-skeleton": "/components/panel-skeleton/event-manage-skeleton/index"
+  },
+  "componentPlaceholder": {
+    "club-detail-panel": "club-detail-skeleton",
+    "club-manage-panel": "club-manage-skeleton",
+    "event-detail-panel": "event-detail-skeleton",
+    "event-manage-panel": "event-manage-skeleton"
+  }
+}

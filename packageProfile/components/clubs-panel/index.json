@@ -1,0 +1,21 @@
+{
+  "component": true,
+  "usingComponents": {
+    "t-image": "tdesign-miniprogram/image/image",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-skeleton": "tdesign-miniprogram/skeleton/skeleton",
+    "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",
+    "club-manage-panel": "/packageClub/components/club-manage-panel/index",
+    "club-detail-panel": "/packageClub/components/club-detail-panel/index",
+    "club-joined-panel": "/packageClub/components/club-joined-panel/index",
+    "club-manage-skeleton": "/components/panel-skeleton/club-manage-skeleton/index",
+    "club-detail-skeleton": "/components/panel-skeleton/club-detail-skeleton/index",
+    "club-joined-skeleton": "/components/panel-skeleton/club-joined-skeleton/index"
+  },
+  "componentPlaceholder": {
+    "club-manage-panel": "club-manage-skeleton",
+    "club-detail-panel": "club-detail-skeleton",
+    "club-joined-panel": "club-detail-skeleton"
+  }
+}
+

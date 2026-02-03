@@ -1,0 +1,32 @@
+{
+  "component": true,
+  "usingComponents": {
+    "t-popup": "tdesign-miniprogram/popup/popup",
+    "t-radio-group": "tdesign-miniprogram/radio-group/radio-group",
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-cell": "tdesign-miniprogram/cell/cell",
+    "t-upload": "tdesign-miniprogram/upload/upload",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-input": "tdesign-miniprogram/input/input",
+    "t-textarea": "tdesign-miniprogram/textarea/textarea",
+    "t-steps": "tdesign-miniprogram/steps/steps",
+    "t-step-item": "tdesign-miniprogram/step-item/step-item",
+    "t-cell-group": "tdesign-miniprogram/cell-group/cell-group",
+    "t-image": "tdesign-miniprogram/image/image",
+    "t-avatar": "tdesign-miniprogram/avatar/avatar",
+    "t-tag": "tdesign-miniprogram/tag/tag",
+    "t-empty": "tdesign-miniprogram/empty/empty",
+    "t-grid": "tdesign-miniprogram/grid/grid",
+    "t-grid-item": "tdesign-miniprogram/grid-item/grid-item",
+    "t-tabs": "tdesign-miniprogram/tabs/tabs",
+    "t-tab-panel": "tdesign-miniprogram/tab-panel/tab-panel",
+    "t-collapse": "tdesign-miniprogram/collapse/collapse",
+    "t-collapse-panel": "tdesign-miniprogram/collapse-panel/collapse-panel",
+    "t-loading": "tdesign-miniprogram/loading/loading",
+    "search-suggest": "/components/search_suggest/index",
+    "addressbook-tree": "/components/addressbook-tree/index",
+    "expandable-container": "/components/expandable-container/index",
+    "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",
+    "isotope": "/components/isotope/index"
+  }
+}

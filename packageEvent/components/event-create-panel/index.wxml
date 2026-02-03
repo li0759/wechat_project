@@ -1,0 +1,684 @@
+<wxs module="utils">
+  // 判断是否为数组
+  function isArray(arr) {
+    return arr && arr.constructor === 'Array';
+  }
+
+  // 判断数组是否包含某个值
+  function includes(arr, value) {
+    if (!arr) return false;
+    if (!isArray(arr)) return false;
+    var len = arr.length;
+    if (len === 0) return false;
+    for (var i = 0; i < len; i++) {
+      if (arr[i] === value) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // 获取星期显示文本
+  function getWeekdaysDisplay(weekdays) {
+    if (!weekdays) return '';
+    var len = weekdays.length;
+    if (len === undefined || len === 0) return '';
+    var dayLabels = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    var result = [];
+    for (var i = 0; i < len; i++) {
+      var day = weekdays[i];
+      if (dayLabels[day]) {
+        result.push(dayLabels[day]);
+      }
+    }
+    return result.join('、');
+  }
+
+  // 获取月份日期显示文本
+  function getMonthdaysDisplay(monthdays) {
+    if (!monthdays) return '';
+    var len = monthdays.length;
+    if (len === undefined || len === 0) return '';
+    var result = [];
+    for (var i = 0; i < len; i++) {
+      result.push(monthdays[i] + '日');
+    }
+    return result.join('、');
+  }
+
+  module.exports = {
+    includes: includes,
+    getWeekdaysDisplay: getWeekdaysDisplay,
+    getMonthdaysDisplay: getMonthdaysDisplay
+  };
+</wxs>
+
+<view class="page">
+  <scroll-view class="page-scroll" scroll-y>
+    <view class="rows">
+      <!-- 发布协会（独立框） -->
+      <expandable-container id="ec-club" expanded-width="700" expanded-height="900" bg-color="#f2f3f5">
+        <view slot="trigger" class="row row-100">
+          <view class="row-left"><text class="row-label">发布协会</text></view>
+          <view class="row-right">
+            <text class="row-value {{!formData.clubName ? 'muted' : ''}}">{{formData.clubName || '请选择'}}</text>
+            <t-icon name="chevron-right" color="#999" />
+          </view>
+        </view>
+        <view slot="content" class="popup-shell">
+          <view class="popup-header">
+            <view class="popup-title">选择发布协会</view>
+          </view>
+          <view class="popup-body">
+            <scroll-view class="list-scroll" scroll-y>
+              <t-cell-group>
+                <t-cell wx:for="{{clubList}}" wx:key="id" title="{{item.name}}" bindtap="selectClubAndClose" data-club-id="{{item.id}}" arrow />
+              </t-cell-group>
+            </scroll-view>
+          </view>
+          <view class="popup-footer">
+            <t-button theme="primary" block bindtap="collapsePopup" data-id="ec-club">完成</t-button>
+          </view>
+        </view>
+      </expandable-container>
+
+      <!-- 活动标题（独立框） -->
+      <expandable-container id="ec-title" expanded-width="700" expanded-height="520" bg-color="#f2f3f5">
+        <view slot="trigger" class="row row-100">
+          <view class="row-left"><text class="row-label">活动标题</text></view>
+          <view class="row-right">
+            <text class="row-value {{!formData.title ? 'muted' : ''}}">{{formData.title || '未设置'}}</text>
+            <t-icon name="chevron-right" color="#999" />
+      </view>
+        </view>
+        <view slot="content" class="popup-shell">
+          <view class="popup-header">
+            <view class="popup-title">编辑活动标题</view>
+          </view>
+          <view class="popup-body">
+            <t-input value="{{formData.title}}" placeholder="请输入活动标题" bind:change="onTitleChange" maxlength="50" />
+          </view>
+          <view class="popup-footer">
+            <t-button theme="primary" block bindtap="collapsePopup" data-id="ec-title">完成</t-button>
+      </view>
+        </view>
+      </expandable-container>
+
+      <!-- 预计开始（独立框） -->
+      <expandable-container id="ec-pre-start" expanded-width="700" expanded-height="700" bg-color="#f2f3f5">
+        <view slot="trigger" class="row row-100">
+          <view class="row-left"><text class="row-label">预计开始</text></view>
+          <view class="row-right">
+            <text class="row-value {{!formData.preStartTimeDisplay ? 'muted' : ''}}">{{formData.preStartTimeDisplay || '未设置'}}</text>
+            <t-icon name="chevron-right" color="#999" />
+          </view>
+        </view>
+        <view slot="content" class="popup-shell">
+          <view class="popup-header">
+            <view class="popup-title">修改预计开始时间</view>
+          </view>
+          <view class="popup-body">
+            <t-date-time-picker
+              usePopup="{{false}}"
+              visible="{{true}}"
+              header="{{false}}"
+              mode="minute"
+              format="YYYY-MM-DD HH:mm"
+              value="{{timeEdit.preStart}}"
+              bind:pick="onPreStartPick"
+              bind:change="onPreStartChange"
+              bind:confirm="onPreStartConfirm"
+          />
+          </view>
+          <view class="popup-footer">
+            <t-button theme="primary" block bindtap="confirmPreStart">保存</t-button>
+          </view>
+        </view>
+      </expandable-container>
+
+      <!-- 预计结束（独立框） -->
+      <expandable-container id="ec-pre-end" expanded-width="700" expanded-height="700" bg-color="#f2f3f5">
+        <view slot="trigger" class="row row-100">
+          <view class="row-left"><text class="row-label">预计结束</text></view>
+          <view class="row-right">
+            <text class="row-value {{!formData.preEndTimeDisplay ? 'muted' : ''}}">{{formData.preEndTimeDisplay || '未设置'}}</text>
+            <t-icon name="chevron-right" color="#999" />
+          </view>
+                     </view>
+        <view slot="content" class="popup-shell">
+          <view class="popup-header">
+            <view class="popup-title">修改预计结束时间</view>
+                  </view>
+          <view class="popup-body">
+            <t-date-time-picker
+              usePopup="{{false}}"
+              visible="{{true}}"
+              header="{{false}}"
+              mode="minute"
+              format="YYYY-MM-DD HH:mm"
+              value="{{timeEdit.preEnd}}"
+              bind:pick="onPreEndPick"
+              bind:change="onPreEndChange"
+              bind:confirm="onPreEndConfirm"
+            />
+          </view>
+          <view class="popup-footer">
+            <t-button theme="primary" block bindtap="confirmPreEnd">保存</t-button>
+      </view>
+    </view>
+      </expandable-container>
+
+      <!-- 活动详情（独立框） -->
+      <expandable-container id="ec-content" expanded-width="700" expanded-height="980" bg-color="#f2f3f5">
+        <view slot="trigger" class="row row-basic">
+          <view class="row-basic-left"><text class="row-label">活动详情</text></view>
+          <view class="row-basic-right">
+            <view class="row-basic-title clamp-1">{{formData.content ? '已填写' : '未填写'}}</view>
+            <view class="row-basic-desc clamp-1">{{formData.content || '点击编辑活动详情'}}</view>
+          </view>
+          <view class="row-basic-arrow"><t-icon name="chevron-right" color="#999" /></view>
+        </view>
+        <view slot="content" class="popup-shell">
+          <view class="popup-header">
+            <view class="popup-title">编辑活动详情</view>
+          </view>
+          <view class="popup-body">
+        <t-textarea
+          value="{{formData.content}}"
+          placeholder="介绍一下活动的具体内容、流程和亮点..." 
+          bordered="{{false}}"
+              autosize="{{ { minHeight: 220 } }}"
+          maxlength="2000"
+          indicator
+              bind:change="onContentChange"
+            />
+        </view>
+          <view class="popup-footer">
+            <t-button theme="primary" block bindtap="collapsePopup" data-id="ec-content">完成</t-button>
+        </view>
+        </view>
+      </expandable-container>
+
+      <!-- 封面 + 地点（面板风格对齐 event-manage） -->
+      <view class="split-row row-300">
+        <view class="split-half">
+          <!-- 直接触发选择封面（不再先弹窗） -->
+          <view class="panel panel-300" bindtap="manualTriggerUpload">
+            <view class="panel-header">
+              <view class="panel-title">
+                <t-icon name="image" color="var(--md-sys-color-primary)" />
+                <text>封面</text>
+      </view>
+              <text class="panel-hint">{{coverFile ? '点我更换' : '点我上传'}}</text>
+        </view>
+            <view class="cover-preview">
+              <image wx:if="{{coverFile}}" class="cover-img" src="{{coverFile.url}}" mode="aspectFill" />
+              <view wx:else class="panel-map-empty">
+                <t-icon name="image" size="48" color="#bbb" />
+                <view class="panel-map-empty-text">点击选择封面</view>
+        </view>
+      </view>
+          </view>
+        </view>
+
+        <view class="split-half">
+          <!-- 直接触发地图选择（不再先弹窗） -->
+          <view class="panel panel-300" bindtap="chooseLocation">
+            <view class="panel-header">
+              <view class="panel-title">
+                <t-icon name="location" color="var(--md-sys-color-primary)" />
+                <text>地点</text>
+              </view>
+              <text class="panel-hint">{{formData.locationName || formData.location ? '点我更换' : '点我选择'}}</text>
+            </view>
+            <view wx:if="{{formData.latitude && formData.longitude}}" class="panel-map-wrap">
+              <image class="panel-map-img" src="{{locationMapSmallUrl}}" mode="aspectFill" />
+           </view>
+            <view wx:else class="panel-map-empty">
+              <t-icon name="location" size="48" color="#bbb" />
+              <view class="panel-map-empty-text">点击选择地点</view>
+        </view>
+          </view>
+        </view>
+      </view>
+
+      <expandable-container id="create-budget" expanded-width="700" expanded-height="520" bg-color="#f2f3f5">
+        <view slot="trigger" class="row row-100">
+          <view class="row-left"><text class="row-label">预算</text></view>
+          <view class="row-right">
+            <text class="row-value {{!formData.budget ? 'muted' : ''}}">{{formData.budget ? ('¥ ' + formData.budget) : '未设置'}}</text>
+            <t-icon name="chevron-right" color="#999" />
+          </view>
+        </view>
+        <view slot="content" class="popup-shell">
+          <view class="popup-header">
+            <view class="popup-title">活动预算</view>
+          </view>
+          <view class="popup-body">
+            <t-input value="{{formData.budget}}" placeholder="0.00" type="number" suffix="元" bind:change="onBudgetChange" />
+      </view>
+          <view class="popup-footer">
+            <t-button theme="primary" block bindtap="collapsePopup" data-id="create-budget">完成</t-button>
+    </view>
+        </view>
+      </expandable-container>
+
+      <!-- 日程管理(左) + 模板(右) —— 样式/尺寸对齐 “首条动态” -->
+      <view class="split-row row-300">
+        <view class="split-half">
+          <expandable-container_fullscreen id="card-schedule" expanded-width="750" expanded-height="1800" bg-color="#f2f3f5">
+            <view slot="trigger" class="panel panel-300">
+              <view class="panel-header">
+                <view class="panel-title">
+                  <t-icon name="calendar" color="var(--md-sys-color-primary)" />
+                  <text>日程管理</text>
+                </view>
+                <text class="panel-hint">{{scheduleEnabled ? '已启用' : '无'}}</text>
+              </view>
+              <view class="moment-preview">
+                <view class="moment-preview-body">
+                  <text class="moment-preview-text clamp-2">{{scheduleEnabled ? (tempScheduleDisplay || '已启用') : '无'}}</text>
+                  <text class="moment-preview-meta">{{scheduleEnabled ? '点击编辑' : '点击设置'}}</text>
+                </view>
+              </view>
+            </view>
+            <view slot="content" class="popup-shell fullscreen-popup">
+              <view class="popup-body popup-body-full" style="padding: 18rpx 16rpx 0;">
+                <view class="popup-shell">
+                  <view style="display:flex;align-items:center;justify-content:space-between;padding: 10rpx 0 18rpx;">
+                    <text class="row-label">启用自动提醒</text>
+                    <van-switch checked="{{scheduleEnabled}}" bind:change="onScheduleEnabledChangeWrapper" active-color="var(--md-sys-color-primary)" />
+        </view>
+
+        <block wx:if="{{scheduleEnabled}}">
+                    <view style="background:#fff;border-radius:16rpx;padding:18rpx;">
+              <view class="mb-3">
+                        <text class="muted">重复频率</text>
+                        <view style="display:flex;gap:24rpx;margin-top:16rpx;">
+                   <t-tag variant="{{scheduleForm.schedule_type === 'weekly' ? 'dark' : 'outline'}}" bindtap="onScheduleTypeChangeWrapper" data-type="weekly">每周</t-tag>
+                   <t-tag variant="{{scheduleForm.schedule_type === 'monthly' ? 'dark' : 'outline'}}" bindtap="onScheduleTypeChangeWrapper" data-type="monthly">每月</t-tag>
+                </view>
+              </view>
+
+              <view class="mb-3">
+                        <text class="muted">执行日期</text>
+                 <view wx:if="{{ scheduleForm.schedule_type === 'weekly' }}" class="date-selector mt-1">
+                          <expandable-container id="weekday-selector" expanded-width="650" expanded-height="600" bg-color="#f2f3f5" trigger-width="100%" bind:expand="onWeekdaySelectorExpand" bind:collapse="onWeekdaySelectorCollapse">
+                            <view slot="trigger" class="row row-80">
+                              <view class="row-left"><text class="row-label">星期</text></view>
+                              <view class="row-right">
+                                <text class="row-value {{!utils.getWeekdaysDisplay(scheduleForm.weekdays) ? 'muted' : ''}}">{{utils.getWeekdaysDisplay(scheduleForm.weekdays) || '请选择'}}</text>
+                        <t-icon name="chevron-right" color="#999" />
+                      </view>
+                            </view>
+                            <view slot="content" class="popup-shell">
+                              <view class="popup-header"><view class="popup-title">选择重复星期</view></view>
+                              <view class="popup-body">
+                        <view class="week-grid">
+                                  <view wx:for="{{['周日','周一','周二','周三','周四','周五','周六']}}" wx:key="index" class="week-cell {{tempWeekdaysMap[index] ? 'active' : ''}}" bindtap="toggleWeekday" data-day="{{index}}">{{item}}</view>
+                          </view>
+                        </view>
+                              <view class="popup-footer"><t-button theme="primary" block bindtap="collapsePopup" data-id="weekday-selector">完成</t-button></view>
+                      </view>
+                    </expandable-container>
+                 </view>
+                 
+                 <view wx:if="{{ scheduleForm.schedule_type === 'monthly' }}" class="date-selector mt-1">
+                          <expandable-container id="monthday-selector" expanded-width="700" expanded-height="800" bg-color="#f2f3f5" trigger-width="100%" bind:expand="onMonthdaySelectorExpand" bind:collapse="onMonthdaySelectorCollapse">
+                            <view slot="trigger" class="row row-80">
+                              <view class="row-left"><text class="row-label">日期</text></view>
+                              <view class="row-right">
+                                <text class="row-value {{!utils.getMonthdaysDisplay(scheduleForm.month_days) ? 'muted' : ''}}">{{utils.getMonthdaysDisplay(scheduleForm.month_days) || '请选择'}}</text>
+                        <t-icon name="chevron-right" color="#999" />
+                      </view>
+                            </view>
+                            <view slot="content" class="popup-shell">
+                              <view class="popup-header"><view class="popup-title">选择每月日期</view></view>
+                              <view class="popup-body">
+                                <scroll-view scroll-y style="height: 560rpx;">
+                                  <view class="calendar-grid">
+                                    <view wx:for="{{31}}" wx:key="index" class="calendar-cell {{tempMonthdaysMap[item + 1] ? 'active' : ''}}" bindtap="toggleMonthday" data-day="{{item + 1}}">{{item + 1}}</view>
+          </view>
+                        </scroll-view>
+                              </view>
+                              <view class="popup-footer"><t-button theme="primary" block bindtap="collapsePopup" data-id="monthday-selector">完成</t-button></view>
+        </view>
+                    </expandable-container>
+        </view>
+      </view>
+
+              <view class="mb-3">
+                        <text class="muted">具体时间</text>
+                        <expandable-container id="time-selector" expanded-width="650" expanded-height="780" bg-color="#f2f3f5" trigger-width="100%" bind:expand="onTimeSelectorExpand" bind:collapse="onTimeSelectorCollapse">
+                          <view slot="trigger" class="row row-80">
+                            <view class="row-left"><text class="row-label">时间</text></view>
+                            <view class="row-right">
+                              <text class="row-value {{!scheduleForm.activity_time ? 'muted' : ''}}">{{scheduleForm.activity_time || '请选择'}}</text>
+                        <t-icon name="chevron-right" color="#999" />
+        </view>
+                          </view>
+                          <view slot="content" class="popup-shell">
+                            <view class="popup-header"><view class="popup-title">选择时间</view></view>
+                            <view class="popup-body">
+                              <van-datetime-picker type="time" value="{{timeOfDayValue}}" min-hour="0" max-hour="23" bind:input="onTimeInput" show-toolbar="{{false}}" style="height: 400rpx;" />
+                              <view class="muted" style="margin-top: 12rpx; text-align: center;">当前：{{timeOfDayValue}}</view>
+                      </view>
+                            <view class="popup-footer"><t-button theme="primary" block bindtap="collapsePopup" data-id="time-selector">完成</t-button></view>
+        </view>
+                 </expandable-container>
+      </view>
+
+              <view>
+                        <text class="muted">提前通知：{{advanceHourLabels[scheduleForm.advance_hours_slider]}}</text>
+                        <van-slider value="{{scheduleForm.advance_hours_slider}}" min="0" max="7" step="1" bind:change="onAdvanceHoursChange" active-color="var(--md-sys-color-primary)" />
+              </view>
+           </view>
+        </block>
+      </view>
+    </view>
+            </view>
+          </expandable-container_fullscreen>
+       </view>
+
+        <view class="split-half">
+          <!-- 模板选择状态显示面板 -->
+          <view class="panel panel-300" bindtap="openSelectorPopup">
+            <view class="panel-header">
+              <view class="panel-title">
+                <t-icon name="layers" color="var(--md-sys-color-primary)" />
+                <text>活动模板</text>
+              </view>
+              <text class="panel-hint">{{selectedTemplateName || '未选择'}}</text>
+            </view>
+            <view class="moment-preview">
+              <image wx:if="{{swiperSelectedTemplateCover}}" class="moment-preview-img" src="{{swiperSelectedTemplateCover}}" mode="aspectFill" />
+              <view class="moment-preview-body">
+                <text class="moment-preview-text clamp-2">{{selectedTemplateName || '点击选择活动模板'}}</text>
+                <text class="moment-preview-meta">{{selectedTemplateName ? '点击更换' : '点击选择'}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 人员管理(左) + 首条动态(右)，对齐 event-manage 的第8行 -->
+      <view class="split-row row-300">
+        <view class="split-half">
+          <!-- 对齐 event-manage：活动人员（全屏弹窗 + 同款网格/详情/右上角 +/-） -->
+          <expandable-container_fullscreen id="card-members" expanded-width="750" expanded-height="1600" bg-color="#f2f3f5" bind:expand="onMemberPanelExpand">
+            <view slot="trigger" class="panel panel-300">
+              <view class="panel-header">
+                <view class="panel-title">
+                  <t-icon name="usergroup" color="var(--md-sys-color-primary)" />
+                  <text>活动人员</text>
+                </view>
+                <text class="panel-hint">{{members.length}} / {{clubMembers.length}}</text>
+              </view>
+              <view class="panel-body">
+                <view class="mini-row">
+                  <text class="mini-k">参加人数</text>
+                  <text class="mini-v">{{members.length}}</text>
+                </view>
+                <view class="mini-row">
+                  <text class="mini-k">协会人数</text>
+                  <text class="mini-v">{{clubMembers.length}}</text>
+                </view>
+                <view class="legend">
+                  <view class="legend-item"><view class="dot joined"></view><text>已参加</text></view>
+                  <view class="legend-item"><view class="dot clockin"></view><text>已打卡</text></view>
+                  <view class="legend-item"><view class="dot not"></view><text>未参加</text></view>
+                </view>
+              </view>
+             </view>
+    
+            <view slot="content" class="popup-shell fullscreen-popup">
+              <view class="popup-body popup-body-full">
+                <view class="members-toolbar" style="padding: 18rpx 16rpx 0;">
+                  <view class="hint">{{clubMembers.length}} 人</view>
+                </view>
+                <view class="members-grid-wrap" wx:if="{{isotopeMembers.length > 0}}">
+                  <t-grid column="{{5}}" border="{{false}}" align="center" gutter="{{0}}">
+                    <t-grid-item wx:for="{{isotopeMembers}}" wx:key="user_id" image="slot" text="{{item.user_name}}">
+                      <view slot="image" class="member-grid-image-slot">
+                        <expandable-container
+                          id="member-detail-{{item.user_id}}"
+                          expanded-width="700"
+                          expanded-height="900"
+                          bg-color="#f2f3f5"
+                        >
+                          <view slot="trigger" class="member-avatar-trigger">
+                            <image class="member-avatar status-{{item.status}}" src="{{item.image || defaultAvatarUrl}}" mode="aspectFill"  data-user-id="{{item.user_id}}" />
+                            <view
+                              class="member-quick-btn {{item.is_joined ? 'minus' : 'plus'}}"
+                              catchtap="toggleMemberJoinFast"
+                              data-user-id="{{item.user_id}}"
+                              data-user-name="{{item.user_name}}"
+                              data-is-joined="{{item.is_joined}}"
+                            >
+                              <t-icon name="{{item.is_joined ? 'remove' : 'add'}}" size="18" color="#fff" />
+                            </view>
+                          </view>
+                          <view slot="content" class="popup-shell">
+                            <view class="popup-header">
+                              <view class="popup-title">成员信息</view>
+                            </view>
+                            <view class="popup-body">
+                              <view class="member-expanded-header">
+                                <image class="member-avatar-large" src="{{item.image || defaultAvatarUrl}}" mode="aspectFill" binderror="onAvatarError" />
+                                <view class="member-expanded-info">
+                                  <view class="member-expanded-name-row">
+                                    <text class="member-expanded-name">{{item.user_name}}</text>
+                                    <view class="role-badge-large member-role-{{item.role}}">{{item.role_display}}</view>
+             </view>
+                                  <view class="member-expanded-meta">
+                                    <view class="detail-item" wx:if="{{item.department}}">
+                                      <t-icon name="location" size="16" color="#666" />
+                                      <text>{{item.department}}</text>
+             </view>
+                                    <view class="detail-item" wx:if="{{item.position}}">
+                                      <t-icon name="user" size="16" color="#666" />
+                                      <text>{{item.position}}</text>
+             </view>
+          </view>
+       </view>
+    </view>
+    
+                              <view class="member-expanded-details">
+                                <view class="member-detail-row" wx:if="{{item.phone}}">
+                                  <text class="detail-label">联系电话</text>
+                                  <text class="detail-value">{{item.phone}}</text>
+                                </view>
+                                <view class="member-detail-row">
+                                  <text class="detail-label">参加状态</text>
+                                  <text class="detail-value">{{item.is_joined ? '已参加' : '未参加'}}</text>
+                                </view>
+                                <view class="member-detail-row" wx:if="{{item.is_joined}}">
+                                  <text class="detail-label">打卡状态</text>
+                                  <text class="detail-value">{{item.is_clockin ? '已打卡' : '未打卡'}}</text>
+                                </view>
+                              </view>
+                            </view>
+                            <view class="popup-footer">
+                              <t-button
+                                wx:if="{{!item.is_joined}}"
+                                theme="primary"
+                                block
+                                bindtap="addMemberFromCard"
+                                data-user-id="{{item.user_id}}"
+                              >把ta加入活动</t-button>
+                              <t-button
+                                wx:else
+                                theme="danger"
+                                block
+                                bindtap="removeMemberFromCard"
+                                data-user-id="{{item.user_id}}"
+                                data-user-name="{{item.user_name}}"
+                              >把ta退出活动</t-button>
+                            </view>
+                          </view>
+                        </expandable-container>
+                      </view>
+                    </t-grid-item>
+                  </t-grid>
+                </view>
+                <view wx:else class="empty-members">
+                  <t-empty description="{{formData.clubId ? '暂无成员数据' : '请先选择协会'}}" />
+                </view>
+              </view>
+            </view>
+          </expandable-container_fullscreen>
+        </view>
+
+        <view class="split-half">
+          <expandable-container id="ec-first-moment" expanded-width="700" expanded-height="980" bg-color="#f2f3f5">
+            <view slot="trigger" class="panel panel-300">
+              <view class="panel-header">
+                <view class="panel-title">
+                  <t-icon name="chat" color="var(--md-sys-color-primary)" />
+                  <text>首条动态</text>
+                </view>
+                <text class="panel-hint">{{firstMomentConfirmed ? '已编辑' : '可选'}}</text>
+              </view>
+              <view class="moment-preview">
+                <image wx:if="{{firstMomentForm.uploadFiles && firstMomentForm.uploadFiles.length}}" class="moment-preview-img" src="{{firstMomentForm.uploadFiles[0].url}}" mode="aspectFill" />
+                <view class="moment-preview-body">
+                  <text class="moment-preview-text clamp-2">{{firstMomentForm.description || '暂无动态'}}</text>
+                  <text class="moment-preview-meta">{{firstMomentConfirmed ? '已保存草稿' : '点击编辑'}}</text>
+                </view>
+              </view>
+            </view>
+            <view slot="content" class="popup-shell">
+              <view class="popup-header">
+                <view class="popup-title">发布动态</view>
+                <view class="pill-ghost">关闭后点外部</view>
+              </view>
+              <view class="popup-body">
+                <t-textarea
+                  value="{{firstMomentForm.description}}"
+                  placeholder="写点什么…"
+                  bordered="{{false}}"
+                  autosize="{{ { minHeight: 160 } }}"
+                  maxlength="500"
+                  indicator
+                  bind:change="onFirstMomentDescChange"
+                />
+                <view style="margin-top: 12rpx;">
+                  <t-upload
+                    files="{{firstMomentForm.uploadFiles}}"
+                    max="{{9}}"
+                    gridConfig="{{momentGridConfig}}"
+                    bind:add="onFirstMomentImageAdd"
+                    bind:remove="onFirstMomentImageRemove"
+                  />
+                </view>
+              </view>
+              <view class="popup-footer">
+                <t-button theme="primary" block bindtap="confirmFirstMomentDraft">发布</t-button>
+              </view>
+            </view>
+          </expandable-container>
+        </view>
+      </view>
+
+      <view class="footer-space"></view>
+    </view>
+  </scroll-view>
+
+  <!-- 底部提交（固定） -->
+  <view class="step-navigation">
+    <view class="nav-buttons">
+      <t-button theme="primary" size="large" shape="round" bindtap="submitForm" loading="{{submitting}}" class="nav-btn">
+        发布活动
+      </t-button>
+    </view>
+  </view>
+
+  <!-- 协会和模板选择弹窗 -->
+  <t-popup visible="{{showSelectorPopup}}" bind:visible-change="closeSelectorPopup" placement="center" close-on-overlay-click="{{false}}">
+    <view class="selector-popup-container">
+      <!-- 弹窗头部 -->
+      <view class="selector-popup-header">
+        <view class="selector-popup-title">{{popupTitle}}</view>
+        <view class="selector-popup-close" bindtap="closeSelectorPopup">
+          <t-icon name="close" size="24" color="#666" />
+        </view>
+      </view>
+
+      <!-- 弹窗内容 -->
+      <view class="selector-popup-body">
+        <!-- 情况1：多个协会 - 显示树形选择器 -->
+        <view wx:if="{{popupMode === 'tree'}}" class="tree-selector-section">
+          <t-tree-select
+            options="{{treeSelectOptions}}"
+            value="{{selectedTreeValue}}"
+            bind:change="onTreeSelectChange"
+            keys="{{treeSelectKeys}}"
+            height="400rpx"
+          />
+        </view>
+
+        <!-- 情况2&3：单个协会或指定协会 - 显示活动列表 -->
+        <view wx:elif="{{popupMode === 'list'}}" class="event-list-section">
+          <view class="event-list-title">选择活动模板（可选）</view>
+          <view wx:if="{{historyEvents.length > 0}}" class="template-list">
+            <scroll-view class="list-scroll" scroll-y bindscrolltolower="onTemplateScrollToLower" style="max-height: 400rpx;">
+              <view 
+                wx:for="{{historyEvents}}" 
+                wx:key="event_id" 
+                class="template-item {{selectedTemplateId === item.event_id ? 'selected' : ''}}"
+                bindtap="selectTemplate"
+                data-event="{{item}}"
+              >
+                <image wx:if="{{item.cover_thumb}}" class="template-cover" src="{{item.cover_thumb}}" mode="aspectFill" />
+                <view class="template-info">
+                  <view class="template-title">{{item.title}}</view>
+                  <view class="template-time">{{item.startTime}}</view>
+                </view>
+                <view wx:if="{{selectedTemplateId === item.event_id}}" class="template-check">
+                  <t-icon name="check-circle-filled" size="24" color="var(--md-sys-color-primary)" />
+                </view>
+              </view>
+              <view wx:if="{{templateLoading}}" class="template-hint">加载中...</view>
+            </scroll-view>
+          </view>
+          <view wx:else class="empty-template">
+            <t-empty description="暂无历史活动模板" />
+          </view>
+        </view>
+      </view>
+
+      <!-- 底部按钮 -->
+      <view class="selector-popup-footer">
+        <t-button theme="light" size="medium" bindtap="skipTemplate">不使用模板</t-button>
+        <t-button theme="primary" size="medium" bindtap="confirmSelection">确认</t-button>
+      </view>
+    </view>
+  </t-popup>
+
+  <!-- create 页不再使用全局 start picker（改为内嵌在弹窗内） -->
+</view>
+
+  <!-- 创建成功弹窗 -->
+  <t-popup visible="{{showSuccessPopup}}" placement="center" close-on-overlay-click="{{false}}">
+    <view class="success-popup-container">
+      <view class="success-popup-content">
+        <t-icon name="check-circle" size="64" color="#52c41a" />
+        <view class="success-title">活动创建成功！</view>
+        <view class="success-desc">{{createdEventData.title}}</view>
+        
+        <!-- 活动封面预览 -->
+        <image wx:if="{{createdEventData.cover_url}}" class="success-cover" src="{{createdEventData.cover_url}}" mode="aspectFill" />
+        
+        <!-- 按钮组 -->
+        <view class="success-buttons">
+          <t-button theme="light" size="large" block bindtap="closeSuccessPopup">返回</t-button>
+          
+          <!-- 直接显示分享按钮 -->
+          <button class="success-share-button" open-type="share">
+            <t-icon name="share" size="20" />
+            <text style="margin-left: 8rpx;">分享活动</text>
+          </button>
+        </view>
+      </view>
+    </view>
+  </t-popup>

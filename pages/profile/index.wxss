@@ -3,14 +3,23 @@
   display: flex;
   flex-direction: column;
   background-color: #f5f5f5;
-  min-height: 100vh;
-  padding-bottom: 30rpx;
+  height: 100vh;
+  padding-bottom: 100rpx;
+  padding-top: 0rpx!important；
+}
+
+/* 添加scroll-view样式 */
+.scroll-container {
+  flex: 1;
+  height: calc(100vh - 500rpx); /* 减去头部的高度 */
+  padding-top: 20rpx;
 }
 
 /* 头部用户信息 */
 .header {
   background-color:rgb(223, 118, 176);
   width:500rpx;
+  margin-left: 100rpx;
   margin-top: 10rpx;
   color: #fff;
   border-radius: 30rpx;
@@ -19,9 +28,11 @@
 
 .user-card {
   display: flex;
-  padding-left:50rpx;
+  flex-direction: row; /* 显式指定flex-direction */
+  padding-left:100rpx;
+  padding-top: 5rpx;
+  padding-bottom: 5rpx;
   align-items: center;
-  margin-bottom: 30rpx;
 }
 
 .avatar {
@@ -54,11 +65,11 @@
 /* 数据概览 */
 .statistics {
   display: flex;
+  flex-direction: row; /* 显式指定flex-direction */
   justify-content: space-between;
-  margin-top: 20rpx;
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 20rpx;
-  padding: 20rpx;
+  padding: 5rpx;
 }
 
 .stat-item {
@@ -67,8 +78,8 @@
   position: relative;
 }
 
-.stat-item::after {
-  content: '';
+/* 使用真实视图替代伪元素 */
+.stat-item-divider {
   position: absolute;
   right: 0;
   top: 15%;
@@ -77,7 +88,8 @@
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-.stat-item:last-child::after {
+/* 最后一个元素的分隔线不显示，使用JS控制 */
+.stat-item-last .stat-item-divider {
   display: none;
 }
 
@@ -94,14 +106,14 @@
 
 /* 功能列表 */
 .function-list {
-  min-height: 80vh;
+  min-height: 90vh;
   width:700rpx;
-  padding: 30rpx;
+  padding: 20rpx;
   position: relative;
 }
 
 .function-group {
-  margin-bottom: 30rpx;
+  margin-bottom: 20rpx;
   background-color: #fff;
   border-radius: 20rpx;
   overflow: hidden;
@@ -115,11 +127,31 @@
   border-bottom: 1rpx solid #f5f5f5;
 }
 
+.function-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 30rpx;
+  border-bottom: 1rpx solid #f5f5f5;
+}
+
+.function-title-row .function-title {
+  padding: 0;
+  border-bottom: none;
+}
+
+.title-action {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
 /* 网格布局 */
 .function-grid {
   display: flex;
+  flex-direction: row; /* 显式指定flex-direction */
   flex-wrap: wrap;
-  padding: 10rpx;
+  padding: 0rpx;
 }
 
 .grid-item {
@@ -127,15 +159,16 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20rpx 0;
+  padding-bottom: 20rpx;
+  padding-left: 20rpx;
 }
 
 .grid-icon {
   position: relative;
-  margin-bottom: 10rpx;
   width: 80rpx;
   height: 80rpx;
   display: flex;
+  flex-direction: row; /* 显式指定flex-direction */
   justify-content: center;
   align-items: center;
 }
@@ -151,6 +184,7 @@
   height: 32rpx;
   border-radius: 16rpx;
   display: flex;
+  flex-direction: row; /* 显式指定flex-direction */
   align-items: center;
   justify-content: center;
   padding: 0 6rpx;
@@ -169,13 +203,14 @@
 
 .function-item {
   display: flex;
+  flex-direction: row; /* 显式指定flex-direction */
   align-items: center;
   padding: 30rpx;
   position: relative;
 }
 
-.function-item:not(:last-child)::after {
-  content: '';
+/* 使用真实视图替代伪元素 */
+.function-item-divider {
   position: absolute;
   bottom: 0;
   left: 30rpx;
@@ -187,6 +222,7 @@
 .item-icon {
   margin-right: 20rpx;
   display: flex;
+  flex-direction: row; /* 显式指定flex-direction */
   align-items: center;
   justify-content: center;
 }
@@ -196,7 +232,6 @@
   font-size: 30rpx;
   color: #333;
 }
-
 
 .item-arrow {
   color: #ccc;
@@ -211,7 +246,8 @@
   transition: background-color 0.3s;
 }
 
-.function-item:active {
+/* 使用JS控制active状态，添加class */
+.function-item-active {
   background-color: #f5f5f5;
 }
 
@@ -219,11 +255,12 @@
   transition: transform 0.2s;
 }
 
-.grid-item:active {
+/* 使用JS控制active状态，添加class */
+.grid-item-active {
   transform: scale(0.95);
 }
 
-/* 社团管理行 */
+/* 协会管理行 */
 .club-management-row {
   padding: 10rpx 0;
 }
@@ -273,11 +310,13 @@
 .tracking-item {
   position: relative;
   display: flex;
+  flex-direction: row; /* 显式指定flex-direction */
   padding: 20rpx 30rpx;
   border-bottom: 1rpx solid #f0f0f0;
 }
 
-.tracking-item:last-child {
+/* 最后一个元素的边框不显示，使用JS控制 */
+.tracking-item-last {
   border-bottom: none;
 }
 
@@ -315,6 +354,7 @@
 /* 新增样式 - 活动详情 */
 .tracking-details {
   display: flex;
+  flex-direction: row; /* 显式指定flex-direction */
   align-items: center;
   flex-wrap: wrap;
   font-size: 12px;
@@ -322,6 +362,7 @@
 
 .tracking-detail-item {
   display: flex;
+  flex-direction: row; /* 显式指定flex-direction */
   align-items: center;
   margin-right: 8px;
 }
@@ -330,4 +371,56 @@
   margin: 0 8px;
   color: #666;
   font-size: 12px;
+}
+
+/* 弹窗内容样式 */
+.popup-content-wrapper {
+  position: relative;
+  padding-top:30rpx;
+  width: 100%;
+  height: 100%;
+  background-color: #f7f8fa;
+  overflow-y: auto;
+}
+
+.popup-skeleton {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  min-height: 100vh;
+  z-index: 10;
+  padding: 0;
+  background: #f7f8fa;
+}
+
+.popup-skeleton .skeleton-nav {
+  margin-bottom: 20rpx;
+}
+
+.popup-skeleton .skeleton-cover {
+  padding: 0 30rpx;
+  margin-bottom: 20rpx;
+}
+
+.popup-skeleton .skeleton-info {
+  background: #fff;
+  border-radius: 16rpx;
+  margin: 0 30rpx 20rpx;
+  padding: 30rpx;
+}
+
+.popup-skeleton .skeleton-rows {
+  margin-bottom: 20rpx;
+}
+
+.popup-skeleton .skeleton-cards {
+  margin-bottom: 20rpx;
+}
+
+.popup-skeleton .skeleton-members {
+  background: #fff;
+  border-radius: 16rpx;
+  margin: 0 30rpx;
+  padding: 30rpx;
 }

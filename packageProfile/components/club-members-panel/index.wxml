@@ -1,0 +1,550 @@
+<!--pages/profile/club-members/index.wxml-->
+
+<view class="container">
+
+  <!-- 加载状态 -->
+  <t-loading 
+    wx:if="{{loading}}" 
+    theme="circular" 
+    size="50rpx" 
+    text="加载中..."
+    class="loading-container"
+  />
+
+  <!-- 空状态 -->
+  <t-empty 
+    wx:elif="{{filteredMembers.length === 0 && !loading}}"
+    icon="member"
+    description="{{searchKeyword ? '未找到匹配的成员' : '暂无成员'}}"
+  />
+    <!-- 搜索栏 (移到 t-indexes 上方) -->
+        <view class="search-container-inline">
+      <t-search style='width:600rpx;'
+        model:value="{{searchKeyword}}" 
+        placeholder="搜索成员姓名、部门或职位"
+        bind:change="onSearchChange"
+        bind:clear="onSearchClear"
+      />
+    </view>
+  <!-- 成员列表 t-indexes (展开显示所有信息) -->
+  <view style="margin-top: 50rpx;">
+    <t-indexes 
+      index-list="{{indexList}}" 
+      sticky-offset="{{50}}"
+    >
+      <block wx:for="{{showIndexList}}" wx:key="index">
+        <t-indexes-anchor index="{{item.index}}" />
+        <block wx:for="{{item.children}}" wx:for-item="member" wx:key="member_id">
+          <view class="member-item-wrapper" id="member-{{member.member_id}}">
+            <view class="member-item">
+              <view class="member-trigger-header">
+                <view class="member-avatar-expandable">
+                  <expandable-container
+                    id="member-expandable-{{member.member_id}}"
+                    expanded-width="700"
+                    expanded-height="840"
+                    trigger-width="160"
+                    bg-color="#e0e0e0"
+                  >
+                    <view slot="trigger" class="member-avatar-trigger">
+                      <t-avatar
+                        image="{{member.avatar || default_avatar}}"
+                        size="large"
+                      />
+                    </view>
+                    <view slot="content" class="am-user-detail">
+                      <view class="am-detail-head">
+                        <image
+                          class="am-detail-avatar"
+                          src="{{member.avatar || default_avatar}}"
+                          mode="aspectFill"
+                          lazy-load="{{true}}"
+                        />
+                        <view class="am-detail-main">
+                          <view class="am-detail-name">{{member.user_name}}</view>
+                          <view class="am-detail-tags">
+                            <text class="am-tag am-tag-role {{member.role}}">{{roleNames[member.role]}}</text>
+                            <text wx:if="{{member.department}}" class="am-tag am-tag-dept">{{member.department}}</text>
+                            <text wx:if="{{member.position}}" class="am-tag am-tag-pos">{{member.position}}</text>
+                          </view>
+                        </view>
+                      </view>
+
+                      <view class="am-detail-kv">
+                        <view class="am-kv" wx:if="{{member.phone}}">
+                          <text class="am-k">电话</text>
+                          <text class="am-v">{{member.phone}}</text>
+                        </view>
+                        <view class="am-kv" wx:if="{{member.join_date}}">
+                          <text class="am-k">入会时间</text>
+                          <text class="am-v">{{member.join_date}}</text>
+                        </view>
+                        <view class="am-kv" wx:if="{{member.participation_count}}">
+                          <text class="am-k">活动参与</text>
+                          <text class="am-v">已参与 {{member.participation_count}} 次</text>
+                        </view>
+                      </view>
+
+                      <view class="am-detail-actions">
+                        <view wx:if="{{member.is_current_user}}" class="am-added">
+                          <t-icon name="check-circle-filled" size="18" color="#52c41a" />
+                          <text>这是您的账户</text>
+                        </view>
+
+                        <view
+                          wx:elif="{{!member.is_current_user && isPresident}}"
+                          class="am-admin-actions"
+                        >
+                          <view
+                            class="am-btn am-btn-ghost"
+                            wx:for="{{roleOptions[member.role].availableRoles}}"
+                            wx:for-item="role"
+                            wx:key="role"
+                            hover-class="am-btn-hover"
+                            bindtap="changeRole"
+                            data-memberid="{{member.member_id}}"
+                            data-newrole="{{role}}"
+                            data-username="{{member.user_name}}"
+                          >
+                            改为{{roleDisplayMap[role]}}
+                          </view>
+                          <view
+                            class="am-btn am-btn-danger"
+                            hover-class="am-btn-danger-hover"
+                            bindtap="removeMember"
+                            data-userid="{{member.user_id}}"
+                            data-username="{{member.user_name}}"
+                          >
+                            移除
+                          </view>
+                        </view>
+                      </view>
+                    </view>
+                  </expandable-container>
+                </view>
+                <view class="member-trigger-info">
+                  <view class="member-trigger-name-row">
+                    <text class="member-name">{{member.user_name}}</text>
+                    <view class="member-role-chip {{member.role}}">{{roleNames[member.role]}}</view>
+                    <view class="current-badge" wx:if="{{member.is_current_user}}">我</view>
+                  </view>
+                  <view class="member-meta-row">
+                    <text class="member-meta-chip" wx:if="{{member.department}}">{{member.department}}</text>
+                    <text class="member-meta-chip member-position-chip" wx:if="{{member.position}}">{{member.position}}</text>
+                  </view>
+                  <view class="member-meta-row member-phone-row" wx:if="{{member.phone}}">
+                    <t-icon name="call" size="16" color="#999999" />
+                    <text class="member-phone-compact">{{member.phone}}</text>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+        </block>
+      </block>
+    </t-indexes>
+  </view>
+
+
+  <!-- 添加会员悬浮按钮 -->
+  <view class="fab-container">
+    <expandable-container_fullscreen
+      id="add-member-sheet"
+      expanded-width="750"
+      expanded-height="1800"
+      bg-color="#f2f3f5"
+      fullscreen-sheet-bg-color="#ffffff"
+      fullscreen-top-padding="300"
+      bind:expand="onAddMemberSheetExpand"
+      bind:collapse="onAddMemberCollapse"
+    >
+      <view slot="trigger" class="fab-add">
+        <t-icon name="add" size="28" />
+      </view>
+
+      <view slot="content" class="am-sheet">
+        <view style="position: absolute; top: -200rpx; left: 50rpx; width: 700rpx; height: 300rpx; overflow: hidden;">
+          <scroll-view 
+            scroll-y="{{true}}" 
+            style="height: 300rpx; width: 700rpx;"
+            enhanced="{{true}}"
+          >
+            <view style="width: 700rpx; height: {{memberIsoHeight}}; position: relative;">
+              <isotope
+                id="clubMemberIsotope"
+                items="{{memberAvatarItems}}"
+                layoutMode="fitRows"
+                width="700rpx"
+                height="{{memberIsoHeight}}"
+                gutter="{{10}}"
+                transitionDuration="0.25s"
+                backgroundColor="transparent"
+                imageStyle="{{memberImageStyle}}"
+                autoHeight="{{true}}"
+                bind:heightChange="onIsoHeightChange"
+              />
+            </view>
+          </scroll-view>
+        </view>
+
+
+        <view class="am-body">
+          <t-tabs
+            value="{{addMemberTab}}"
+            defaultValue="{{0}}"
+            bind:change="onAddMemberTabChange"
+            swipeable="{{true}}"
+          >
+            <!-- 用户搜索Tab -->
+            <t-tab-panel label="搜索用户" value="{{0}}" class="am-tab-panel" style="height: 1200rpx;">
+              <view class="am-search">
+                <search-suggest
+                  id="memberSearchSuggest"
+                  placeholder="搜索姓名 / 手机号 / 邮箱"
+                  themeColor="#667eea"
+                  shape="round"
+                  enableAutocomplete="{{true}}"
+                  showHistory="{{true}}"
+                  maxSuggestions="{{8}}"
+                  debounceTime="{{300}}"
+                  minSearchLength="{{1}}"
+                  bind:search="onMemberSearch"
+                  bind:fetchSuggestions="onFetchMemberSuggestions"
+                  bind:select="onSelectMemberSuggestion"
+                  bind:historySelect="onMemberHistorySelect"
+                />
+              </view>
+
+              <view class="am-results">
+                <view class="am-results-head" wx:if="{{searchResults.length > 0}}">
+                  <view class="am-results-title">搜索结果</view>
+                  <view class="am-results-count">{{searchResults.length}}</view>
+                </view>
+
+                <scroll-view class="am-results-scroll" scroll-y="{{true}}" show-scrollbar="{{false}}">
+                  <view
+                    wx:for="{{searchResults}}"
+                    wx:key="user_id"
+                    class="am-user-row"
+                    wx:for-item="user"
+                  >
+                    <view class="am-user-left">
+                      <expandable-container
+                        id="search-user-expandable-{{user.user_id}}"
+                        expanded-width="700"
+                        expanded-height="820"
+                        trigger-width="120"
+                        bg-color="#f2f3f5"
+                        bind:expand="onSearchUserExpandableExpand"
+                        bind:collapse="onSearchUserExpandableCollapse"
+                      >
+                        <view slot="trigger" class="am-avatar-trigger">
+                          <image
+                            class="am-avatar"
+                            src="{{user.avatar || default_avatar}}"
+                            mode="aspectFill"
+                            lazy-load="{{true}}"
+                          />
+                        </view>
+
+                        <view slot="content" class="am-user-detail">
+                          <view class="am-detail-head">
+                            <image
+                              class="am-detail-avatar"
+                              src="{{user.avatar || default_avatar}}"
+                              mode="aspectFill"
+                              lazy-load="{{true}}"
+                            />
+                            <view class="am-detail-main">
+                              <view class="am-detail-name">{{user.user_name}}</view>
+                              <view class="am-detail-tags">
+                                <text wx:if="{{user.department}}" class="am-tag am-tag-dept">{{user.department}}</text>
+                                <text wx:if="{{user.position}}" class="am-tag am-tag-pos">{{user.position}}</text>
+                              </view>
+                            </view>
+                          </view>
+
+                          <view class="am-detail-kv">
+                            <view class="am-kv" wx:if="{{user.phone}}">
+                              <text class="am-k">电话</text>
+                              <text class="am-v">{{user.phone}}</text>
+                            </view>
+                            <view class="am-kv" wx:if="{{user.department}}">
+                              <text class="am-k">部门</text>
+                              <text class="am-v">{{user.department}}</text>
+                            </view>
+                            <view class="am-kv" wx:if="{{user.position}}">
+                              <text class="am-k">职位</text>
+                              <text class="am-v">{{user.position}}</text>
+                            </view>
+                          </view>
+
+                          <view class="am-detail-actions">
+                            <view
+                              wx:if="{{!user.isExistingMember}}"
+                              class="am-btn am-btn-primary"
+                              catchtap="addUserToClub"
+                              data-id="{{user.user_id}}"
+                            >
+                              <t-icon name="add" size="16" color="#667eea" />
+                              <text>添加入会</text>
+                            </view>
+
+                            <view
+                              wx:elif="{{user.isExistingMember && isPresident && !user.is_current_user}}"
+                              class="am-admin-actions"
+                            >
+                              <view
+                                class="am-btn am-btn-ghost"
+                                wx:for="{{roleOptions[user.role].availableRoles}}"
+                                wx:for-item="role"
+                                wx:key="role"
+                                hover-class="am-btn-hover"
+                                bindtap="changeRole"
+                                data-memberid="{{user.member_id}}"
+                                data-newrole="{{role}}"
+                                data-username="{{user.user_name}}"
+                              >
+                                改为{{roleDisplayMap[role]}}
+                              </view>
+                              <view
+                                class="am-btn am-btn-danger"
+                                hover-class="am-btn-danger-hover"
+                                bindtap="removeMember"
+                                data-userid="{{user.user_id}}"
+                                data-username="{{user.user_name}}"
+                              >
+                                移除
+                              </view>
+                            </view>
+
+                            <view wx:else class="am-added">
+                              <t-icon name="check-circle-filled" size="18" color="#52c41a" />
+                              <text>已添加</text>
+                            </view>
+                          </view>
+                        </view>
+                      </expandable-container>
+
+                      <view class="am-user-text">
+                        <view class="am-user-name">{{user.user_name}}</view>
+                        <view class="am-user-meta">
+                          <text wx:if="{{user.department}}" class="am-meta">{{user.department}}</text>
+                          <text wx:if="{{user.position}}" class="am-meta">{{user.position}}</text>
+                        </view>
+                        <view class="am-user-phone" wx:if="{{user.phone}}">{{user.phone}}</view>
+                      </view>
+                    </view>
+
+                    <view class="am-user-right">
+                      <view
+                        wx:if="{{!user.isExistingMember}}"
+                        class="am-icon-btn"
+                        catchtap="addUserToClub"
+                        data-id="{{user.user_id}}"
+                      >
+                        <t-icon name="add" size="20" color="#667eea" />
+                      </view>
+                      <view 
+                        wx:else 
+                        class="am-icon-btn am-icon-ok"
+                        catchtap="removeMember"
+                        data-userid="{{user.user_id}}"
+                        data-username="{{user.user_name}}"
+                      >
+                        <t-icon name="check-circle-filled" size="20" color="#52c41a" />
+                      </view>
+                    </view>
+                  </view>
+
+                  <view wx:if="{{searchResults.length === 0}}" class="am-empty">
+                    <t-empty icon="user-search" description="输入关键词开始搜索" />
+                  </view>
+                </scroll-view>
+              </view>
+            </t-tab-panel>
+
+            <!-- 全部用户Tab -->
+            <t-tab-panel label="全部用户" value="{{1}}" class="am-tab-panel" style="height: 1200rpx;">
+              <view class="am-ab-nav" wx:if="{{abNavStack.length > 0}}">
+                <view class="am-back" catchtap="abNavBack">
+                  <t-icon name="chevron-left" size="20" color="#666" />
+                  <text>返回</text>
+                </view>
+                <view class="am-path">{{abNavTitle}}</view>
+              </view>
+
+              <scroll-view class="am-ab-scroll" scroll-y="{{true}}" show-scrollbar="{{true}}" catch:touchmove="catchTouchMove">
+                <view class="am-ab">
+                  <view wx:if="{{abLoading}}" class="am-hint">
+                    <t-loading theme="circular" size="32rpx" color="{{abThemeColor}}" />
+                    <text class="am-hint-text">加载中...</text>
+                  </view>
+
+                  <view wx:elif="{{abViewType === 'root'}}">
+                    <view wx:if="{{!(abDeptTree && abDeptTree.length)}}" class="am-empty am-empty-pad">暂无部门</view>
+                    <view
+                      wx:for="{{abDeptTree}}"
+                      wx:key="department_id"
+                      class="am-dept"
+                      catchtap="abEnterDept"
+                      data-dept="{{item}}"
+                    >
+                      <view class="am-dept-title">{{item.department_name}}</view>
+                      <view class="am-dept-right">
+                        <text class="am-dept-count">{{item.user_count_total || 0}}</text>
+                        <text wx:if="{{item.joined_count > 0}}" class="am-dept-joined">{{item.joined_count}}</text>
+                        <t-icon name="chevron-right" color="#999" />
+                      </view>
+                    </view>
+                  </view>
+
+                  <view wx:elif="{{abViewType === 'children'}}">
+                    <view wx:if="{{!(abCurrentDepartments && abCurrentDepartments.length)}}" class="am-empty am-empty-pad">暂无子部门</view>
+                    <view
+                      wx:for="{{abCurrentDepartments}}"
+                      wx:key="department_id"
+                      class="am-dept"
+                      catchtap="abEnterDept"
+                      data-dept="{{item}}"
+                    >
+                      <view class="am-dept-title">{{item.department_name}}</view>
+                      <view class="am-dept-right">
+                        <text class="am-dept-count">{{item.user_count_total || 0}}</text>
+                        <text wx:if="{{item.joined_count > 0}}" class="am-dept-joined">{{item.joined_count}}</text>
+                        <t-icon name="chevron-right" color="#999" />
+                      </view>
+                    </view>
+                  </view>
+
+                  <view wx:elif="{{abViewType === 'users'}}">
+                    <view wx:if="{{!(abCurrentUsers && abCurrentUsers.length)}}" class="am-empty am-empty-pad">暂无成员</view>
+                    <view class="am-ab-users">
+                      <view
+                        wx:for="{{abCurrentUsers}}"
+                        wx:for-item="u"
+                        wx:key="user_id"
+                        class="am-user-row am-user-row-compact"
+                      >
+                        <view class="am-user-left">
+                          <expandable-container
+                            id="ab-user-{{u.user_id}}"
+                            expanded-width="700"
+                            expanded-height="820"
+                            trigger-width="120"
+                            bg-color="#f2f3f5"
+                            z-index="30000"
+                          >
+                            <view slot="trigger" class="am-avatar-trigger">
+                              <image class="am-avatar" src="{{u.avatar || default_avatar}}" mode="aspectFill" />
+                            </view>
+
+                            <view slot="content" class="am-user-detail">
+                              <view class="am-detail-head">
+                                <image
+                                  class="am-detail-avatar"
+                                  src="{{u.avatar || default_avatar}}"
+                                  mode="aspectFill"
+                                  lazy-load="{{true}}"
+                                />
+                                <view class="am-detail-main">
+                                  <view class="am-detail-name">{{u.user_name}}</view>
+                                  <view class="am-detail-tags">
+                                    <text wx:if="{{u.department}}" class="am-tag am-tag-dept">{{u.department}}</text>
+                                    <text wx:if="{{u.position}}" class="am-tag am-tag-pos">{{u.position}}</text>
+                                  </view>
+                                </view>
+                              </view>
+
+                              <view class="am-detail-kv">
+                                <view class="am-kv" wx:if="{{u.phone}}">
+                                  <text class="am-k">电话</text>
+                                  <text class="am-v">{{u.phone}}</text>
+                                </view>
+                                <view class="am-kv" wx:if="{{u.department}}">
+                                  <text class="am-k">部门</text>
+                                  <text class="am-v">{{u.department}}</text>
+                                </view>
+                                <view class="am-kv" wx:if="{{u.position}}">
+                                  <text class="am-k">职位</text>
+                                  <text class="am-v">{{u.position}}</text>
+                                </view>
+                              </view>
+
+                              <view class="am-detail-actions">
+                                <view
+                                  wx:if="{{!u.isExistingMember && !u.is_current_user}}"
+                                  class="am-btn am-btn-primary"
+                                  catchtap="abOnUserAction"
+                                  data-user="{{u}}"
+                                  data-action="add"
+                                >
+                                  <t-icon name="add" size="16" color="#667eea" />
+                                  <text>添加入会</text>
+                                </view>
+                                <view wx:elif="{{u.is_current_user}}" class="am-added">
+                                  <t-icon name="check-circle-filled" size="18" color="#52c41a" />
+                                  <text>这是您的账户</text>
+                                </view>
+                                <view wx:else class="am-added">
+                                  <t-icon name="check-circle-filled" size="18" color="#52c41a" />
+                                  <text>已添加</text>
+                                </view>
+                              </view>
+                            </view>
+                          </expandable-container>
+
+                          <view class="am-user-text">
+                            <view class="am-user-name">{{u.user_name}}</view>
+                            <view class="am-user-meta">
+                              <text wx:if="{{u.department}}" class="am-meta">{{u.department}}</text>
+                              <text wx:if="{{u.position}}" class="am-meta">{{u.position}}</text>
+                            </view>
+                          </view>
+                        </view>
+
+                        <view class="am-user-right">
+                          <view
+                            wx:if="{{!u.isExistingMember && !u.is_current_user}}"
+                            class="am-icon-btn"
+                            catchtap="abOnUserAction"
+                            data-user="{{u}}"
+                            data-action="add"
+                          >
+                            <t-icon name="add" color="{{abThemeColor}}" />
+                          </view>
+                          <view 
+                            wx:else 
+                            class="am-icon-btn am-icon-ok"
+                            catchtap="removeMember"
+                            data-userid="{{u.user_id}}"
+                            data-username="{{u.user_name}}"
+                          >
+                            <t-icon name="check-circle-filled" color="#52c41a" />
+                          </view>
+                        </view>
+                      </view>
+                    </view>
+                  </view>
+
+                  <view wx:else class="am-empty am-empty-pad">暂无数据</view>
+                </view>
+              </scroll-view>
+            </t-tab-panel>
+          </t-tabs>
+        </view>
+      </view>
+    </expandable-container_fullscreen>
+  </view>
+
+
+
+
+
+</view>
+
+
+
+
+<!-- Toast 提示 -->
+<t-toast id="t-toast" />

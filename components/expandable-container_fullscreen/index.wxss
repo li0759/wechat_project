@@ -1,0 +1,116 @@
+/* components/expandable-container_fullscreen/index.wxss */
+
+/* 容器包装器 - 简化版，不再需要变形动画 */
+.expandable-wrapper {
+  position: relative;
+  display: inline-block;
+  box-sizing: border-box;
+}
+
+.expandable-wrapper.full-size {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 触发内容 */
+.trigger-content {
+  display: inline-block;
+  position: relative;
+}
+
+.trigger-content.full-size {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 涟漪遮罩 - 关键：确保可见 */
+.fs-ripple {
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* 不使用 root-portal 时的 fixed 定位样式 */
+.fs-ripple-fixed {
+  position: fixed;
+}
+
+/* 全屏 portal */
+.fs-portal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+/* 不使用 root-portal 时的 fixed 定位样式 */
+.fs-portal-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* 全屏 sheet */
+.fs-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 0;
+  background: transparent;
+  overflow: visible;
+  pointer-events: auto;
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+.fs-sheet.fs-enter-active {
+  animation: fsSheetIn var(--fs-content-dur, 360ms) cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.fs-sheet.fs-leave-active {
+  animation: fsSheetOut var(--fs-content-dur, 360ms) cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.fs-sheet.fs-entered {
+  animation: none !important;
+  transform: none !important;
+  opacity: 1;
+  pointer-events: auto;
+  will-change: auto;
+}
+
+.fs-sheet.fs-hidden {
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes fsSheetIn {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fsSheetOut {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(100%); opacity: 0; }
+}
+
+/* 返回按钮图标 */
+.fullscreen-topbar-back-icon {
+  width: 22rpx;
+  height: 22rpx;
+  border-left: 6rpx solid #333;
+  border-bottom: 6rpx solid #333;
+  transform: rotate(45deg);
+  margin-left: 6rpx;
+}

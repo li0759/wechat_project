@@ -1,286 +1,595 @@
+<!-- 侧边抽屉容器 -->
+<view class="drawer-container {{drawerTouching ? 'drawer-touching' : ''}}" style="left: {{drawerLeft}}rpx;">
+  <!-- 左侧隐藏区域：协会总览 (800rpx宽) -->
+  <view class="drawer-sidebar"
+    bindtouchstart="onDrawerTouchStart" 
+    bindtouchmove="onDrawerTouchMove" 
+    bindtouchend="onDrawerTouchEnd"
+  >
+    <club-overview-panel visible="{{drawerOpened}}" animationEnded="{{drawerAnimationEnded}}" />
+  </view>
 
-
+  <!-- 右侧主内容区域：原home内容 -->
+  <view class="drawer-main">
   <!-- 顶部导航栏 -->
-  <view class="header">
-    <view class="user-info" bindtap="navigateToUserInfo">
+  <view class="header"
+    bindtouchstart="onDrawerTouchStart" 
+    bindtouchmove="onDrawerTouchMove" 
+    bindtouchend="onDrawerTouchEnd"
+  >
+    <view class="user-info {{userInfoActive ? 'user-info-active' : ''}}" bindtap="navigateToUserInfo" bindtouchstart="handleUserInfoTouchStart" bindtouchend="handleUserInfoTouchEnd">
       <image class="avatar" src="{{userInfo.avatar}}"></image>
       <view class="user-detail">
         <text class="username">{{userInfo.username || '点击登录'}}</text>
-        <text class="user-role">{{userInfo.roles_join}}</text>
       </view>
+      <!-- 搜索框区域 -->
+      <view class="search-section">
+          <view class="search-input-container {{searchInputActive ? 'search-input-container-active' : ''}}" bindtap="navigateToSearch" bindtouchstart="handleSearchTouchStart" bindtouchend="handleSearchTouchEnd">
+            <van-icon name="search" size="16px" color="#999" />
+            <text class="search-placeholder">搜索用户、活动、协会...</text>
+          </view>
+        </view>
     </view>
     <view class="header-right">
-      <view class="notification-icon" bindtap="navigateToMessages">
-        <van-icon name="bell" size="24px" color="#333" />
-        <view class="notification-badge" wx:if="{{unread_messages_count > 0}}">{{unread_messages_count > 99 ? '99+' : unread_messages_count}}</view>
-      </view>
+      <expandable-container
+        id="homeMessagesPanel"
+        expanded-width="700"
+        expanded-height="1280"
+        bg-color="#e0e0e0"
+        text-color="#333333"
+        z-index="1500"
+        bind:expand="onMessagesPanelExpand"
+        bind:collapse="onMessagesPanelCollapse"
+      >
+        <view slot="trigger" class="notification-icon">
+          <t-icon name="notification" size="24px" color="rgb(223, 118, 176)" />
+          <view class="notification-badge" wx:if="{{unread_messages_count > 0}}">{{unread_messages_count > 99 ? '99+' : unread_messages_count}}</view>
+        </view>
+        <view slot="content" class="messages-panel">
+          <view class="messages-panel-header">
+            <view class="messages-panel-title">通知中心</view>
+            <view class="messages-panel-close" bindtap="onMessagesPanelClose">
+              <van-icon name="cross" size="18px" color="#666666" />
+            </view>
+          </view>
+          <view class="messages-panel-body">
+            <view class="loading-container" wx:if="{{messagesLoading}}">
+              <van-loading color="#1989fa" size="24px" />
+              <text class="loading-text">加载中...</text>
+            </view>
+            <van-tabs wx:else active="{{messagesActiveTab}}" bind:change="onMessagesTabChange" swipeable animated>
+              <van-tab title="协会通知">
+                <scroll-view scroll-y="true" class="messages-tab-scroll">
+                  <view class="messages-tab-content">
+                    <view class="empty-container" wx:if="{{messagesEmptyClub}}">
+                      <van-empty description="暂无协会通知" />
+                    </view>
+                    <view class="notice-list" wx:else>
+                      <view
+                        class="notice-item {{!item.readDate ? 'unread' : ''}}"
+                        wx:for="{{messagesClubNotices}}"
+                        wx:key="message_id"
+                        bindtap="onMessageItemTap"
+                        data-message_id="{{item.message_id}}"
+                        data-url="{{item.url}}"
+                        data-type="club"
+                      >
+                        <view class="notice-icon">
+                          <view class="icon-bg club-icon">
+                            <van-icon name="cluster-o" color="#fff" size="20px" />
+                          </view>
+                          <view class="unread-dot" wx:if="{{!item.readDate}}"></view>
+                        </view>
+                        <view class="notice-content">
+                          <view class="notice-title">{{item.title}}</view>
+                          <view class="notice-desc">{{item.text}}</view>
+                          <view class="notice-time">{{item.created_time}}</view>
+                        </view>
+                      </view>
+                    </view>
+                  </view>
+                </scroll-view>
+              </van-tab>
+              <van-tab title="活动通知">
+                <scroll-view scroll-y="true" class="messages-tab-scroll">
+                  <view class="messages-tab-content">
+                    <view class="empty-container" wx:if="{{messagesEmptyEvent}}">
+                      <van-empty description="暂无活动通知" />
+                    </view>
+                    <view class="notice-list" wx:else>
+                      <view
+                        class="notice-item {{!item.readDate ? 'unread' : ''}}"
+                        wx:for="{{messagesEventNotices}}"
+                        wx:key="message_id"
+                        bindtap="onMessageItemTap"
+                        data-message_id="{{item.message_id}}"
+                        data-url="{{item.url}}"
+                        data-type="event"
+                      >
+                        <view class="notice-icon">
+                          <view class="icon-bg event-icon">
+                            <van-icon name="calendar-o" color="#fff" size="20px" />
+                          </view>
+                          <view class="unread-dot" wx:if="{{!item.readDate}}"></view>
+                        </view>
+                        <view class="notice-content">
+                          <view class="notice-title">{{item.title}}</view>
+                          <view class="notice-desc">{{item.text}}</view>
+                          <view class="notice-time">{{item.created_time}}</view>
+                        </view>
+                      </view>
+                    </view>
+                  </view>
+                </scroll-view>
+              </van-tab>
+              <van-tab title="系统通知">
+                <scroll-view scroll-y="true" class="messages-tab-scroll">
+                  <view class="messages-tab-content">
+                    <view class="empty-container" wx:if="{{messagesEmptySystem}}">
+                      <van-empty description="暂无系统通知" />
+                    </view>
+                    <view class="notice-list" wx:else>
+                      <view
+                        class="notice-item {{!item.readDate ? 'unread' : ''}}"
+                        wx:for="{{messagesSystemNotices}}"
+                        wx:key="message_id"
+                        bindtap="onMessageItemTap"
+                        data-message_id="{{item.message_id}}"
+                        data-url="{{item.url}}"
+                        data-type="system"
+                      >
+                        <view class="notice-icon">
+                          <view class="icon-bg system-icon">
+                            <van-icon name="info-o" color="#fff" size="20px" />
+                          </view>
+                          <view class="unread-dot" wx:if="{{!item.readDate}}"></view>
+                        </view>
+                        <view class="notice-content">
+                          <view class="notice-title">{{item.title}}</view>
+                          <view class="notice-desc">{{item.text}}</view>
+                          <view class="notice-time">{{item.created_time}}</view>
+                        </view>
+                      </view>
+                    </view>
+                  </view>
+                </scroll-view>
+              </van-tab>
+            </van-tabs>
+          </view>
+        </view>
+      </expandable-container>
     </view>
   </view>
 
-  <!-- 使用vant的Tab组件 -->
-  <van-tabs  swipeable animated sticky offset-top="{{ 65 }}">
-    <!-- 最新活动 -->
-    <van-tab title="最新活动">
-      <!-- 热门活动轮播 -->
-      <view class="hot-events-container" wx:if="{{hotActivities.length > 0}}">
-        <view class="section-title">
-          <text>热门活动</text>
-        </view>
-        <swiper class="hot-events-swiper" indicator-dots="{{true}}" interval="{{3000}}" duration="{{500}}" circular="{{true}}">
-          <swiper-item wx:for="{{hotActivities}}" wx:key="event_id">
-            <view class="hot-event-card" bindtap="navigateToEventDetail" data-event_id="{{item.event_id}}" data-user_managed="{{item.cur_user_managed}}">
-              <view class="hot-event-layout">
-                <!-- 地图背景 - 占据整个容器 -->
-                <view class="hot-event-map-background" wx:if="{{item.location_data}}">
-                  <view class="hot-event-map">
-                    <image 
-                      src="https://maps.geoapify.com/v1/staticmap?style=osm-bright-grey&width=600&height=400&center=lonlat:{{item.location_data.longitude}},{{item.location_data.latitude}}&zoom=14&styleCustomization=road_label_primary:36|road_label_secondary:36|place_label_park:36|place_label_village:36|place_label_city:36|place_label_town:36|place_state-label:36|place_label_country:36&marker=lonlat:{{item.location_data.longitude}},{{item.location_data.latitude}};type:awesome;color:%23ff0000;size:28&scaleFactor=2&apiKey=b8568cb9afc64fad861a69edbddb2658"
-                      mode="aspectFill" />
-                    <!-- 地点名称在地图中心 -->
-                    <text class="location-name">{{item.location_data.name}}</text>
-                  </view>
-                </view>
-                
-                <!-- 活动封面 - 左上角 -->
-                <view class="hot-event-image-container">
-                  <image 
-                    class="hot-event-image {{!item.cover_url ? 'image-placeholder' : ''}} {{item.end_time ? 'card-image-ended' : ''}} {{item.cur_user_is_joined ? 'is-joined' : ''}} {{item.cur_user_managed ? 'is-managed' : ''}}"
-                    src="{{item.cover_url}}" 
-                    mode="aspectFill" />
-                </view>
-                
-                <!-- 参与者头像 - 右上角 -->
-                <view class="hot-event-participants">
-                  <view class="participants-avatars">
-                    <image 
-                      wx:for="{{item.latest_joins}}" 
-                      wx:for-item="member" 
-                      wx:key="user_id" 
-                      wx:if="{{index < 5}}"
-                      src="{{member.avatar || '/assets/images/default-avatar.png'}}" 
-                      class="participant-avatar" />
-                    <view class="more-participants" wx:if="{{item.join_count > 5}}">...</view>
-                  </view>
-                  <text class="participants-count">{{item.join_count}}人参加</text>
-                </view>
-                
-                <!-- 活动信息 - 左下角 -->
-                <view class="hot-event-info">
-                  <view class="hot-event-title">{{item.title}}</view>
-                  <view class="hot-event-description">{{item.description}}</view>
-                  <view class="hot-event-time">{{item.start_time}}</view>
-                </view>
-              </view>
-            </view>
-          </swiper-item>
-        </swiper>
-      </view>
+  <!-- 自定义标签栏 -->
+  <view class="custom-tabs">
+    <view class="custom-tab {{activeTab === 0 ? 'custom-tab-active' : ''}}" bindtap="switchTab" data-index="0">
+      <text>活动</text>
+    </view>
+    <view class="custom-tab {{activeTab === 1 ? 'custom-tab-active' : ''}}" bindtap="switchTab" data-index="1">
+      <text>协会</text>
+    </view>
+    <view class="custom-tab-line" style="left: {{activeTab * 50}}%"></view>
+  </view>
 
-      <view class="waterfall-container">
-        <view class="waterfall-column">
-          <view wx:for="{{activities}}" wx:key="event_id" wx:if="{{index % 2 === 0}}" class="waterfall-item">
-            <view class="card" bindtap="navigateToEventDetail" data-event_id="{{item.event_id}}" data-user_managed="{{item.cur_user_managed}}">
-              <view class="image-container">
-                <image 
-                  class="card-image {{!item.cover_url ? 'image-placeholder' : ''}} {{item.end_time ? 'card-image-ended' : ''}} {{item.cur_user_is_joined ? 'is-joined' : ''}} {{item.cur_user_managed ? 'is-managed' : ''}}"
-                  src="{{item.cover_url}}" 
-                  mode="aspectFill" />
-                <view class="image-members-count">
-                  <van-icon name="friends-o" size="12px" color="#fff" />
-                  <text>{{item.join_count}}人参加</text>
+  <!-- 内容区域 - 使用swiper实现左右滑动 -->
+  <swiper 
+    class="tab-content-swiper" 
+    current="{{activeTab}}" 
+    bindchange="handleSwiperChange" 
+    bindtransition="handleSwiperTransition" 
+    bindanimationfinish="handleSwiperAnimationFinish"
+    disable-touch="{{swiperDisableTouch}}"
+  >
+    <!-- 活动标签页 -->
+    <swiper-item>
+      <scroll-view 
+        scroll-y="{{!eventItemCatchMove && !swiperToDrawerMode}}"
+        class="tab-content-scroll" 
+        bindscrolltolower="onScrollToLower"
+        bindscroll="onScrollViewScroll"
+        bindtouchstart="onEventScrollTouchStart"
+        bindtouchmove="onEventScrollTouchMove"
+        bindtouchend="onEventScrollTouchEnd"
+      >
+        <!-- 热门活动轮播 -->
+        <view class="hot-events-container" wx:if="{{hotActivities.length > 0}}">
+          <swiper class="hot-events-swiper" indicator-dots="{{true}}" interval="{{3000}}" duration="{{500}}" circular="{{true}}">
+            <swiper-item wx:for="{{hotActivities}}" wx:key="event_id" wx:for-index="hotIndex" list-item>
+              <view 
+                class="hot-event-card"
+                bindtouchstart="onGlobalPopupTouchStart"
+                bindtouchend="openGlobalPopup"
+                data-popup-type="{{item.cur_user_managed ? 'event-manage' : 'event-detail'}}"
+                data-popup-id="{{item.event_id}}"
+                data-bg-color="#f7f8fa"
+                data-sheet-bg-color="#f7f8fa"
+              >
+                <view class="hot-event-layout" style="height: 430rpx;">
+                  <view class="hot-event-map-background" wx:if="{{item.location_data}}">
+                    <view class="hot-event-map">
+                      <image 
+                        src="{{item.premap_url || 'https://maps.geoapify.com/v1/staticmap?style=osm-bright-grey&width=600&height=400&center=lonlat:' + item.location_data.longitude + ',' + item.location_data.latitude + '&zoom=14&marker=lonlat:' + item.location_data.longitude + ',' + item.location_data.latitude + ';type:awesome;color:%23ff0000;size:medium&scaleFactor=2'}}"
+                        mode="aspectFill" />
+                      <text class="location-name">{{item.location_data.name}}</text>
+                      <view class="hot-event-overlay"></view>
+                    </view>
+                  </view>
+                  <view class="hot-event-image-container">
+                    <image class="hot-event-image" src="{{item.cover_url_thumb}}" mode="aspectFill" />
+                    <view class="tag-managed" wx:if="{{item.cur_user_managed}}">我管理</view>
+                    <view class="tag-ended" wx:elif="{{item.end_time}}">已结束</view>
+                    <view class="tag-joined" wx:elif="{{item.cur_user_is_joined}}">已参加</view>
+                  </view>
+                  <view class="hot-event-participants">
+                    <view class="participants-avatars">
+                      <image wx:for="{{item.latest_joins}}" wx:for-item="member" wx:key="user_id" wx:if="{{index < 5}}" list-item src="{{member.avatar || default_avatar}}" class="participant-avatar" />
+                      <view class="more-participants" wx:if="{{item.join_count > 5}}">...</view>
+                    </view>
+                    <text class="participants-count">{{item.join_count}}人参加</text>
+                  </view>
+                  <view class="hot-event-info">
+                    <view class="hot-event-title"><text>{{item.title}}</text></view>
+                    <view class="hot-event-description"><text>{{item.description}}</text></view>
+                    <view class="hot-event-time"><text>{{item.start_time}}</text></view>
+                  </view>
                 </view>
               </view>
-              <view class="card-content">
-                <view class="card-title">{{item.title}}</view>
-                <view class="card-info-row">
-                  <view class="card-club-name" wx:if="{{item.club_name}}">
-                    <van-icon name="friends-o" size="12px" color="#666" />
-                    <text>{{item.club_name}}</text>
-                  </view>
-                  <view class="card-tag">
-                    <text>{{item.start_time}}</text>
-                  </view>
-                </view>
-              </view>
-            </view>
-          </view>
+            </swiper-item>
+          </swiper>
         </view>
-        <view class="waterfall-column">
-          <view wx:for="{{activities}}" wx:key="event_id" wx:if="{{index % 2 === 1}}" class="waterfall-item">
-            <view class="card" bindtap="navigateToEventDetail" data-event_id="{{item.event_id}}" data-user_managed="{{item.cur_user_managed}}">
-              <view class="image-container">
-                <image 
-                  class="card-image {{!item.cover_url ? 'image-placeholder' : ''}} {{item.end_time ? 'card-image-ended' : ''}} {{item.cur_user_is_joined ? 'is-joined' : ''}} {{item.cur_user_managed ? 'is-managed' : ''}}"
-                  src="{{item.cover_url}}" 
-                  mode="aspectFill" />
-                <view class="image-members-count">
-                  <van-icon name="friends-o" size="12px" color="#fff" />
-                  <text>{{item.join_count}}人参加</text>
-                </view>
-              </view>
-              <view class="card-content">
-                <view class="card-title">{{item.title}}</view>
-                <view class="card-info-row">
-                  <view class="card-club-name" wx:if="{{item.club_name}}">
-                    <van-icon name="friends-o" size="12px" color="#666" />
-                    <text>{{item.club_name}}</text>
-                  </view>
-                  <view class="card-tag">
-                    <text>{{item.start_time}}</text>
-                  </view>
-                </view>
-              </view>
-            </view>
-          </view>
-        </view>
-        <!-- 空状态 -->
-        <view class="empty-container" wx:if="{{activities.length === 0}}">
-          <van-empty description="暂无活动" />
-        </view>
-      </view>
-    </van-tab>
 
-    <!-- 热门协会 -->
-    <van-tab title="热门协会">
-      <!-- 热门协会轮播 -->
-      <view class="hot-clubs-container" wx:if="{{hotClubs.length > 0}}">
-        <view class="section-title">
-          <text>热门协会</text>
-        </view>
-        <swiper class="hot-clubs-swiper" indicator-dots="{{true}}" interval="{{3000}}" duration="{{500}}" circular="{{true}}">
-          <swiper-item wx:for="{{hotClubs}}" wx:key="club_id">
-            <view class="hot-club-card" bindtap="navigateToClubDetail" data-club_id="{{item.club_id}}" data-user_leaded="{{item.cur_user_leaded}}">
-              <view class="hot-club-layout">
-                <!-- 协会logo背景 -->
-                <view class="hot-club-background">
-                  <image class="hot-club-bg-image {{!item.logo ? 'image-placeholder' : ''}}" src="{{item.logo}}" mode="aspectFill" />
-                  <view class="hot-club-overlay"></view>
-                </view>
-                
-                <!-- 协会信息 - 左上角 -->
-                <view class="hot-club-info">
-                  <view class="hot-club-name">{{item.club_name}}</view>
-                  <view class="hot-club-description">{{item.description}}</view>
-                </view>
-                
-                <!-- 协会会长信息 - 左中 -->
-                <view class="hot-club-leader">
-                  <view class="leader-item">
-                    <image src="{{item.leader_info.avatar || '/assets/images/default-avatar.png'}}" class="leader-avatar" mode="aspectFill" />
-                    <view class="leader-details">
-                      <text class="leader-title">会长</text>
-                      <text class="leader-name">{{item.leader_info.name || '暂无'}}</text>
-                    </view>
+        <!-- 活动瀑布流部分 - 使用全局弹窗 -->
+        <view class="waterfall-container">
+          <view class="waterfall-column">
+            <block wx:for="{{eventList}}" wx:key="event_id" wx:for-index="index">
+              <view wx:if="{{index % 2 === 0}}" class="card" style="width:100%;margin-bottom:15rpx;">
+                <!-- 阶段1：数据未加载 - 完整骨架屏 -->
+                <view wx:if="{{item.loading}}" class="card-skeleton">
+                  <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '280rpx', borderRadius: '8rpx' }]}}" />
+                  <view class="card-content">
+                    <t-skeleton animation="gradient" rowCol="{{[{ width: '80%', height: '28rpx', marginBottom: '12rpx' }]}}" />
+                    <t-skeleton animation="gradient" rowCol="{{[{ width: '50%', height: '22rpx' }]}}" />
                   </view>
                 </view>
                 
-                <!-- 协会会员信息 - 左下 -->
-                <view class="hot-club-members">
-                    <view class="members-list-rows">
-                      <view 
-                        wx:for="{{item.recent_members}}" 
-                        wx:for-item="member" 
-                        wx:key="user_id" 
-                        wx:if="{{index < 3}}"
-                        class="member-row">
-                        <image src="{{member.avatar || '/assets/images/default-avatar.png'}}" class="member-row-avatar" mode="aspectFill" />
-                        <text class="member-row-name">{{member.name || member.user_name}}</text>
-                      </view>
+                <!-- 阶段2&3：数据已加载 -->
+                <view 
+                  wx:else
+                  bindtouchstart="onGlobalPopupTouchStart"
+                  bindtouchend="openGlobalPopup"
+                  data-popup-type="{{item.cur_user_managed ? 'event-manage' : 'event-detail'}}"
+                  data-popup-id="{{item.event_id}}"
+                  data-bg-color="#f7f8fa"
+                  data-sheet-bg-color="#f7f8fa"
+                >
+                  <!-- 图片区域 -->
+                  <view class="image-container" style="width:100%;height:280rpx;position:relative;">
+                    <!-- 阶段2：图片骨架屏（覆盖在图片上方） -->
+                    <view wx:if="{{!item.imgLoaded}}" class="image-skeleton">
+                      <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '280rpx', borderRadius: '8rpx 8rpx 0 0' }]}}" />
                     </view>
-                </view>
-                
-                <!-- 最新活动列表 - 右侧 -->
-                <view class="hot-club-events">
-                  <view class="recent-events-list">
-                    <!-- 显示实际活动 -->
-                    <view wx:for="{{item.recent_events}}" wx:for-item="event" wx:key="title" wx:if="{{index < 3}}" class="recent-event-item">
-                      <view class="event-item-content">
-                        <!-- 第一个活动显示封面 -->
-                        <view wx:if="{{index === 0}}" class="event-cover-container">
-                          <image wx:if="{{event.cover}}" class="event-cover" src="{{event.cover}}" mode="aspectFill" />
-                          <view class="event-text-overlay">
-                            <text class="event-title">{{event.title}}</text>
-                            <text class="event-time">{{event.start_time}}</text>
-                          </view>
-                        </view>
-                        <!-- 第二、三个活动只显示文字 -->
-                        <view wx:else class="event-text-only">
-                          <text class="event-title-only">{{event.title}}</text>
-                          <text class="event-time-only">{{event.start_time}}</text>
-                        </view>
-                      </view>
-                    </view>
-                    <!-- 占位符，确保始终有3行的空间 -->
-                    <view wx:for="{{[1,2,3]}}" wx:key="*this" wx:if="{{item.recent_events.length < index}}" class="recent-event-placeholder">
-                      <view class="placeholder-content">
-                        <!-- 第一个占位符显示封面样式 -->
-                        <view wx:if="{{index === 1}}" class="event-cover-container">
-                          <view class="event-cover-placeholder">
-                            <van-icon name="photo" size="16px" color="#ddd" />
-                          </view>
-                          <view class="event-text-overlay">
-                            <text class="placeholder-text">暂无活动</text>
-                            <text class="placeholder-time">--</text>
-                          </view>
-                        </view>
-                        <!-- 其他占位符只显示文字 -->
-                        <view wx:else class="event-text-only">
-                          <text class="placeholder-text-only">暂无活动</text>
-                          <text class="placeholder-time-only">--</text>
-                        </view>
-                      </view>
+                    <!-- 图片始终渲染，但在未加载完成时被骨架屏遮挡 -->
+                    <image class="card-image" src="{{item.cover_url_thumb}}" mode="aspectFill" bindload="onEventImgLoad" binderror="onEventImgLoad" data-index="{{index}}" style="{{item.imgLoaded ? '' : 'opacity: 0;'}}" />
+                    <!-- 阶段3：遮罩和标签只在图片加载完成后显示 -->
+                    <block wx:if="{{item.imgLoaded}}">
+                      <view class="image-gradient-mask"></view>
+                      <view class="tag-managed" wx:if="{{item.cur_user_managed}}"><t-icon name="user-list" size="36rpx" color="#fff"></t-icon></view>
+                      <view class="tag-ended" wx:elif="{{item.is_ended}}"><t-icon name="close-circle" size="36rpx" color="#fff"></t-icon></view>
+                      <view class="tag-joined" wx:elif="{{item.cur_user_is_joined}}"><t-icon name="bookmark-checked" size="36rpx" color="#fff"></t-icon></view>
+                    </block>
+                  </view>
+                  
+                  <!-- 文字内容区域 - 阶段2&3都显示 -->
+                  <view class="card-content">
+                    <view class="card-title"><text>{{item.title}}</text></view>
+                    <view class="card-info-row">
+                      <view class="card-club-name" wx:if="{{item.club_name}}"><text>{{item.club_name}}</text></view>
+                      <view class="card-tag"><text>{{item.start_time}}</text></view>
                     </view>
                   </view>
                 </view>
               </view>
-            </view>
-          </swiper-item>
-        </swiper>
-      </view>
-
-      <view class="waterfall-container">
-        <view class="waterfall-column">
-          <view wx:for="{{clubList}}" wx:key="club_id" wx:if="{{index % 2 === 0}}" class="waterfall-item">
-            <view class="card" bindtap="navigateToClubDetail" data-club_id="{{item.club_id}}" data-user_leaded="{{item.cur_user_leaded}}">
-              <image 
-                class="card-image {{!item.logoUrl ? 'image-placeholder' : ''}} {{item.cur_user_is_member ? 'is-member' : ''}} {{item.cur_user_leaded ? 'is-leaded' : ''}}"
-                src="{{item.logoUrl}}" 
-                mode="aspectFill" />
-              <view class="card-content">
-                <view class="card-title">{{item.club_name}}</view>
-                <view class="card-desc">{{item.description}}</view>
-                <view class="card-members">
-                  <van-icon name="friends-o" size="12px" color="#666" />
-                  <text>{{item.member_num}}名成员</text>
+            </block>
+          </view>
+          
+          <view class="waterfall-column">
+            <block wx:for="{{eventList}}" wx:key="event_id" wx:for-index="index">
+              <view wx:if="{{index % 2 === 1}}" class="card" style="width:100%;margin-bottom:15rpx;">
+                <!-- 阶段1：数据未加载 - 完整骨架屏 -->
+                <view wx:if="{{item.loading}}" class="card-skeleton">
+                  <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '280rpx', borderRadius: '8rpx' }]}}" />
+                  <view class="card-content">
+                    <t-skeleton animation="gradient" rowCol="{{[{ width: '80%', height: '28rpx', marginBottom: '12rpx' }]}}" />
+                    <t-skeleton animation="gradient" rowCol="{{[{ width: '50%', height: '22rpx' }]}}" />
+                  </view>
+                </view>
+                
+                <!-- 阶段2&3：数据已加载 -->
+                <view 
+                  wx:else
+                  bindtouchstart="onGlobalPopupTouchStart"
+                  bindtouchend="openGlobalPopup"
+                  data-popup-type="{{item.cur_user_managed ? 'event-manage' : 'event-detail'}}"
+                  data-popup-id="{{item.event_id}}"
+                  data-bg-color="#f7f8fa"
+                  data-sheet-bg-color="#f7f8fa"
+                >
+                  <!-- 图片区域 -->
+                  <view class="image-container" style="width:100%;height:280rpx;position:relative;">
+                    <!-- 阶段2：图片骨架屏（覆盖在图片上方） -->
+                    <view wx:if="{{!item.imgLoaded}}" class="image-skeleton">
+                      <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '280rpx', borderRadius: '8rpx 8rpx 0 0' }]}}" />
+                    </view>
+                    <!-- 图片始终渲染，但在未加载完成时被骨架屏遮挡 -->
+                    <image class="card-image" src="{{item.cover_url_thumb}}" mode="aspectFill" bindload="onEventImgLoad" binderror="onEventImgLoad" data-index="{{index}}" style="{{item.imgLoaded ? '' : 'opacity: 0;'}}" />
+                    <!-- 阶段3：遮罩和标签只在图片加载完成后显示 -->
+                    <block wx:if="{{item.imgLoaded}}">
+                      <view class="image-gradient-mask"></view>
+                      <view class="tag-managed" wx:if="{{item.cur_user_managed}}"><t-icon name="user-list" size="36rpx" color="#fff"></t-icon></view>
+                      <view class="tag-ended" wx:elif="{{item.is_ended}}"><t-icon name="close-circle" size="36rpx" color="#fff"></t-icon></view>
+                      <view class="tag-joined" wx:elif="{{item.cur_user_is_joined}}"><t-icon name="bookmark-checked" size="36rpx" color="#fff"></t-icon></view>
+                    </block>
+                  </view>
+                  
+                  <!-- 文字内容区域 - 阶段2&3都显示 -->
+                  <view class="card-content">
+                    <view class="card-title"><text>{{item.title}}</text></view>
+                    <view class="card-info-row">
+                      <view class="card-club-name" wx:if="{{item.club_name}}"><text>{{item.club_name}}</text></view>
+                      <view class="card-tag"><text>{{item.start_time}}</text></view>
+                    </view>
+                  </view>
                 </view>
               </view>
-            </view>
+            </block>
           </view>
         </view>
-        <view class="waterfall-column">
-          <view wx:for="{{clubList}}" wx:key="club_id" wx:if="{{index % 2 === 1}}" class="waterfall-item">
-            <view class="card" bindtap="navigateToClubDetail" data-club_id="{{item.club_id}}" data-user_leaded="{{item.cur_user_leaded}}">
-              <image 
-                class="card-image {{!item.logoUrl ? 'image-placeholder' : ''}} {{item.cur_user_is_member ? 'is-member' : ''}} {{item.cur_user_leaded ? 'is-leaded' : ''}}"
-                src="{{item.logoUrl}}" 
-                mode="aspectFill" />
-              <view class="card-content">
-                <view class="card-title">{{item.club_name}}</view>
-                <view class="card-desc">{{item.description}}</view>
-                <view class="card-members">
-                  <van-icon name="friends-o" size="12px" color="#666" />
-                  <text>{{item.member_num}}名成员</text>
+      </scroll-view>
+    </swiper-item>
+
+    <!-- 协会标签页 -->
+    <swiper-item>
+      <scroll-view 
+        scroll-y="true" 
+        class="tab-content-scroll" 
+        bindscrolltolower="onScrollToLower"
+        bindscroll="onScrollViewScroll"
+        bindtouchstart="onScrollTouchStart"
+        bindtouchmove="onScrollTouchMove"
+        bindtouchend="onScrollTouchEnd"
+      >
+        <!-- 热门协会轮播 - 海报式设计 -->
+        <view class="hot-clubs-container" wx:if="{{hotClubs.length > 0}}">
+          <swiper class="hot-clubs-swiper" indicator-dots="{{true}}" interval="{{4000}}" duration="{{600}}" circular="{{true}}" bindchange="onClubSwiperChange">
+            <swiper-item wx:for="{{hotClubs}}" wx:key="club_id" wx:for-index="hotIndex" list-item>
+              <view 
+                class="hot-club-poster-card"
+                bindtouchstart="onGlobalPopupTouchStart"
+                bindtouchend="openGlobalPopup"
+                data-popup-type="{{item.cur_user_managed ? 'club-manage' : 'club-detail'}}"
+                data-popup-id="{{item.club_id}}"
+                data-bg-color="{{item.cur_user_managed ? '#f5f5f5' : '#fff'}}"
+                data-sheet-bg-color="{{item.cur_user_managed ? '#f5f5f5' : '#fff'}}"
+              >
+                <view class="hot-club-trigger">
+                  <!-- isotope背景 -->
+                  <view class="isotope-background-container">
+                    <isotope
+                      id="hotClubIsotope-{{index}}"
+                      items="{{item.isotopeData}}"
+                      layoutMode="masonryHorizontal"
+                      masonryHorizontal="{{masonryHorizontalConfig}}"
+                      width="750rpx"
+                      height="450rpx"
+                      gutter="{{10}}"
+                      transitionDuration="0.8s"
+                      groupInterval="5000"
+                      backgroundColor="rgb(108, 99, 104)">
+                    </isotope>
+                    <view class="isotope-overlay"></view>
+                  </view>
+                  <!-- 会长头像展示区 -->
+                  <view class="poster-president-section" wx:if="{{item.posterData.president}}">
+                    <view class="president-avatar-container">
+                      <image class="president-avatar" src="{{item.posterData.president.avatar}}" mode="aspectFill" />
+                      <view class="president-glow"></view>
+                    </view>
+                    <view class="president-badge"><text class="badge-text">会长</text></view>
+                    <view class="president-name"><text class="president-name-text">{{item.posterData.president.name}}</text></view>
+                  </view>
+                  <!-- 协会描述区域 -->
+                  <view class="poster-description-section">
+                    <view class="description-content"><text class="description-text">{{item.description}}</text></view>
+                  </view>
+                  <!-- 协会信息展示区 -->
+                  <view class="poster-info-section">
+                    <view class="club-title">
+                      <text class="main-title">{{item.club_name}}</text>
+                      <view class="title-underline"></view>
+                    </view>
+                    <view class="club-stats">
+                      <view class="stat-item"><text class="stat-number">{{item.posterData.memberCount}}</text><text class="stat-label">成员</text></view>
+                      <view class="stat-item"><text class="stat-number">{{item.posterData.eventCount}}</text><text class="stat-label">活动</text></view>
+                    </view>
+                  </view>
+                  <!-- 标识 -->
+                  <view class="poster-badge">
+                    <view class="badge-icon">{{item.cur_user_managed ? '⚙️' : '🏆'}}</view>
+                    <view class="badge-text">{{item.cur_user_managed ? '我管理' : '热门协会'}}</view>
+                  </view>
                 </view>
               </view>
-            </view>
+            </swiper-item>
+          </swiper>
+        </view>
+
+        <!-- 协会瀑布流部分 - 使用全局弹窗 -->
+        <view class="waterfall-container">
+          <view class="waterfall-column">
+            <block wx:for="{{clubList}}" wx:key="club_id" wx:for-index="index">
+              <view wx:if="{{index % 2 === 0}}" class="card" style="width:100%;margin-bottom:15rpx;">
+                <!-- 阶段1：数据未加载 - 完整骨架屏 -->
+                <view wx:if="{{item.loading}}" class="card-skeleton">
+                  <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '280rpx', borderRadius: '8rpx' }]}}" />
+                  <view class="card-content">
+                    <t-skeleton animation="gradient" rowCol="{{[{ width: '80%', height: '28rpx', marginBottom: '12rpx' }]}}" />
+                    <t-skeleton animation="gradient" rowCol="{{[{ width: '60%', height: '22rpx' }]}}" />
+                  </view>
+                </view>
+                
+                <!-- 阶段2&3：数据已加载 -->
+                <view 
+                  wx:else
+                  bindtouchstart="onGlobalPopupTouchStart"
+                  bindtouchend="openGlobalPopup"
+                  data-popup-type="{{item.cur_user_managed ? 'club-manage' : 'club-detail'}}"
+                  data-popup-id="{{item.club_id}}"
+                  data-bg-color="{{item.cur_user_managed ? '#f5f5f5' : '#fff'}}"
+                  data-sheet-bg-color="{{item.cur_user_managed ? '#f5f5f5' : '#fff'}}"
+                >
+                  <!-- 图片区域 -->
+                  <view class="image-container" style="width:100%;height:280rpx;position:relative;">
+                    <!-- 阶段2：图片骨架屏（覆盖在图片上方） -->
+                    <view wx:if="{{!item.imgLoaded}}" class="image-skeleton">
+                      <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '280rpx', borderRadius: '8rpx 8rpx 0 0' }]}}" />
+                    </view>
+                    <!-- 图片始终渲染，但在未加载完成时被骨架屏遮挡 -->
+                    <image class="card-image" src="{{item.cover_url_thumb}}" mode="aspectFill" bindload="onClubImgLoad" binderror="onClubImgLoad" data-index="{{index}}" style="{{item.imgLoaded ? '' : 'opacity: 0;'}}" />
+                    <!-- 阶段3：遮罩和标签只在图片加载完成后显示 -->
+                    <block wx:if="{{item.imgLoaded}}">
+                      <view class="image-gradient-mask"></view>
+                      <view class="tag-managed" wx:if="{{item.cur_user_managed}}"><t-icon name="user-list" size="36rpx" color="#fff"></t-icon></view>
+                      <view class="tag-joined" wx:elif="{{item.cur_user_is_member}}"><t-icon name="bookmark-checked" size="36rpx" color="#fff"></t-icon></view>
+                    </block>
+                  </view>
+                  
+                  <!-- 文字内容区域 - 阶段2&3都显示 -->
+                  <view class="card-content">
+                    <view class="card-title"><text>{{item.club_name}}</text></view>
+                    <view class="card-desc"><text>{{item.description}}</text></view>
+                  </view>
+                </view>
+              </view>
+            </block>
+          </view>
+          
+          <view class="waterfall-column">
+            <block wx:for="{{clubList}}" wx:key="club_id" wx:for-index="index">
+              <view wx:if="{{index % 2 === 1}}" class="card" style="width:100%;margin-bottom:15rpx;">
+                <!-- 阶段1：数据未加载 - 完整骨架屏 -->
+                <view wx:if="{{item.loading}}" class="card-skeleton">
+                  <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '280rpx', borderRadius: '8rpx' }]}}" />
+                  <view class="card-content">
+                    <t-skeleton animation="gradient" rowCol="{{[{ width: '80%', height: '28rpx', marginBottom: '12rpx' }]}}" />
+                    <t-skeleton animation="gradient" rowCol="{{[{ width: '60%', height: '22rpx' }]}}" />
+                  </view>
+                </view>
+                
+                <!-- 阶段2&3：数据已加载 -->
+                <view 
+                  wx:else
+                  bindtouchstart="onGlobalPopupTouchStart"
+                  bindtouchend="openGlobalPopup"
+                  data-popup-type="{{item.cur_user_managed ? 'club-manage' : 'club-detail'}}"
+                  data-popup-id="{{item.club_id}}"
+                  data-bg-color="{{item.cur_user_managed ? '#f5f5f5' : '#fff'}}"
+                  data-sheet-bg-color="{{item.cur_user_managed ? '#f5f5f5' : '#fff'}}"
+                >
+                  <!-- 图片区域 -->
+                  <view class="image-container" style="width:100%;height:280rpx;position:relative;">
+                    <!-- 阶段2：图片骨架屏（覆盖在图片上方） -->
+                    <view wx:if="{{!item.imgLoaded}}" class="image-skeleton">
+                      <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '280rpx', borderRadius: '8rpx 8rpx 0 0' }]}}" />
+                    </view>
+                    <!-- 图片始终渲染，但在未加载完成时被骨架屏遮挡 -->
+                    <image class="card-image" src="{{item.cover_url_thumb}}" mode="aspectFill" bindload="onClubImgLoad" binderror="onClubImgLoad" data-index="{{index}}" style="{{item.imgLoaded ? '' : 'opacity: 0;'}}" />
+                    <!-- 阶段3：遮罩和标签只在图片加载完成后显示 -->
+                    <block wx:if="{{item.imgLoaded}}">
+                      <view class="image-gradient-mask"></view>
+                      <view class="tag-managed" wx:if="{{item.cur_user_managed}}"><t-icon name="user-list" size="36rpx" color="#fff"></t-icon></view>
+                      <view class="tag-joined" wx:elif="{{item.cur_user_is_member}}"><t-icon name="bookmark-checked" size="36rpx" color="#fff"></t-icon></view>
+                    </block>
+                  </view>
+                  
+                  <!-- 文字内容区域 - 阶段2&3都显示 -->
+                  <view class="card-content">
+                    <view class="card-title"><text>{{item.club_name}}</text></view>
+                    <view class="card-desc"><text>{{item.description}}</text></view>
+                  </view>
+                </view>
+              </view>
+            </block>
           </view>
         </view>
-        <!-- 空状态 -->
-        <view class="empty-container" wx:if="{{clubList.length === 0}}">
-          <van-empty description="暂无协会" />
-        </view>
-      </view>
-    </van-tab>
+      </scroll-view>
+    </swiper-item>
+  </swiper>
 
- 
-  </van-tabs>
+  <!-- 全局全屏弹窗 - 放在 swiper 外部，避免被 swiper 限制 -->
+  <expandable-container_fullscreen 
+    wx:if="{{globalPopup.visible}}"
+    id="globalFullscreenPopup"
+    bg-color="{{globalPopup.bgColor}}"
+    fullscreen-sheet-bg-color="{{globalPopup.sheetBgColor}}"
+    fullscreen-top-padding="{{0}}"
+    bind:collapse="onGlobalPopupCollapse"
+    bind:contentReady="onGlobalPopupContentReady"
+  >
+    <view slot="trigger"></view>
+    <view slot="content" class="popup-content-wrapper">
+      <!-- 骨架屏 - 覆盖在 panel 上面 -->
+      <view wx:if="{{globalPopup.loading}}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 999; background: #f7f8fa;">
+        <event-manage-skeleton wx:if="{{globalPopup.type === 'event-manage'}}" />
+        <event-detail-skeleton wx:if="{{globalPopup.type === 'event-detail'}}" />
+        <club-detail-skeleton wx:if="{{globalPopup.type === 'club-detail'}}" />
+        <club-manage-skeleton wx:if="{{globalPopup.type === 'club-manage'}}" />
+      </view>
+
+      <!-- 真实 panel 组件 - 延迟渲染 -->
+      <block wx:if="{{globalPopup.renderPanel}}">
+        <!-- 活动详情 -->
+        <event-detail-panel 
+          wx:if="{{globalPopup.type === 'event-detail'}}"
+          id="globalEventDetailPanel" 
+          event-id="{{globalPopup.id}}" 
+          bind:update="onEventDetailPanelUpdate" 
+          bind:navigateClub="onNavigateClubFromPanel"
+          bind:loaded="onGlobalPopupLoaded"
+          bind:close="closeGlobalPopup"
+        />
+        <!-- 活动管理 -->
+        <event-manage-panel 
+          wx:if="{{globalPopup.type === 'event-manage'}}"
+          id="globalEventManagePanel" 
+          event-id="{{globalPopup.id}}" 
+          bind:update="onEventManagePanelUpdate"
+          bind:loaded="onGlobalPopupLoaded"
+          bind:close="closeGlobalPopup"
+        />
+        <!-- 协会详情 -->
+        <club-detail-panel 
+          wx:if="{{globalPopup.type === 'club-detail'}}"
+          id="globalClubDetailPanel" 
+          club-id="{{globalPopup.id}}" 
+          bind:update="onClubDetailPanelUpdate" 
+          bind:navigateEvent="onNavigateEventFromPanel"
+          bind:loaded="onGlobalPopupLoaded"
+          bind:close="closeGlobalPopup"
+        />
+        <!-- 协会管理 -->
+        <club-manage-panel 
+          wx:if="{{globalPopup.type === 'club-manage'}}"
+          id="globalClubManagePanel" 
+          club-id="{{globalPopup.id}}" 
+          bind:update="onClubManagePanelUpdate" 
+          bind:navigateEvent="onNavigateEventFromPanel" 
+          bind:dissolved="onClubDissolved"
+          bind:loaded="onGlobalPopupLoaded"
+          bind:close="closeGlobalPopup"
+        />
+      </block>
+    </view>
+  </expandable-container_fullscreen>
+  </view>
+</view>

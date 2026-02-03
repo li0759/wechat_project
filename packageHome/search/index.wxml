@@ -1,0 +1,182 @@
+<view class="search-page">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <search_suggest 
+      id="searchSuggest"
+      placeholder="搜索用户、活动、协会..."
+      bind:search="onSearch"
+      bind:select="onSuggestionTap"
+      bind:clear="onClear"
+      bind:fetchSuggestions="onFetchSuggestions"
+      value="{{searchKey}}"
+      enableAutocomplete="{{true}}"
+      showHistory="{{true}}"
+      maxSuggestions="{{10}}"
+    />
+  </view>
+
+  <!-- 搜索结果区域 -->
+  <view class="search-results" wx:if="{{showResults}}">
+    <!-- 搜索信息 -->
+    <view class="search-info" wx:if="{{searchQuery}}">
+      <text class="search-query">搜索 "{{searchQuery}}" 的结果</text>
+      <text class="search-count">共找到 {{totalResults}} 条结果</text>
+    </view>
+
+    <!-- Tab切换 -->
+    <van-tabs active="{{activeTab}}" bind:change="onTabChange" sticky>
+      <van-tab title="全部 ({{totalResults}})" name="all"></van-tab>
+      <van-tab title="用户 ({{userCount}})" name="user"></van-tab>
+      <van-tab title="活动 ({{eventCount}})" name="event"></van-tab>
+      <van-tab title="协会 ({{clubCount}})" name="club"></van-tab>
+    </van-tabs>
+
+    <!-- 搜索结果列表 -->
+    <scroll-view 
+      class="results-list" 
+      scroll-y="{{true}}" 
+      bindscrolltolower="loadMore"
+      refresher-enabled="{{true}}"
+      bindrefresherrefresh="onRefresh"
+      refresher-triggered="{{refreshing}}">
+      
+      <!-- 用户结果 -->
+      <view class="user-results" wx:if="{{activeTab === 'all' || activeTab === 'user'}}">
+        <view 
+          class="user-item" 
+          wx:for="{{userResults}}" 
+          wx:key="user_id"
+          bindtap="navigateToUserProfile"
+          data-user-id="{{item.user_id}}">
+          <image class="user-avatar" src="{{item.avatar || '/assets/images/default-avatar.png'}}" mode="aspectFill"></image>
+          <view class="user-info">
+            <view class="user-name">{{item.user_name}}</view>
+            <view class="user-detail">
+              <text class="user-phone" wx:if="{{item.phone}}">{{item.phone}}</text>
+              <text class="user-tag">{{item.tag}}</text>
+            </view>
+          </view>
+          <view class="user-status">
+            <van-icon name="{{item.is_super_user ? 'manager-o' : 'friends-o'}}" 
+                      color="{{item.is_super_user ? '#ff6b9d' : '#52c41a'}}" />
+          </view>
+        </view>
+      </view>
+
+      <!-- 活动结果 -->
+      <view class="event-results" wx:if="{{activeTab === 'all' || activeTab === 'event'}}">
+        <view 
+          class="event-item" 
+          wx:for="{{eventResults}}" 
+          wx:key="event_id"
+          bindtap="navigateToEventDetail"
+          data-event-id="{{item.event_id}}">
+          <view class="event-info">
+            <view class="event-title">{{item.title}}</view>
+            <view class="event-detail">
+              <view class="event-location" wx:if="{{item.location_name || item.location}}">
+                <van-icon name="location-o" size="12px" color="#666" />
+                <text>{{item.location_name || item.location}}</text>
+              </view>
+              <view class="event-time" wx:if="{{item.pre_start_time}}">
+                <van-icon name="clock-o" size="12px" color="#666" />
+                <text>{{item.pre_start_time}}</text>
+              </view>
+              <view class="event-club" wx:if="{{item.club_name}}">
+                <van-icon name="shop-o" size="12px" color="#666" />
+                <text>{{item.club_name}}</text>
+              </view>
+            </view>
+            <view class="event-participants" wx:if="{{item.join_count > 0}}">
+              <van-icon name="friends-o" size="12px" color="#52c41a" />
+              <text>{{item.join_count}}人参加</text>
+            </view>
+          </view>
+          <van-icon name="arrow" color="#ccc" />
+        </view>
+      </view>
+
+      <!-- 协会结果 -->
+      <view class="club-results" wx:if="{{activeTab === 'all' || activeTab === 'club'}}">
+        <view 
+          class="club-item" 
+          wx:for="{{clubResults}}" 
+          wx:key="club_id"
+          bindtap="navigateToClubDetail"
+          data-club-id="{{item.club_id}}">
+          <image class="club-logo" src="{{item.images && item.images.split(';')[0] || '/assets/images/default-club.png'}}" mode="aspectFill"></image>
+          <view class="club-info">
+            <view class="club-name">{{item.club_name}}</view>
+            <view class="club-detail">
+              <view class="club-president" wx:if="{{item.president}}">
+                <van-icon name="manager-o" size="12px" color="#666" />
+                <text>会长: {{item.president.user_name}}</text>
+              </view>
+              <view class="club-members">
+                <van-icon name="friends-o" size="12px" color="#666" />
+                <text>{{item.member_count}}名成员</text>
+              </view>
+            </view>
+            <view class="club-description" wx:if="{{item.description}}">{{item.description}}</view>
+          </view>
+          <van-icon name="arrow" color="#ccc" />
+        </view>
+      </view>
+
+      <!-- 加载更多 -->
+      <view class="load-more" wx:if="{{loading}}">
+        <van-loading size="20px" color="#1890ff">加载中...</van-loading>
+      </view>
+
+      <!-- 空状态 -->
+      <view class="empty-state" wx:if="{{!loading && totalResults === 0 && searchQuery}}">
+        <van-empty description="未找到相关结果">
+          <view slot="description">
+            <text>没有找到与 "{{searchQuery}}" 相关的结果</text>
+            <text>请尝试其他关键词</text>
+          </view>
+        </van-empty>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 搜索历史/热门推荐 -->
+  <view class="search-suggestions" wx:if="{{!showResults}}">
+    <!-- 搜索历史 -->
+    <view class="search-history" wx:if="{{searchHistory.length > 0}}">
+      <view class="section-header">
+        <text class="section-title">搜索历史</text>
+        <text class="clear-history" bindtap="clearHistory">清空</text>
+      </view>
+      <view class="history-tags">
+        <view 
+          class="history-tag" 
+          wx:for="{{searchHistory}}" 
+          wx:key="*this"
+          bindtap="searchFromHistory"
+          data-keyword="{{item}}">
+          <van-icon name="clock-o" size="12px" color="#999" />
+          <text>{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 热门搜索 -->
+    <view class="hot-search">
+      <view class="section-header">
+        <text class="section-title">热门搜索</text>
+      </view>
+      <view class="hot-tags">
+        <view 
+          class="hot-tag" 
+          wx:for="{{hotSearches}}" 
+          wx:key="*this"
+          bindtap="searchFromHistory"
+          data-keyword="{{item}}">
+          <van-icon name="fire-o" size="12px" color="#ff6b9d" />
+          <text>{{item}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view> 

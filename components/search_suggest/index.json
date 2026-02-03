@@ -1,7 +1,23 @@
 {
   "component": true,
   "usingComponents": {
-    "van-icon": "@vant/weapp/icon/index",
-    "van-loading": "@vant/weapp/loading/index"
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-loading": "tdesign-miniprogram/loading/loading",
+    "t-cell": "tdesign-miniprogram/cell/cell",
+    "t-cell-group": "tdesign-miniprogram/cell-group/cell-group",
+    "t-tag": "tdesign-miniprogram/tag/tag",
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-empty": "tdesign-miniprogram/empty/empty"
+  },
+  "renderer": "skyline",
+  "componentFramework": "glass-easel",
+  "componentPlaceholder": {
+    "t-icon": "view",
+    "t-loading": "view",
+    "t-cell": "view",
+    "t-cell-group": "view",
+    "t-tag": "view",
+    "t-button": "view",
+    "t-empty": "view"
   }
 } 

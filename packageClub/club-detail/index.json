@@ -1,9 +1,0 @@
-{
-  "navigationBarTitleText": "协会详情",
-  "usingComponents": {
-    "van-icon": "@vant/weapp/icon/index",
-    "van-button": "@vant/weapp/button/index",
-    "van-loading": "@vant/weapp/loading/index",
-    "count-num": "/components/count_num/index"
-  }
-} 

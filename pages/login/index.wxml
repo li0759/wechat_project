@@ -1,22 +1,105 @@
 <view class="container">
-  <view class="logo">
-    <image src="https://www.vhhg.top/assets/logo.png" mode="aspectFit"></image>
-  </view>
-  <view class="subtitle">协会活动管理平台</view>
-  
-  <button class="login-btn" type="primary" bindtap="handleLogin">微信一键登录</button>
-  
-  <view class="user-list-title">选择用户直接登录</view>
-  <scroll-view class="user-list" scroll-y="true">
-    <view wx:if="{{userList.length === 0}}" class="no-data">加载用户列表中...</view>
-    <view wx:for="{{userList}}" wx:key="id" class="user-item" bindtap="selectUserLogin" data-wecomUserID="{{item.wecomUserID}}">
-      <view class="user-avatar">
-        <image src="{{item.avatar || 'https://www.vhhg.top/assets/default-avatar.png'}}" mode="aspectFill"></image>
+  <!-- 已登录状态 -->
+  <view wx:if="{{isLoggedIn}}" class="logged-in">
+    <view class="logo">
+      <image src="{{logo_url}}" mode="aspectFit"></image>
+    </view>
+    <view class="subtitle">协会活动管理平台</view>
+    
+    <view class="user-info-card">
+      <view class="avatar">
+        <image src="{{userInfo.avatar || default_avatar}}" mode="aspectFill"></image>
+        <!-- 头像完成状态图标 -->
+        <view wx:if="{{userInfo.avatar}}" class="status-icon success">
+          <text class="iconfont icon-check">✓</text>
+        </view>
       </view>
-      <view class="user-info">
-        <view class="user-name">{{item.name || item.username}}</view>
-        <view class="user-role-main">{{item.roles_join}}</view>
+      <view class="info">
+        <view class="name">{{userInfo.username}}</view>
+        <view class="department">{{userInfo.department || ''}}</view>
+        <view class="position">{{userInfo.position || ''}}</view>
+        <!-- 手机号显示区域 -->
+        <view class="mobile-info">
+          <text class="mobile-label">手机号：</text>
+          <text wx:if="{{userInfo.phone}}" class="mobile-value">{{userInfo.phone}}</text>
+          <text wx:else class="mobile-placeholder">未设置</text>
+          <view wx:if="{{userInfo.phone}}" class="status-icon success inline">
+            <text class="iconfont icon-check">✓</text>
+          </view>
+        </view>
       </view>
     </view>
-  </scroll-view>
+    
+    <!-- 信息补全按钮区域 -->
+    <view wx:if="!{{userInfo_complete}}" class="profile-buttons">
+      <view class="profile-section">
+        <text class="section-title">完善个人信息</text>
+        <view class="button-group">
+          <!-- 手机号获取按钮 -->
+          <t-button 
+            wx:if="{{!userInfo.phone}}"
+            theme="primary" 
+            size="medium" 
+            bindtap="handleGetMobile"
+            class="profile-btn"
+          >
+            获取手机号
+          </t-button>
+          <view wx:else class="completed-item">
+            <text class="completed-text">✓ 手机号已完善</text>
+          </view>
+          
+          <!-- 头像获取按钮 -->
+          <t-button 
+            wx:if="{{!userInfo.avatar}}"
+            theme="primary" 
+            size="medium" 
+            bindtap="handleGetAvatar"
+            class="profile-btn"
+          >
+            获取头像
+          </t-button>
+          <view wx:else class="completed-item">
+            <text class="completed-text">✓ 头像已完善</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+  </view>
+
+  <!-- 未登录状态 -->
+  <view wx:else class="not-logged-in">
+    <view class="logo">
+      <image src="{{logo_url}}" mode="aspectFit"></image>
+    </view>
+    <view class="subtitle">协会活动管理平台</view>
+
+    <view class="login-tip">
+      <text>请使用企业微信登录获取完整权限</text>
+    </view>
+    <t-button theme="primary" size="large" bindtap="handleWecomLogin" hover-class="t-button--hover">
+      企业微信登录
+    </t-button>
+
+    <!-- 开发者工具模式：用户列表弱登录 -->
+    <view wx:if="{{isInDevTools}}" style="width:100%;margin-top:24rpx;">
+      <view class="dev-title">开发者模式 - 选择用户登录</view>
+      <scroll-view scroll-y="true" class="dev-user-list">
+        <view wx:for="{{devUsers}}" wx:key="id" class="dev-user-item" data-userid="{{item.id}}" bindtap="handleWeakLogin" hover-class="dev-user-item--hover">
+          <view class="dev-user-item__left">
+
+            <view class="dev-user-item__info">
+              <view class="dev-user-item__name">{{item.name}}</view>
+              <view wx:if="{{item.roles && item.roles.length}}" class="dev-user-item__tags">
+                <t-tag wx:for="{{item.roles}}" wx:for-item="role" wx:key="*this" size="small" variant="light-outline" style="margin-right:8rpx;margin-top:6rpx;">
+                  {{role}}
+                </t-tag>
+              </view>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
 </view> 

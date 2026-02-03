@@ -1,0 +1,236 @@
+<!-- 活动列表页面 -->
+<view class="event-container">
+  <van-tabs active="{{ activeTab }}" bind:change="onTabChange" sticky animated swipeable>
+    <!-- 活动列表选项卡 -->
+    <van-tab title="活动列表" class="list-tab">
+      <!-- 活动列表内容 -->
+      <scroll-view 
+        class="events-scroll" 
+        scroll-y="{{true}}"
+        show-scrollbar="{{false}}"
+        bindscrolltolower="onScrollToLower"
+        enhanced="{{true}}"
+      >
+        <!-- 活动列表容器（参考动态列表结构） -->
+        <view class="events-container">
+          <!-- 活动列表（包含骨架屏和真实内容） -->
+          <view wx:if="{{eventList.length > 0}}" class="events-list">
+              <view wx:for="{{eventList}}" wx:key="event_id" class="event-item">
+                <!-- 骨架屏 -->
+                <view wx:if="{{item.loading}}" class="inline-skeleton-card">
+                  <!-- 顶部协会名称行 -->
+                  <view class="inline-skeleton-header">
+                    <t-skeleton animation="gradient" rowCol="{{[{ width: '150rpx', height: '24rpx' }]}}" />
+                  </view>
+                  <!-- 主内容：左边封面 + 右边信息 -->
+                  <view class="inline-skeleton-content">
+                    <!-- 左边封面 -->
+                    <t-skeleton animation="gradient" rowCol="{{[{ width: '150rpx', height: '150rpx', borderRadius: '8rpx' }]}}" />
+                    <!-- 右边信息 -->
+                    <view class="inline-skeleton-info">
+                      <!-- 活动标题 -->
+                      <t-skeleton animation="gradient" rowCol="{{[{ width: '200rpx', height: '28rpx', marginBottom: '8rpx' }]}}" />
+                      <!-- 时间信息 -->
+                      <t-skeleton animation="gradient" rowCol="{{[{ width: '180rpx', height: '22rpx', marginBottom: '8rpx' }]}}" />
+                      <!-- 描述 -->
+                      <t-skeleton animation="gradient" rowCol="{{[{ width: '250rpx', height: '22rpx' }]}}" />
+                    </view>
+                  </view>
+                </view>
+                
+                <!-- 真实内容 -->
+              <view wx:else bind:tap="onEventTap" data-event_id="{{item.event_id}}" data-user_managed="{{item.cur_user_managed}}">
+                <!-- 灰色蒙层 -->
+                <view wx:if="{{item.is_cancelled || item.club_deleted}}" class="event-overlay">
+                  <text>{{item.is_cancelled ? '活动已取消' : '协会已删除'}}</text>
+                </view>
+                
+                <!-- 上部分：协会名称 -->
+                <view class="event-club-header">
+                  <text class="club-name">{{item.club_info.club_name}}</text>
+                  <!-- 状态标签 - 只在显示"全部"活动时显示 -->
+                  <view class="event-status" wx:if="{{showAllEvents}}">
+                    <text wx:if="{{item.is_cancelled}}" class="status-tag cancelled">已取消</text>
+                    <text wx:elif="{{item.club_deleted}}" class="status-tag club-deleted">协会已删除</text>
+                    <text wx:elif="{{item.actual_endTime}}" class="status-tag ended">已结束</text>
+                    <text wx:elif="{{item.actual_startTime}}" class="status-tag going">进行中</text>
+                    <text wx:else class="status-tag prego">预计开始</text>
+                  </view>
+                </view>
+                
+                <!-- 下部分：左边封面，右边信息 -->
+                <view class="event-main-content">
+                  <!-- 左边：活动封面 -->
+                  <view class="event-cover-wrapper">
+                    <t-image 
+                      src="{{item.cover_url_thumb}}" 
+                      width="150rpx" 
+                      height="150rpx" 
+                      mode="aspectFill"
+                      error="default"
+                      style="border-radius: 8rpx;"
+                    />
+                  </view>
+                  
+                  <!-- 右边：活动信息 -->
+                  <view class="event-info-wrapper">
+                    <text class="event-title">{{item.title}}</text>
+                    <text class="event-time" wx:if="{{item.actual_startTime}}">
+                      <t-icon name="time" size="24rpx" color="#52c41a" />
+                      实际开始：{{item.actual_startTime}}
+                    </text>
+                    <text class="event-time" wx:else>
+                      <t-icon name="time" size="24rpx" color="#ff6b9d" />
+                      预计开始：{{item.pre_startTime}}
+                    </text>
+                    <text class="event-description">{{item.content}}</text>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+          
+          <!-- 空状态显示 -->
+          <view wx:elif="{{eventList.length === 0 && eventEmpty}}" class="empty-state">
+            <t-icon name="calendar" size="120rpx" color="#ddd" />
+            <text class="empty-text">暂无活动</text>
+            <text class="empty-desc">还没有参加任何活动哦</text>
+          </view>
+        </view>
+
+        <!-- 底部安全距离 -->
+        <view class="bottom-safe-area"></view>
+      </scroll-view>
+    </van-tab>
+    
+    <!-- 活动日历选项卡 -->
+    <van-tab title="活动日历">
+      <view class="calendar-container">
+        <!-- 日历组件 -->
+        <calendar
+          show="{{true}}"
+          events="{{ calendarEvents || [] }}"
+          bind:select="onCalendarSelect"
+          bind:monthChange="onCalendarMonthChange"
+        />
+        <!-- 如果没有活动数据，显示提示 -->
+        <view wx:if="{{ eventList.length === 0 }}" class="calendar-empty-tip">
+          暂无活动数据可显示
+        </view>
+      </view>
+    </van-tab>
+  </van-tabs>
+  
+  <!-- 月份选择器弹出层 -->
+  <van-popup
+    show="{{ monthPickerVisible }}"
+    position="bottom"
+    bind:close="closeMonthPicker"
+    round
+  >
+    <van-datetime-picker
+      type="year-month"
+      value="{{ monthPickerDate }}"
+      min-date="{{ minDate }}"
+      max-date="{{ maxDate }}"
+      bind:confirm="confirmMonthPicker"
+      bind:cancel="closeMonthPicker"
+    />
+  </van-popup>
+
+  <!-- 嵌套的 event-manage 弹窗 -->
+  <expandable-container_fullscreen 
+    wx:if="{{nestedEventManage.visible}}"
+    id="nestedEventManagePopup" 
+    expanded-width="750" 
+    expanded-height="1800" 
+    bg-color="#f3e3f3ff"
+    fullscreen-top-padding="{{0}}"
+    bind:collapse="onNestedEventManageCollapse"
+    bind:collapsed="onNestedEventManageCollapsed"
+    bind:contentReady="onNestedEventManageContentReady"
+  >
+    <view slot="trigger"></view>
+    <view slot="content" class="nested-popup-shell">
+      <!-- 骨架屏 - 覆盖在panel上面 -->
+      <view wx:if="{{nestedEventManage.loading}}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 999; background: #f3e3f3ff;">
+        <event-manage-skeleton />
+      </view>
+      
+      <!-- 真实 panel 组件 - 延迟渲染 -->
+      <block wx:if="{{nestedEventManage.renderPanel}}">
+        <event-manage-panel
+          id="nestedEventManagePanel"
+          event-id="{{nestedEventManage.eventId}}"
+          bind:loaded="onNestedEventManageLoaded"
+          bind:update="onNestedEventManageUpdate"
+          bind:close="closeNestedEventManage"
+        />
+      </block>
+    </view>
+  </expandable-container_fullscreen>
+
+  <!-- 嵌套的 event-detail 弹窗 -->
+  <expandable-container_fullscreen 
+    wx:if="{{nestedEventDetail.visible}}"
+    id="nestedEventDetailPopup" 
+    expanded-width="750" 
+    expanded-height="1800" 
+    bg-color="#f7f8fa"
+    fullscreen-top-padding="{{0}}"
+    bind:collapse="onNestedEventDetailCollapse"
+    bind:collapsed="onNestedEventDetailCollapsed"
+    bind:contentReady="onNestedEventDetailContentReady"
+  >
+    <view slot="trigger"></view>
+    <view slot="content" class="nested-popup-shell">
+      <!-- 骨架屏 - 覆盖在panel上面 -->
+      <view wx:if="{{nestedEventDetail.loading}}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 999; background: #f7f8fa;">
+        <event-detail-skeleton />
+      </view>
+      
+      <!-- 真实 panel 组件 - 延迟渲染 -->
+      <block wx:if="{{nestedEventDetail.renderPanel}}">
+        <event-detail-panel
+          id="nestedEventDetailPanel"
+          event-id="{{nestedEventDetail.eventId}}"
+          bind:loaded="onNestedEventDetailLoaded"
+          bind:update="onNestedEventDetailUpdate"
+          bind:close="closeNestedEventDetail"
+        />
+      </block>
+    </view>
+  </expandable-container_fullscreen>
+
+  <!-- 嵌套的 event-joined 弹窗 -->
+  <expandable-container_fullscreen 
+    wx:if="{{nestedEventJoined.visible}}"
+    id="nestedEventJoinedPopup" 
+    expanded-width="750" 
+    expanded-height="1800" 
+    bg-color="#f7f8fa"
+    fullscreen-top-padding="{{0}}"
+    bind:collapse="onNestedEventJoinedCollapse"
+    bind:collapsed="onNestedEventJoinedCollapsed"
+    bind:contentReady="onNestedEventJoinedContentReady"
+  >
+    <view slot="trigger"></view>
+    <view slot="content" class="nested-popup-shell">
+      <!-- 骨架屏 - 覆盖在panel上面 -->
+      <view wx:if="{{nestedEventJoined.loading}}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 999; background: #f7f8fa;">
+        <event-joined-skeleton />
+      </view>
+      
+      <!-- 真实 panel 组件 - 延迟渲染 -->
+      <block wx:if="{{nestedEventJoined.renderPanel}}">
+        <event-joined-panel
+          id="nestedEventJoinedPanel"
+          event-id="{{nestedEventJoined.eventId}}"
+          bind:loaded="onNestedEventJoinedLoaded"
+          bind:update="onNestedEventJoinedUpdate"
+          bind:close="closeNestedEventJoined"
+        />
+      </block>
+    </view>
+  </expandable-container_fullscreen>
+</view> 

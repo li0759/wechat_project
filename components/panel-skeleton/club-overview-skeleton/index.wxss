@@ -1,0 +1,21 @@
+.club-overview-skeleton {
+  padding: 20rpx;
+}
+
+.club-skeleton-item {
+  display: flex;
+  gap: 20rpx;
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+  background: #fff;
+  border-radius: 16rpx;
+}
+
+.skeleton-left {
+  width: 200rpx;
+  flex-shrink: 0;
+}
+
+.skeleton-right {
+  flex: 1;
+}

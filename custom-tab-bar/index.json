@@ -1,6 +1,8 @@
 {
   "component": true,
   "usingComponents": {
-    "van-icon": "@vant/weapp/icon/index"
+    "t-tabbar": "tdesign-miniprogram/tab-bar/tab-bar",
+    "t-tabbar-item": "tdesign-miniprogram/tab-bar-item/tab-bar-item",
+    "t-icon": "tdesign-miniprogram/icon/icon"
   }
 }

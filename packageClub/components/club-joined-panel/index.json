@@ -1,0 +1,13 @@
+{
+  "component": true,
+  "usingComponents": {
+    "t-image": "tdesign-miniprogram/image/image",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-skeleton": "tdesign-miniprogram/skeleton/skeleton",
+    "club-joined-skeleton": "/components/panel-skeleton/club-joined-skeleton/index"
+  },
+  "componentPlaceholder": {
+    "club-joined-panel": "club-joined-skeleton"
+  }
+}

@@ -1,0 +1,219 @@
+<!-- 协会详情面板 - 复刻 club-detail 页面样式 -->
+<view class="club-detail-panel">
+  <!-- 灰色蒙层 - 当协会被删除时显示 -->
+  <view wx:if="{{club && club.isDelete}}" class="disabled-overlay">
+    <view class="disabled-overlay-content">
+      <t-icon name="info-circle" size="48" color="#fff" />
+      <text class="disabled-overlay-text">协会已删除</text>
+      <text class="disabled-overlay-desc">此页面仅供查看，无法进行操作</text>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-container" wx:if="{{!loading && !club}}">
+    <t-icon name="info-circle" size="80rpx" color="#ccc" />
+    <text class="empty-text">协会不存在或已删除</text>
+  </view>
+
+  <!-- 主内容 -->
+  <block wx:else>
+    <!-- 分段导航 -->
+    <view class="section-nav">
+      <scroll-view class="nav-scroll" scroll-x="{{true}}" show-scrollbar="{{false}}">
+        <view class="nav-content">
+          <view 
+            wx:for="{{sectionTabs}}" 
+            wx:key="value"
+            class="nav-item {{activeSection === item.value ? 'active' : ''}}"
+            bind:tap="onSectionNavTap"
+            data-section="{{item.value}}"
+          >
+            {{item.label}}
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 主滚动区域 -->
+    <scroll-view 
+      class="main-content" 
+      scroll-y="{{true}}"
+      scroll-into-view="{{scrollIntoView}}"
+      bindscroll="onMainScroll"
+      show-scrollbar="{{false}}"
+    >
+      <!-- 1. 协会信息区域 -->
+      <view id="section-info" class="section info-section">
+        <view class="section-header">
+          <view class="section-title">协会信息</view>
+        </view>
+
+        <!-- 封面轮播 -->
+        <view class="cover-section" wx:if="{{swiperImages.length > 0}}">
+          <swiper class="cover-swiper" current="{{currentSwiperIndex}}" bindchange="onSwiperChange">
+            <swiper-item wx:for="{{swiperImages}}" wx:key="index">
+              <image class="cover-img" src="{{item.url}}" mode="aspectFill" bindtap="previewImage" data-index="{{index}}" />
+            </swiper-item>
+          </swiper>
+
+          <!-- 缩略图指示器 -->
+          <view class="thumbnail-indicators" wx:if="{{swiperImagesThumbs.length > 1}}">
+            <view 
+              wx:for="{{swiperImagesThumbs}}" 
+              wx:key="index"
+              class="thumb-item {{currentSwiperIndex === index ? 'active' : ''}}"
+              bindtap="onThumbTap"
+              data-index="{{index}}"
+            >
+              <image class="thumb-img" src="{{item.url}}" mode="aspectFill" />
+            </view>
+          </view>
+        </view>
+
+        <!-- 协会基本信息 -->
+        <view class="info-card">
+          <view class="club-title">{{club.name || club.club_name}}</view>
+          <view class="club-desc" wx:if="{{club.content}}">{{club.content}}</view>
+
+          <!-- 会长信息 -->
+          <view class="info-row" wx:if="{{club.president_username}}">
+            <t-icon name="user" size="32rpx" color="#666" />
+            <view class="info-content">
+              <text class="info-label">会长</text>
+              <view class="president-info">
+                <t-image 
+                  wx:if="{{club.president_avatar}}"
+                  src="{{club.president_avatar}}" 
+                  width="60rpx"
+                  height="60rpx"
+                  mode="aspectFill"
+                  shape="circle"
+                  style="margin-right: 12rpx;"
+                />
+                <text class="info-value">{{club.president_username}}</text>
+              </view>
+            </view>
+          </view>
+
+          <view class="info-row">
+            <t-icon name="usergroup" size="32rpx" color="#666" />
+            <view class="info-content">
+              <text class="info-label">成员数量</text>
+              <text class="info-value">{{club.member_count || 0}}人</text>
+            </view>
+          </view>
+
+          <view class="info-row">
+            <t-icon name="calendar" size="32rpx" color="#666" />
+            <view class="info-content">
+              <text class="info-label">近期活动</text>
+              <text class="info-value">{{club.recent_events ? club.recent_events.length : 0}}个</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 2. 协会人员区域 -->
+      <view id="section-members" class="section members-section">
+        <view class="section-header">
+          <view class="section-title">协会人员 ({{clubMembers.length}})</view>
+        </view>
+
+        <view class="members-grid" wx:if="{{clubMembers.length > 0}}">
+          <view class="member-item" wx:for="{{clubMembers}}" wx:key="user_id">
+            <image class="member-avatar" src="{{item.avatar || '/assets/images/default-avatar.png'}}" mode="aspectFill" />
+            <text class="member-name">{{item.user_name}}</text>
+          </view>
+        </view>
+
+        <view class="empty-members" wx:else>
+          <text>暂无成员信息</text>
+        </view>
+      </view>
+
+      <!-- 3. 最近活动区域 -->
+      <view id="section-activities" class="section activities-section">
+        <view class="section-header">
+          <view class="section-title">最近活动</view>
+        </view>
+
+        <view class="activities-list" wx:if="{{club.recent_events && club.recent_events.length > 0}}">
+          <view 
+            class="activity-item" 
+            wx:for="{{club.recent_events}}"
+            wx:key="event_id"
+            data-event-id="{{item.event_id}}"
+            bindtap="viewEventDetail"
+          >
+            <!-- 地图背景 -->
+            <view class="activity-map-bg" wx:if="{{item.mapImageUrl}}">
+              <image class="map-bg-image" src="{{item.mapImageUrl}}" mode="aspectFill" />
+              <view class="map-fade-left"></view>
+              <view class="map-fade-bottom"></view>
+              <view class="map-fade-corner"></view>
+            </view>
+            
+            <!-- 活动信息内容 -->
+            <view class="activity-content">
+              <view class="activity-title">{{item.title}}</view>
+              <view class="activity-desc" wx:if="{{item.content}}">{{item.content}}</view>
+              
+              <view class="activity-meta">
+                <view class="meta-row" wx:if="{{item.pre_startTime}}">
+                  <t-icon name="time" size="28rpx" color="#666" />
+                  <text class="meta-text">{{item.pre_startTime}}{{item.pre_endTime ? ' ~ ' + item.pre_endTime : ''}}</text>
+                </view>
+                <view class="meta-row" wx:if="{{item.location || (item.location_data && item.location_data.address)}}">
+                  <t-icon name="location" size="28rpx" color="#666" />
+                  <text class="meta-text">{{item.location || (item.location_data && item.location_data.address) || '待定'}}</text>
+                </view>
+                <view class="meta-row">
+                  <t-icon name="usergroup" size="28rpx" color="#666" />
+                  <text class="meta-text">{{item.join_count || 0}}人参与</text>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="empty-activities" wx:else>
+          <text>暂无最近活动</text>
+        </view>
+      </view>
+
+      <!-- 底部安全距离 -->
+      <view class="bottom-safe-area"></view>
+    </scroll-view>
+
+    <!-- 底部操作栏 -->
+    <view class="bottom-actions">
+      <view class="action-left" wx:if="{{club.cur_user_is_superuser}}">
+        <view class="action-btn danger" bindtap="deleteClub">
+          <t-icon name="delete" size="40rpx" color="#ff4d4f" />
+          <text>删除协会</text>
+        </view>
+      </view>
+
+      <view class="action-right">
+        <!-- 申请加入协会按钮 -->
+        <view class="action-btn primary" wx:if="{{!club.cur_user_is_member && !club.cur_user_has_pending_application}}" bindtap="applyToJoin">
+          申请加入协会
+        </view>
+        <view class="action-btn secondary" wx:elif="{{club.cur_user_has_pending_application}}">
+          申请审核中
+        </view>
+        <view class="action-btn disabled" wx:elif="{{club.cur_user_is_member}}">
+          已加入协会
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 图片预览 -->
+  <t-image-viewer 
+    visible="{{showImageViewer}}"
+    images="{{previewImages}}"
+    initial-index="{{previewIndex}}"
+    bind:close="closeImageViewer"
+  />
+</view>

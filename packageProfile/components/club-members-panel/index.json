@@ -1,0 +1,26 @@
+{
+  "component": true,
+  "usingComponents": {
+    "t-search": "tdesign-miniprogram/search/search",
+    "t-toast": "tdesign-miniprogram/toast/toast",
+    "t-loading": "tdesign-miniprogram/loading/loading",
+    "t-empty": "tdesign-miniprogram/empty/empty",
+    "t-indexes": "tdesign-miniprogram/indexes/indexes",
+    "t-indexes-anchor": "tdesign-miniprogram/indexes-anchor/indexes-anchor",
+    "t-tabs": "tdesign-miniprogram/tabs/tabs",
+    "t-tab-panel": "tdesign-miniprogram/tab-panel/tab-panel",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-avatar": "tdesign-miniprogram/avatar/avatar",
+    "t-tag": "tdesign-miniprogram/tag/tag",
+    "t-cell": "tdesign-miniprogram/cell/cell",
+    "t-cell-group": "tdesign-miniprogram/cell-group/cell-group",
+    "t-collapse": "tdesign-miniprogram/collapse/collapse",
+    "t-collapse-panel": "tdesign-miniprogram/collapse-panel/collapse-panel",
+    "t-popup": "tdesign-miniprogram/popup/popup",
+    "search-suggest": "/components/search_suggest/index",
+    "isotope": "/components/isotope/index",
+    "expandable-container": "/components/expandable-container/index",
+    "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index"
+  }
+}

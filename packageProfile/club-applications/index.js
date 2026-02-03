@@ -34,7 +34,7 @@ Page({
       this.fetchApplications(options.clubId)
     } else {
       wx.showToast({
-        title: '缺少社团ID参数',
+        title: '缺少协会ID参数',
         icon: 'none'
       })
     }
@@ -95,7 +95,7 @@ Page({
 
   },
 
-  // 获取社团信息
+  // 获取协会信息
   fetchClubInfo(clubId) {
     wx.request({
       url: app.globalData.request_url + `/club/${clubId}`,
@@ -111,13 +111,12 @@ Page({
           })
         } else {
           wx.showToast({
-            title: res.data.message || '获取社团信息失败',
+            title: res.data.message || '获取协会信息失败',
             icon: 'none'
           })
         }
       },
       fail: (err) => {
-        console.error('请求失败:', err)
         wx.showToast({
           title: '网络请求失败',
           icon: 'none'
@@ -144,7 +143,7 @@ Page({
           if (res.data.Flag == 4000) {
             const applications = res.data.data || []
             // 分类处理申请
-            const pending = applications.filter(app => app.status === 'pending')
+    const pending = applications.filter(app => app.status === 'pending')
             const processed = applications.filter(app => app.status !== 'pending')
             
             this.setData({
@@ -165,7 +164,6 @@ Page({
           }
         },
         fail: (err) => {
-          console.error('请求失败:', err)
           this.setData({ loading: false })
           wx.showToast({
             title: '网络请求失败',
@@ -241,7 +239,7 @@ Page({
             icon: 'success'
           })
           // 刷新数据
-          this.fetchApplications(this.data.clubId)
+    this.fetchApplications(this.data.clubId)
         } else {
           wx.showToast({
             title: res.data.message || '操作失败',
@@ -250,7 +248,6 @@ Page({
         }
       },
       fail: (err) => {
-        console.error('请求失败:', err)
         wx.showToast({
           title: '网络请求失败',
           icon: 'none'
@@ -288,7 +285,7 @@ Page({
                   icon: 'success'
                 })
                 // 刷新数据
-                this.fetchApplications(this.data.clubId)
+    this.fetchApplications(this.data.clubId)
               } else {
                 wx.showToast({
                   title: res.data.message || '操作失败',

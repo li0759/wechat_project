@@ -1,0 +1,137 @@
+<!--packageProfile/components/all-club-events-panel/index.wxml-->
+<view class="container">
+  <view class="page-header">
+    <view class="title">活动数据</view>
+    <view class="header-actions">
+      <van-button 
+        type="primary" 
+        round 
+        size="small" 
+        icon="down" 
+        bindtap="downloadExcel"
+        loading="{{downloading}}"
+        class="download-btn"
+      >
+        下载Excel
+      </van-button>
+    </view>
+  </view>
+  
+  <view wx:if="{{loading}}" class="loading-container">
+    <van-loading size="24px" type="spinner" color="#df76b0" />
+    <view class="loading-text">正在加载数据...</view>
+  </view>
+  
+  <view wx:else class="content">
+    <!-- 总体统计卡片 -->
+    <view class="stats-overview">
+      <view class="stats-card">
+        <view class="stats-number">{{totalEvents}}</view>
+        <view class="stats-label">活动总数</view>
+      </view>
+      <view class="stats-card">
+        <view class="stats-number">{{totalParticipants}}</view>
+        <view class="stats-label">总参与人次</view>
+      </view>
+      <view class="stats-card">
+        <view class="stats-number">{{totalCheckedIn}}</view>
+        <view class="stats-label">总签到人次</view>
+      </view>
+      <view class="stats-card">
+        <view class="stats-number">{{checkinRate}}%</view>
+        <view class="stats-label">平均签到率</view>
+      </view>
+    </view>
+    
+    <!-- 图表展示区域 -->
+    <view class="charts-section" wx:if="{{!hideCharts}}">
+      <!-- 协会活动数量柱状图 -->
+      <view class="chart-container">
+        <bar-chart 
+          data="{{clubEventChart}}" 
+          title="各协会活动数量分布"
+          height="{{300}}"
+          bar-color="#df76b0"
+          show-value="{{true}}"
+        />
+      </view>
+      
+      <!-- 月度活动趋势图 -->
+      <view class="chart-container" wx:if="{{monthlyChart.length > 0}}">
+        <bar-chart 
+          data="{{monthlyChart}}" 
+          title="月度活动趋势"
+          height="{{280}}"
+          bar-color="#9c88ff"
+          show-value="{{true}}"
+        />
+      </view>
+      
+      <!-- 活动费用分布饼图 -->
+      <view class="chart-container" wx:if="{{budgetChart.length > 0}}">
+        <pie-chart 
+          data="{{budgetChart}}" 
+          title="活动预算分布"
+          height="{{280}}"
+          colors="{{['#df76b0', '#9c88ff', '#5fb3d4', '#f4b844', '#67c23a']}}"
+        />
+      </view>
+      
+      <!-- 签到率对比图 -->
+      <view class="chart-container" wx:if="{{checkinChart.length > 0}}">
+        <bar-chart 
+          data="{{checkinChart}}" 
+          title="各协会签到率对比"
+          height="{{300}}"
+          bar-color="#5fb3d4"
+          show-value="{{true}}"
+        />
+      </view>
+    </view>
+    
+    <!-- 活动列表 -->
+    <view class="list-section">
+      <view class="section-title">
+        <view class="title-text">最近活动</view>
+        <view class="title-desc">共{{events.length}}个活动</view>
+      </view>
+      
+      <view class="event-list">
+        <view class="event-item" wx:for="{{events}}" wx:key="event_id">
+          <view class="event-header">
+            <view class="event-title">{{item.title}}</view>
+            <view class="event-club">{{item.club.club_name}}</view>
+          </view>
+          <view class="event-info">
+            <view class="info-row">
+              <text class="info-label">时间:</text>
+              <text class="info-value">{{item.pre_start_time}}</text>
+            </view>
+            <view class="info-row">
+              <text class="info-label">地点:</text>
+              <text class="info-value">{{item.location_name || '待定'}}</text>
+            </view>
+            <view class="info-row">
+              <text class="info-label">预算:</text>
+              <text class="info-value budget">¥{{item.budget || 0}}</text>
+            </view>
+          </view>
+          <view class="event-stats">
+            <view class="stat-item">
+              <text class="stat-value">{{item.total_participants}}</text>
+              <text class="stat-label">报名</text>
+            </view>
+            <view class="stat-item">
+              <text class="stat-value">{{item.checked_in_count}}</text>
+              <text class="stat-label">签到</text>
+            </view>
+            <view class="stat-item">
+              <text class="stat-value">{{Math.round(item.checked_in_count/item.total_participants*100) || 0}}%</text>
+              <text class="stat-label">签到率</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view> 

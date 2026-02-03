@@ -1,0 +1,27 @@
+<view class="popup-skeleton">
+  <!-- 活动状态头部 -->
+  <view style="padding: 20rpx 30rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '200rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  
+  <!-- 选项卡 -->
+  <view style="padding: 0 30rpx 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '80rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  
+  <!-- 时间线步骤卡片 -->
+  <view style="padding: 0 30rpx 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '600rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  
+  <!-- 动态列表骨架屏（3个动态项） -->
+  <view style="padding: 0 30rpx 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '300rpx', borderRadius: '16rpx', marginBottom: '20rpx' }]}}" />
+  </view>
+  <view style="padding: 0 30rpx 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '300rpx', borderRadius: '16rpx', marginBottom: '20rpx' }]}}" />
+  </view>
+  <view style="padding: 0 30rpx 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '300rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+</view>

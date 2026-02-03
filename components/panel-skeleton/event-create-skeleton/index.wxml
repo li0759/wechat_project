@@ -1,0 +1,31 @@
+<view class="popup-skeleton">
+  <!-- 协会选择 -->
+  <view style="padding: 20rpx 30rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '100rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  <!-- 活动名称输入框 -->
+  <view style="padding: 0 30rpx 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '100rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  <!-- 封面上传区域 -->
+  <view style="padding: 0 30rpx 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '300rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  <!-- 时间选择区域 -->
+  <view style="padding: 0 30rpx 20rpx; display: flex; gap: 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '335rpx', height: '120rpx', borderRadius: '16rpx' }]}}" />
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '335rpx', height: '120rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  <!-- 地点选择区域 -->
+  <view style="padding: 0 30rpx 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '120rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  <!-- 活动描述输入框 -->
+  <view style="padding: 0 30rpx 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '200rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  <!-- 提交按钮 -->
+  <view style="padding: 0 30rpx 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '88rpx', borderRadius: '44rpx' }]}}" />
+  </view>
+</view>
