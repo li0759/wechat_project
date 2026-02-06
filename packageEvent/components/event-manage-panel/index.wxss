@@ -69,10 +69,11 @@
   margin-top: 8rpx;
 }
 
-/* 使用 flex 布局，让 scroll-view 自动填充剩余空间 */
-.page-scroll { 
+/* 主内容区域 - 参考 event-detail-panel */
+.main-content {
   flex: 1;
-  overflow-y: auto;
+  padding-bottom: 140rpx; /* 为底部操作栏留出空间 */
+  -webkit-overflow-scrolling: touch;
 }
 .rows { padding: 16rpx 16rpx 24rpx; box-sizing: border-box; }
 
@@ -219,101 +220,7 @@
   border-top: 1rpx solid #E5E7EB;
 }
 
-/* 一级操作按钮（最重要）*/
-.action-primary {
-  flex: 1;
-  height: 88rpx;
-  background: var(--md-sys-color-primary);
-  color: #FFFFFF;
-  border-radius: 12rpx;
-  font-size: 30rpx;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8rpx;
-  transition: all 0.2s;
-  box-shadow: 0 2rpx 8rpx rgba(223, 118, 176, 0.25);
-}
-
-.action-primary:active {
-  background: var(--md-sys-color-primary-dark);
-  transform: scale(0.98);
-  box-shadow: 0 4rpx 12rpx rgba(223, 118, 176, 0.3);
-}
-
-.action-danger {
-  flex: 1;
-  height: 88rpx;
-  background: #EF4444;
-  color: #FFFFFF;
-  border-radius: 12rpx;
-  font-size: 30rpx;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8rpx;
-  transition: all 0.2s;
-  box-shadow: 0 2rpx 8rpx rgba(239, 68, 68, 0.25);
-}
-
-.action-danger:active {
-  background: #DC2626;
-  transform: scale(0.98);
-  box-shadow: 0 4rpx 12rpx rgba(239, 68, 68, 0.3);
-}
-
-/* 二级操作按钮（次要）*/
-.action-secondary {
-  flex: 1;
-  height: 80rpx;
-  background: transparent;
-  color: var(--md-sys-color-primary);
-  border: 1rpx solid var(--md-sys-color-primary);
-  border-radius: 12rpx;
-  font-size: 28rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8rpx;
-  transition: all 0.3s;
-}
-
-.action-secondary:active {
-  background: var(--md-sys-color-primary-light);
-  transform: scale(0.98);
-}
-
-.action-secondary::after {
-  border: none;
-}
-
-.action-full {
-  flex: 1;
-  width: 100%;
-}
-
-/* 三级操作按钮（偶尔使用）*/
-.action-tertiary {
-  width: 100%;
-  height: 72rpx;
-  background: transparent;
-  color: #EF4444;
-  border: 1rpx solid #FEE2E2;
-  border-radius: 12rpx;
-  font-size: 26rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8rpx;
-  transition: all 0.3s;
-}
-
-.action-tertiary:active {
-  background: #FEE2E2;
-  transform: scale(0.98);
-}
+/* 状态卡片底部操作按钮已移至底部操作栏 */
 
 .row-left { flex: 0 0 auto; min-width: 120rpx; display: flex; flex-direction: column; }
 .row-label { font-size: 30rpx; font-weight: 600; color: var(--md-sys-color-on-surface); }
@@ -478,8 +385,8 @@
 .loading { margin-top: 120rpx; }
 .footer-space { height: 160rpx; } /* 为底部操作栏留出空间 */
 
-/* ===== 固定底部操作栏（参考 event-detail-panel）===== */
-.fixed-action-bar {
+/* ===== 底部操作栏（完全参考 event-detail-panel）===== */
+.bottom-actions {
   position: absolute;
   bottom: 0;
   left: 0;
@@ -488,35 +395,97 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12rpx;
-  padding: 16rpx 20rpx;
+  padding: 16rpx 32rpx;
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
   background: linear-gradient(0deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.9) 70%, transparent 100%);
   backdrop-filter: blur(20rpx);
 }
 
-/* 紧凑型三级按钮（用于底部栏）*/
-.action-tertiary-compact {
-  flex: 0 0 auto;
-  min-width: 100rpx;
-  height: 72rpx;
+.action-left {
+  display: flex;
+  gap: 16rpx;
+}
+
+.action-right {
+  display: flex;
+  gap: 16rpx;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.action-btn {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  min-width: 120rpx;
+  height: 80rpx;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  gap: 8rpx;
+}
+
+.action-btn.secondary {
+  background: rgba(0,0,0,0.05);
+  color: #666;
+  padding: 0 24rpx;
+}
+
+.action-btn.secondary:active {
+  background: rgba(0,0,0,0.1);
+  transform: scale(0.98);
+}
+
+.action-btn.primary {
+  background: linear-gradient(135deg, var(--md-sys-color-primary) 0%, var(--md-sys-color-primary-dark) 100%);
+  color: #fff;
+  padding: 0 32rpx;
+  min-width: 160rpx;
+  box-shadow: 0 4rpx 12rpx rgba(223, 118, 176, 0.25);
+}
+
+.action-btn.primary:active {
+  transform: scale(0.98);
+  box-shadow: 0 8rpx 20rpx rgba(223, 118, 176, 0.3);
+}
+
+.action-btn.danger {
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  color: #fff;
+  padding: 0 32rpx;
+  min-width: 160rpx;
+  box-shadow: 0 4rpx 12rpx rgba(239, 68, 68, 0.25);
+}
+
+.action-btn.danger:active {
+  transform: scale(0.98);
+  box-shadow: 0 8rpx 20rpx rgba(239, 68, 68, 0.3);
+}
+
+.action-btn.tertiary {
   background: transparent;
   color: #EF4444;
   border: 1rpx solid #FEE2E2;
-  border-radius: 12rpx;
-  font-size: 24rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6rpx;
-  transition: all 0.3s;
-  padding: 0 16rpx;
+  padding: 0 24rpx;
+  min-width: 100rpx;
 }
 
-.action-tertiary-compact:active {
+.action-btn.tertiary:active {
   background: #FEE2E2;
   transform: scale(0.98);
 }
+
+/* 移除原生 button 的边框 */
+.action-btn.secondary::after,
+.action-btn.primary::after,
+.action-btn.danger::after,
+.action-btn.tertiary::after {
+  border: none;
+}
+
+
 .members-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; margin-bottom: 32rpx; }
 .members-toolbar .hint { font-size: 31rpx; color: var(--md-sys-color-on-surface-variant); }
 

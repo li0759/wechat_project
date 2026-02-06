@@ -56,7 +56,7 @@
   <t-empty wx:if="{{!loading && !event}}" icon="calendar" description="活动不存在或无权限" />
 
   <block wx:else>
-    <scroll-view class="page-scroll" scroll-y>
+    <scroll-view class="main-content" scroll-y>
       <view class="rows">
         <!-- 标题（独立框） -->
         <expandable-container id="row-title" expanded-width="700" expanded-height="520" bg-color="#f2f3f5">
@@ -603,47 +603,53 @@
       <view class="footer-space"></view>
     </scroll-view>
 
-    <!-- 固定底部操作栏（必须在 scroll-view 外部）-->
-    <view class="fixed-action-bar" wx:if="{{event && !event.is_cancelled && !event.club_deleted}}">
-      <!-- 未开始：显示"开始活动"和"分享" -->
-      <block wx:if="{{!event.actual_startTime}}">
-        <view class="action-primary" bindtap="beginEvent">
-          <t-icon name="play-circle" size="20" color="#fff" />
-          <text>开始活动</text>
-        </view>
-        <button class="action-secondary" open-type="share">
-          <t-icon name="share" size="18" color="var(--md-sys-color-primary)" />
-          <text>分享</text>
-        </button>
-        <view class="action-tertiary-compact" bindtap="cancelEvent">
-          <t-icon name="close-circle" size="18" color="#EF4444" />
-          <text>取消</text>
-        </view>
-      </block>
-      
-      <!-- 进行中：显示"结束活动"和"分享打卡" -->
-      <block wx:elif="{{!event.actual_endTime}}">
-        <view class="action-danger" bindtap="endEvent">
-          <t-icon name="stop-circle" size="20" color="#fff" />
-          <text>结束活动</text>
-        </view>
-        <button class="action-secondary" open-type="share">
-          <t-icon name="share" size="18" color="var(--md-sys-color-primary)" />
-          <text>分享</text>
-        </button>
-        <view class="action-tertiary-compact" bindtap="cancelEvent">
-          <t-icon name="close-circle" size="18" color="#EF4444" />
-          <text>取消</text>
-        </view>
-      </block>
-      
-      <!-- 已结束：只显示"分享" -->
-      <block wx:else>
-        <button class="action-secondary action-full" open-type="share">
-          <t-icon name="share" size="18" color="var(--md-sys-color-primary)" />
-          <text>分享活动</text>
-        </button>
-      </block>
+    <!-- 底部操作栏 -->
+    <view class="bottom-actions" wx:if="{{event && !event.is_cancelled && !event.club_deleted}}">
+      <view class="action-left">
+        <!-- 可以添加左侧按钮，如分享到协会等 -->
+      </view>
+
+      <view class="action-right">
+        <!-- 未开始：显示"开始活动"和"分享" -->
+        <block wx:if="{{!event.actual_startTime}}">
+          <view class="action-btn primary" bindtap="beginEvent">
+            <t-icon name="play-circle" size="20" color="#fff" />
+            <text>开始活动</text>
+          </view>
+          <button class="action-btn secondary" open-type="share">
+            <t-icon name="share" size="18" color="#666" />
+            <text>分享</text>
+          </button>
+          <view class="action-btn tertiary" bindtap="cancelEvent">
+            <t-icon name="close-circle" size="18" color="#EF4444" />
+            <text>取消</text>
+          </view>
+        </block>
+        
+        <!-- 进行中：显示"结束活动"和"分享" -->
+        <block wx:elif="{{!event.actual_endTime}}">
+          <view class="action-btn danger" bindtap="endEvent">
+            <t-icon name="stop-circle" size="20" color="#fff" />
+            <text>结束活动</text>
+          </view>
+          <button class="action-btn secondary" open-type="share">
+            <t-icon name="share" size="18" color="#666" />
+            <text>分享</text>
+          </button>
+          <view class="action-btn tertiary" bindtap="cancelEvent">
+            <t-icon name="close-circle" size="18" color="#EF4444" />
+            <text>取消</text>
+          </view>
+        </block>
+        
+        <!-- 已结束：只显示"分享" -->
+        <block wx:else>
+          <button class="action-btn primary" open-type="share" style="flex: 1;">
+            <t-icon name="share" size="18" color="#fff" />
+            <text>分享活动</text>
+          </button>
+        </block>
+      </view>
     </view>
   </block>
 
