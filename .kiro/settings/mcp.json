@@ -9,7 +9,34 @@
       "env": {
         "WEAPP_WS_ENDPOINT": "ws://localhost:9420",
         "NODE_OPTIONS": "--no-warnings"
-      }
+      },
+      "autoApprove": [
+        "mp_ensureConnection",
+        "mp_navigate",
+        "mp_screenshot",
+        "mp_callWx",
+        "mp_getLogs",
+        "mp_currentPage",
+        "page_getElement",
+        "page_getElements",
+        "page_waitElement",
+        "page_waitTimeout",
+        "page_getData",
+        "page_setData",
+        "page_callMethod",
+        "element_tap",
+        "element_input",
+        "element_callMethod",
+        "element_getData",
+        "element_setData",
+        "element_getInnerElement",
+        "element_getInnerElements",
+        "element_getWxml",
+        "element_getStyles",
+        "element_scrollTo",
+        "element_getAttributes",
+        "element_getBoundingClientRect"
+      ]
     }
   }
 }

@@ -19,11 +19,15 @@
   --md-sys-shape-corner-large: 20rpx;
   --md-sys-shape-corner-medium: 16rpx;
   --md-sys-shape-corner-small: 12rpx;
+  
+  /* 容器布局 - 参考 event-detail-panel */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   background-color: var(--md-sys-color-background);
   color: var(--md-sys-color-on-surface);
-  height: 100%;
   overflow: hidden;
-  position: relative;
 }
 
 /* 灰色蒙层样式 */
@@ -65,8 +69,11 @@
   margin-top: 8rpx;
 }
 
-/* 使用 calc 计算高度，200rpx 是弹窗顶部留白 */
-.page-scroll { height: calc(100vh - 200rpx); }
+/* 使用 flex 布局，让 scroll-view 自动填充剩余空间 */
+.page-scroll { 
+  flex: 1;
+  overflow-y: auto;
+}
 .rows { padding: 16rpx 16rpx 24rpx; box-sizing: border-box; }
 
 .row {
@@ -469,22 +476,23 @@
 .pill-ghost { background: var(--md-sys-color-surface-variant); color: var(--md-sys-color-on-surface); font-weight: 500; font-size: 26rpx; padding: 14rpx 20rpx; border-radius: 999rpx; transition: all 0.2s; }
 .pill-ghost:active { background: #E5E7EB; }
 .loading { margin-top: 120rpx; }
-.footer-space { height: 160rpx; }
+.footer-space { height: 160rpx; } /* 为底部操作栏留出空间 */
 
-/* ===== 固定底部操作栏 ===== */
+/* ===== 固定底部操作栏（参考 event-detail-panel）===== */
 .fixed-action-bar {
-  position: fixed;
+  position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
   padding: 16rpx 20rpx;
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
-  background: #FFFFFF;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
-  z-index: 1000;
-  display: flex;
-  gap: 12rpx;
-  align-items: center;
+  background: linear-gradient(0deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.9) 70%, transparent 100%);
+  backdrop-filter: blur(20rpx);
 }
 
 /* 紧凑型三级按钮（用于底部栏）*/
