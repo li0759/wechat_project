@@ -388,7 +388,7 @@
 /* ===== 底部操作栏（完全参考 event-detail-panel）===== */
 .bottom-actions {
   position: absolute;
-  bottom: 0;
+  bottom: 100rpx; /* 往上移，避免被 tabbar 遮挡 */
   left: 0;
   right: 0;
   z-index: 100;
