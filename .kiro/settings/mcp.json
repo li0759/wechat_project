@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "weapp-dev": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@yfme/weapp-dev-mcp"
+      ],
+      "env": {
+        "WEAPP_WS_ENDPOINT": "ws://localhost:9420",
+        "NODE_OPTIONS": "--no-warnings"
+      }
+    }
+  }
+}

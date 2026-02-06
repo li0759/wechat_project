@@ -209,7 +209,7 @@
                   <view class="hot-event-map-background" wx:if="{{item.location_data}}">
                     <view class="hot-event-map">
                       <image 
-                        src="{{item.premap_url || 'https://maps.geoapify.com/v1/staticmap?style=osm-bright-grey&width=600&height=400&center=lonlat:' + item.location_data.longitude + ',' + item.location_data.latitude + '&zoom=14&marker=lonlat:' + item.location_data.longitude + ',' + item.location_data.latitude + ';type:awesome;color:%23ff0000;size:medium&scaleFactor=2'}}"
+                        src="{{item.premap_url}}"
                         mode="aspectFill" />
                       <text class="location-name">{{item.location_data.name}}</text>
                       <view class="hot-event-overlay"></view>

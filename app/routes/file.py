@@ -53,11 +53,27 @@ def get_minio_client():
 
 
 def ensure_bucket_exists(client, bucket_name):
-    """确保bucket存在"""
+    """
+    确保bucket存在（带缓存优化）
+    使用应用上下文缓存已检查的bucket，避免重复检查
+    """
     try:
+        # 使用应用上下文缓存已验证的bucket
+        if not hasattr(current_app, '_verified_buckets'):
+            current_app._verified_buckets = set()
+        
+        # 如果已经验证过，直接返回
+        if bucket_name in current_app._verified_buckets:
+            return
+        
+        # 检查bucket是否存在
         if not client.bucket_exists(bucket_name):
             client.make_bucket(bucket_name)
             current_app.logger.info(f"创建bucket: {bucket_name}")
+        
+        # 标记为已验证
+        current_app._verified_buckets.add(bucket_name)
+        
     except S3Error as e:
         current_app.logger.error(f"创建bucket失败: {str(e)}")
         raise
@@ -106,21 +122,22 @@ def upload_file():
                 'message': f'不支持的文件类型，仅支持: {", ".join(ALLOWED_EXTENSIONS)}'
             }), 400
         
-        # 检查文件大小（默认限制16MB）
-        file_upload.seek(0, os.SEEK_END)
-        file_size = file_upload.tell()
-        file_upload.seek(0)  # 重置文件指针
+        # 生成安全的文件名
+        original_filename = secure_filename(file_upload.filename)
+        file_extension = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else ''
+        safe_filename = generate_safe_filename(original_filename)
         
+        # 一次性读取文件内容到内存
+        file_data = io.BytesIO(file_upload.read())
+        file_size = len(file_data.getvalue())
+        
+        # 检查文件大小（默认限制16MB）
         max_size = current_app.config.get('MAX_CONTENT_LENGTH', 16 * 1024 * 1024)
         if file_size > max_size:
             return jsonify({
                 'Flag': 4001,
                 'message': f'文件大小超过限制（最大{max_size // (1024*1024)}MB）'
             }), 400
-        
-        # 生成安全的文件名
-        original_filename = secure_filename(file_upload.filename)
-        safe_filename = generate_safe_filename(original_filename)
         
         # 获取MinIO客户端
         minio_client = get_minio_client()
@@ -129,8 +146,7 @@ def upload_file():
         # 确保bucket存在
         ensure_bucket_exists(minio_client, bucket_name)
         
-        # 上传到MinIO
-        file_data = io.BytesIO(file_upload.read())
+        # 上传到MinIO（file_data已经在内存中）
         file_data.seek(0)
         
         # 设置content type

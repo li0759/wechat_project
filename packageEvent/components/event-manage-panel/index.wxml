@@ -60,11 +60,14 @@
       <view class="rows">
         <!-- 标题（独立框） -->
         <expandable-container id="row-title" expanded-width="700" expanded-height="520" bg-color="#f2f3f5">
-          <view slot="trigger" class="row row-100">
-            <view class="row-left"><text class="row-label">标题</text></view>
+          <view slot="trigger" class="row row-100 row-editable">
+            <view class="row-left">
+              <text class="row-label">标题</text>
+              <text class="edit-hint">点击编辑</text>
+            </view>
             <view class="row-right">
               <text class="row-value {{!event.title ? 'muted' : ''}}">{{event.title || '未设置'}}</text>
-              <t-icon name="chevron-right" color="#999" />
+              <t-icon name="edit" size="20" color="var(--md-sys-color-primary)" />
             </view>
           </view>
           <view slot="content" class="popup-shell">
@@ -82,13 +85,18 @@
 
         <!-- 简介（独立框） -->
         <expandable-container id="row-content" expanded-width="700" expanded-height="980" bg-color="#f2f3f5">
-          <view slot="trigger" class="row row-basic">
-            <view class="row-basic-left"><text class="row-label">简介</text></view>
+          <view slot="trigger" class="row row-basic row-editable">
+            <view class="row-basic-left">
+              <text class="row-label">简介</text>
+              <text class="edit-hint">点击编辑</text>
+            </view>
             <view class="row-basic-right">
               <view class="row-basic-title clamp-1">{{event.content ? '已填写' : '未填写'}}</view>
-              <view class="row-basic-desc clamp-1">{{event.content || '点击编辑简介'}}</view>
+              <view class="row-basic-desc clamp-2">{{event.content || '暂无简介，点击添加'}}</view>
             </view>
-            <view class="row-basic-arrow"><t-icon name="chevron-right" color="#999" /></view>
+            <view class="row-basic-arrow">
+              <t-icon name="edit" size="20" color="var(--md-sys-color-primary)" />
+            </view>
           </view>
           <view slot="content" class="popup-shell">
             <view class="popup-header">
@@ -113,13 +121,14 @@
 
         <!-- 第3行：预计开始（100rpx） -->
         <expandable-container id="pre-start-box" expanded-width="700" expanded-height="700" bg-color="#f2f3f5" bind:expand="onPreStartBoxExpand">
-          <view slot="trigger" class="row row-100">
+          <view slot="trigger" class="row row-100 row-editable">
             <view class="row-left">
               <text class="row-label">预计开始</text>
+              <text class="edit-hint">点击修改</text>
             </view>
             <view class="row-right">
               <text class="row-value {{!event.pre_startTime ? 'muted' : ''}}">{{event.pre_startTime_display || '未设置'}}</text>
-              <t-icon name="chevron-right" color="#999" />
+              <t-icon name="edit" size="20" color="var(--md-sys-color-primary)" />
             </view>
           </view>
           <view slot="content" class="popup-shell">
@@ -149,13 +158,14 @@
 
         <!-- 第4行：预计结束（100rpx） -->
         <expandable-container id="pre-end-box" expanded-width="700" expanded-height="700" bg-color="#f2f3f5" bind:expand="onPreEndBoxExpand">
-          <view slot="trigger" class="row row-100">
+          <view slot="trigger" class="row row-100 row-editable">
             <view class="row-left">
               <text class="row-label">预计结束</text>
+              <text class="edit-hint">点击修改</text>
             </view>
             <view class="row-right">
               <text class="row-value {{!event.pre_endTime ? 'muted' : ''}}">{{event.pre_endTime_display || '未设置'}}</text>
-              <t-icon name="chevron-right" color="#999" />
+              <t-icon name="edit" size="20" color="var(--md-sys-color-primary)" />
             </view>
           </view>
           <view slot="content" class="popup-shell">
@@ -183,38 +193,28 @@
           </view>
         </expandable-container>
 
-        <!-- 实际开始/结束：不使用框，只显示文本/按钮 -->
-        <view class="plain-line">
-          <text class="plain-k">实际开始：</text>
-          <t-button wx:if="{{!event.actual_startTime}}" theme="primary" size="small" bindtap="beginEvent">开始活动</t-button>
-          <text wx:else class="plain-v">{{event.actual_startTime_display}}</text>
-        </view>
-
-        <!-- 分享活动按钮 - 始终显示 -->
-        <view class="plain-line">
-          <text class="plain-k">分享活动：</text>
-          <button class="share-button" open-type="share">
-            <t-icon name="share" size="16" />
-            <text style="margin-left: 4rpx;">{{event.actual_startTime ? '分享打卡链接' : '分享活动链接'}}</text>
-          </button>
-        </view>
-
-        <view class="plain-line">
-          <text class="plain-k">实际结束：</text>
-          <t-button wx:if="{{event.actual_startTime && !event.actual_endTime}}" theme="danger" size="small" bindtap="endEvent">结束活动</t-button>
-          <text wx:elif="{{event.actual_endTime}}" class="plain-v">{{event.actual_endTime_display}}</text>
-          <text wx:else class="plain-v muted">未开始</text>
-        </view>
-
-        <!-- 取消活动按钮 -->
-        <view class="plain-line" wx:if="{{!event.is_cancelled && !event.actual_endTime}}">
-          <text class="plain-k">活动状态：</text>
-          <t-button theme="danger" size="small" variant="outline" bindtap="cancelEvent">取消活动</t-button>
-        </view>
-        
-        <view class="plain-line" wx:if="{{event.is_cancelled}}">
-          <text class="plain-k">活动状态：</text>
-          <text class="plain-v" style="color: #ff4d4f;">已取消</text>
+        <!-- 活动状态卡片 - 优化后的设计 -->
+        <view class="status-card">
+          <view class="status-card-header">
+            <view class="status-card-title">
+              <t-icon name="play-circle" size="24" color="var(--md-sys-color-primary)" />
+              <text>活动状态</text>
+            </view>
+            <view class="status-badge {{event.actual_startTime ? (event.actual_endTime ? 'status-badge-ended' : 'status-badge-active') : 'status-badge-pending'}}">
+              {{event.is_cancelled ? '已取消' : (event.actual_startTime ? (event.actual_endTime ? '已结束' : '进行中') : '未开始')}}
+            </view>
+          </view>
+          
+          <view class="status-card-body">
+            <view class="status-info-row">
+              <text class="status-label">实际开始</text>
+              <text class="status-value">{{event.actual_startTime_display || '未开始'}}</text>
+            </view>
+            <view class="status-info-row">
+              <text class="status-label">实际结束</text>
+              <text class="status-value">{{event.actual_endTime_display || '--'}}</text>
+            </view>
+          </view>
         </view>
 
         <!-- 第7行：封面(左) + 地址地图(右)（300rpx） -->
@@ -256,123 +256,7 @@
           </view>
         </view>
 
-        <!-- 日程管理 -->
-        <expandable-container_fullscreen id="card-schedule" expanded-width="750" expanded-height="1800" bg-color="#f2f3f5" bind:expand="onScheduleExpand">
-          <view slot="trigger" class="panel panel-300 panel-wide">
-            <view class="panel-header">
-              <view class="panel-title">
-                <t-icon name="calendar" color="var(--md-sys-color-primary)" />
-                <text>日程管理</text>
-              </view>
-              <text class="panel-hint">{{scheduleEnabled ? '已启用' : '无'}}</text>
-            </view>
-            <view class="moment-preview">
-              <view class="moment-preview-body">
-                <text class="moment-preview-text clamp-2">{{scheduleEnabled ? (tempScheduleDisplay || '已启用') : '无'}}</text>
-                <text class="moment-preview-meta">{{scheduleEnabled ? '点击编辑' : '点击设置'}}</text>
-              </view>
-            </view>
-          </view>
-          <view slot="content" class="popup-shell fullscreen-popup">
-            <view class="popup-body popup-body-full" style="padding: 18rpx 16rpx 0;">
-              <view class="popup-shell">
-                <view style="display:flex;align-items:center;justify-content:space-between;padding: 10rpx 0 18rpx;">
-                  <text class="row-label">启用自动提醒</text>
-                  <van-switch checked="{{scheduleEnabled}}" bind:change="onScheduleEnabledChangeWrapper" active-color="var(--md-sys-color-primary)" />
-                </view>
 
-                <block wx:if="{{scheduleEnabled}}">
-                  <view style="background:#fff;border-radius:16rpx;padding:18rpx;">
-                    <view class="mb-3">
-                      <text class="muted">重复频率</text>
-                      <view style="display:flex;gap:24rpx;margin-top:16rpx;">
-                        <t-tag variant="{{scheduleForm.schedule_type === 'weekly' ? 'dark' : 'outline'}}" bindtap="onScheduleTypeChangeWrapper" data-type="weekly">每周</t-tag>
-                        <t-tag variant="{{scheduleForm.schedule_type === 'monthly' ? 'dark' : 'outline'}}" bindtap="onScheduleTypeChangeWrapper" data-type="monthly">每月</t-tag>
-                      </view>
-                    </view>
-
-                    <view class="mb-3">
-                      <text class="muted">执行日期</text>
-                      <view wx:if="{{ scheduleForm.schedule_type === 'weekly' }}" class="date-selector mt-1">
-                        <expandable-container id="weekday-selector" expanded-width="650" expanded-height="600" bg-color="#f2f3f5" trigger-width="100%" bind:expand="onWeekdaySelectorExpand" bind:collapse="onWeekdaySelectorCollapse">
-                          <view slot="trigger" class="row row-80">
-                            <view class="row-left"><text class="row-label">星期</text></view>
-                            <view class="row-right">
-                              <text class="row-value {{!utils.getWeekdaysDisplay(scheduleForm.weekdays) ? 'muted' : ''}}">{{utils.getWeekdaysDisplay(scheduleForm.weekdays) || '请选择'}}</text>
-                              <t-icon name="chevron-right" color="#999" />
-                            </view>
-                          </view>
-                          <view slot="content" class="popup-shell">
-                            <view class="popup-header"><view class="popup-title">选择重复星期</view></view>
-                            <view class="popup-body">
-                              <view class="week-grid">
-                                <view wx:for="{{['周日','周一','周二','周三','周四','周五','周六']}}" wx:key="index" class="week-cell {{tempWeekdaysMap[index] ? 'active' : ''}}" bindtap="toggleWeekday" data-day="{{index}}">{{item}}</view>
-                              </view>
-                            </view>
-                            <view class="popup-footer"><t-button theme="primary" block bindtap="collapsePopup" data-id="weekday-selector">完成</t-button></view>
-                          </view>
-                        </expandable-container>
-                      </view>
-
-                      <view wx:if="{{ scheduleForm.schedule_type === 'monthly' }}" class="date-selector mt-1">
-                        <expandable-container id="monthday-selector" expanded-width="700" expanded-height="800" bg-color="#f2f3f5" trigger-width="100%" bind:expand="onMonthdaySelectorExpand" bind:collapse="onMonthdaySelectorCollapse">
-                          <view slot="trigger" class="row row-80">
-                            <view class="row-left"><text class="row-label">日期</text></view>
-                            <view class="row-right">
-                              <text class="row-value {{!utils.getMonthdaysDisplay(scheduleForm.month_days) ? 'muted' : ''}}">{{utils.getMonthdaysDisplay(scheduleForm.month_days) || '请选择'}}</text>
-                              <t-icon name="chevron-right" color="#999" />
-                            </view>
-                          </view>
-                          <view slot="content" class="popup-shell">
-                            <view class="popup-header"><view class="popup-title">选择每月日期</view></view>
-                            <view class="popup-body">
-                              <scroll-view scroll-y style="height: 560rpx;">
-                                <view class="calendar-grid">
-                                  <view wx:for="{{31}}" wx:key="index" class="calendar-cell {{tempMonthdaysMap[item + 1] ? 'active' : ''}}" bindtap="toggleMonthday" data-day="{{item + 1}}">{{item + 1}}</view>
-                                </view>
-                              </scroll-view>
-                            </view>
-                            <view class="popup-footer"><t-button theme="primary" block bindtap="collapsePopup" data-id="monthday-selector">完成</t-button></view>
-                          </view>
-                        </expandable-container>
-                      </view>
-                    </view>
-
-                    <view class="mb-3">
-                      <text class="muted">具体时间</text>
-                      <expandable-container id="time-selector" expanded-width="650" expanded-height="780" bg-color="#f2f3f5" trigger-width="100%" bind:expand="onTimeSelectorExpand" bind:collapse="onTimeSelectorCollapse">
-                        <view slot="trigger" class="row row-80">
-                          <view class="row-left"><text class="row-label">时间</text></view>
-                          <view class="row-right">
-                            <text class="row-value {{!scheduleForm.activity_time ? 'muted' : ''}}">{{scheduleForm.activity_time || '请选择'}}</text>
-                            <t-icon name="chevron-right" color="#999" />
-                          </view>
-                        </view>
-                        <view slot="content" class="popup-shell">
-                          <view class="popup-header"><view class="popup-title">选择时间</view></view>
-                          <view class="popup-body">
-                            <van-datetime-picker type="time" value="{{timeOfDayValue}}" min-hour="0" max-hour="23" bind:input="onTimeInput" show-toolbar="{{false}}" style="height: 400rpx;" />
-                            <view class="muted" style="margin-top: 12rpx; text-align: center;">当前：{{timeOfDayValue}}</view>
-                          </view>
-                          <view class="popup-footer"><t-button theme="primary" block bindtap="collapsePopup" data-id="time-selector">完成</t-button></view>
-                        </view>
-                      </expandable-container>
-                    </view>
-
-                    <view>
-                      <text class="muted">提前通知：{{advanceHourLabels[scheduleForm.advance_hours_slider]}}</text>
-                      <van-slider value="{{scheduleForm.advance_hours_slider}}" min="0" max="7" step="1" bind:change="onAdvanceHoursChange" active-color="var(--md-sys-color-primary)" />
-                    </view>
-                  </view>
-                </block>
-
-                <view class="popup-footer popup-footer-full">
-                  <t-button theme="primary" block bindtap="saveScheduleAndClose">完成</t-button>
-                </view>
-              </view>
-            </view>
-          </view>
-        </expandable-container_fullscreen>
 
         <!-- 第8行：活动人员(左) + 动态(右)（300rpx） -->
         <view class="split-row row-300">
@@ -594,11 +478,173 @@
                 </view>
               </view>
             </expandable-container_fullscreen>
+
+        <!-- 日程管理 -->
+        <expandable-container_fullscreen id="card-schedule" expanded-width="750" expanded-height="1800" bg-color="#f2f3f5" bind:expand="onScheduleExpand">
+          <view slot="trigger" class="panel panel-300 panel-wide">
+            <view class="panel-header">
+              <view class="panel-title">
+                <t-icon name="calendar" color="var(--md-sys-color-primary)" />
+                <text>日程管理</text>
+              </view>
+              <text class="panel-hint">{{scheduleEnabled ? '已启用' : '无'}}</text>
+            </view>
+            <view class="moment-preview">
+              <view class="moment-preview-body">
+                <text class="moment-preview-text clamp-2">{{scheduleEnabled ? (tempScheduleDisplay || '已启用') : '无'}}</text>
+                <text class="moment-preview-meta">{{scheduleEnabled ? '点击编辑' : '点击设置'}}</text>
+              </view>
+            </view>
+          </view>
+          <view slot="content" class="popup-shell fullscreen-popup">
+            <view class="popup-body popup-body-full" style="padding: 18rpx 16rpx 0;">
+              <view class="popup-shell">
+                <view style="display:flex;align-items:center;justify-content:space-between;padding: 10rpx 0 18rpx;">
+                  <text class="row-label">启用自动提醒</text>
+                  <van-switch checked="{{scheduleEnabled}}" bind:change="onScheduleEnabledChangeWrapper" active-color="var(--md-sys-color-primary)" />
+                </view>
+
+                <block wx:if="{{scheduleEnabled}}">
+                  <view style="background:#fff;border-radius:16rpx;padding:18rpx;">
+                    <view class="mb-3">
+                      <text class="muted">重复频率</text>
+                      <view style="display:flex;gap:24rpx;margin-top:16rpx;">
+                        <t-tag variant="{{scheduleForm.schedule_type === 'weekly' ? 'dark' : 'outline'}}" bindtap="onScheduleTypeChangeWrapper" data-type="weekly">每周</t-tag>
+                        <t-tag variant="{{scheduleForm.schedule_type === 'monthly' ? 'dark' : 'outline'}}" bindtap="onScheduleTypeChangeWrapper" data-type="monthly">每月</t-tag>
+                      </view>
+                    </view>
+
+                    <view class="mb-3">
+                      <text class="muted">执行日期</text>
+                      <view wx:if="{{ scheduleForm.schedule_type === 'weekly' }}" class="date-selector mt-1">
+                        <expandable-container id="weekday-selector" expanded-width="650" expanded-height="600" bg-color="#f2f3f5" trigger-width="100%" bind:expand="onWeekdaySelectorExpand" bind:collapse="onWeekdaySelectorCollapse">
+                          <view slot="trigger" class="row row-80">
+                            <view class="row-left"><text class="row-label">星期</text></view>
+                            <view class="row-right">
+                              <text class="row-value {{!utils.getWeekdaysDisplay(scheduleForm.weekdays) ? 'muted' : ''}}">{{utils.getWeekdaysDisplay(scheduleForm.weekdays) || '请选择'}}</text>
+                              <t-icon name="chevron-right" color="#999" />
+                            </view>
+                          </view>
+                          <view slot="content" class="popup-shell">
+                            <view class="popup-header"><view class="popup-title">选择重复星期</view></view>
+                            <view class="popup-body">
+                              <view class="week-grid">
+                                <view wx:for="{{['周日','周一','周二','周三','周四','周五','周六']}}" wx:key="index" class="week-cell {{tempWeekdaysMap[index] ? 'active' : ''}}" bindtap="toggleWeekday" data-day="{{index}}">{{item}}</view>
+                              </view>
+                            </view>
+                            <view class="popup-footer"><t-button theme="primary" block bindtap="collapsePopup" data-id="weekday-selector">完成</t-button></view>
+                          </view>
+                        </expandable-container>
+                      </view>
+
+                      <view wx:if="{{ scheduleForm.schedule_type === 'monthly' }}" class="date-selector mt-1">
+                        <expandable-container id="monthday-selector" expanded-width="700" expanded-height="800" bg-color="#f2f3f5" trigger-width="100%" bind:expand="onMonthdaySelectorExpand" bind:collapse="onMonthdaySelectorCollapse">
+                          <view slot="trigger" class="row row-80">
+                            <view class="row-left"><text class="row-label">日期</text></view>
+                            <view class="row-right">
+                              <text class="row-value {{!utils.getMonthdaysDisplay(scheduleForm.month_days) ? 'muted' : ''}}">{{utils.getMonthdaysDisplay(scheduleForm.month_days) || '请选择'}}</text>
+                              <t-icon name="chevron-right" color="#999" />
+                            </view>
+                          </view>
+                          <view slot="content" class="popup-shell">
+                            <view class="popup-header"><view class="popup-title">选择每月日期</view></view>
+                            <view class="popup-body">
+                              <scroll-view scroll-y style="height: 560rpx;">
+                                <view class="calendar-grid">
+                                  <view wx:for="{{31}}" wx:key="index" class="calendar-cell {{tempMonthdaysMap[item + 1] ? 'active' : ''}}" bindtap="toggleMonthday" data-day="{{item + 1}}">{{item + 1}}</view>
+                                </view>
+                              </scroll-view>
+                            </view>
+                            <view class="popup-footer"><t-button theme="primary" block bindtap="collapsePopup" data-id="monthday-selector">完成</t-button></view>
+                          </view>
+                        </expandable-container>
+                      </view>
+                    </view>
+
+                    <view class="mb-3">
+                      <text class="muted">具体时间</text>
+                      <expandable-container id="time-selector" expanded-width="650" expanded-height="780" bg-color="#f2f3f5" trigger-width="100%" bind:expand="onTimeSelectorExpand" bind:collapse="onTimeSelectorCollapse">
+                        <view slot="trigger" class="row row-80">
+                          <view class="row-left"><text class="row-label">时间</text></view>
+                          <view class="row-right">
+                            <text class="row-value {{!scheduleForm.activity_time ? 'muted' : ''}}">{{scheduleForm.activity_time || '请选择'}}</text>
+                            <t-icon name="chevron-right" color="#999" />
+                          </view>
+                        </view>
+                        <view slot="content" class="popup-shell">
+                          <view class="popup-header"><view class="popup-title">选择时间</view></view>
+                          <view class="popup-body">
+                            <van-datetime-picker type="time" value="{{timeOfDayValue}}" min-hour="0" max-hour="23" bind:input="onTimeInput" show-toolbar="{{false}}" style="height: 400rpx;" />
+                            <view class="muted" style="margin-top: 12rpx; text-align: center;">当前：{{timeOfDayValue}}</view>
+                          </view>
+                          <view class="popup-footer"><t-button theme="primary" block bindtap="collapsePopup" data-id="time-selector">完成</t-button></view>
+                        </view>
+                      </expandable-container>
+                    </view>
+
+                    <view>
+                      <text class="muted">提前通知：{{advanceHourLabels[scheduleForm.advance_hours_slider]}}</text>
+                      <van-slider value="{{scheduleForm.advance_hours_slider}}" min="0" max="7" step="1" bind:change="onAdvanceHoursChange" active-color="var(--md-sys-color-primary)" />
+                    </view>
+                  </view>
+                </block>
+
+                <view class="popup-footer popup-footer-full">
+                  <t-button theme="primary" block bindtap="saveScheduleAndClose">完成</t-button>
+                </view>
+              </view>
+            </view>
+          </view>
+        </expandable-container_fullscreen>
+
           </view>
         </view>
       </view>
       <view class="footer-space"></view>
     </scroll-view>
+
+    <!-- 固定底部操作栏（必须在 scroll-view 外部）-->
+    <view class="fixed-action-bar" wx:if="{{event && !event.is_cancelled && !event.club_deleted}}">
+      <!-- 未开始：显示"开始活动"和"分享" -->
+      <block wx:if="{{!event.actual_startTime}}">
+        <view class="action-primary" bindtap="beginEvent">
+          <t-icon name="play-circle" size="20" color="#fff" />
+          <text>开始活动</text>
+        </view>
+        <button class="action-secondary" open-type="share">
+          <t-icon name="share" size="18" color="var(--md-sys-color-primary)" />
+          <text>分享</text>
+        </button>
+        <view class="action-tertiary-compact" bindtap="cancelEvent">
+          <t-icon name="close-circle" size="18" color="#EF4444" />
+          <text>取消</text>
+        </view>
+      </block>
+      
+      <!-- 进行中：显示"结束活动"和"分享打卡" -->
+      <block wx:elif="{{!event.actual_endTime}}">
+        <view class="action-danger" bindtap="endEvent">
+          <t-icon name="stop-circle" size="20" color="#fff" />
+          <text>结束活动</text>
+        </view>
+        <button class="action-secondary" open-type="share">
+          <t-icon name="share" size="18" color="var(--md-sys-color-primary)" />
+          <text>分享</text>
+        </button>
+        <view class="action-tertiary-compact" bindtap="cancelEvent">
+          <t-icon name="close-circle" size="18" color="#EF4444" />
+          <text>取消</text>
+        </view>
+      </block>
+      
+      <!-- 已结束：只显示"分享" -->
+      <block wx:else>
+        <button class="action-secondary action-full" open-type="share">
+          <t-icon name="share" size="18" color="var(--md-sys-color-primary)" />
+          <text>分享活动</text>
+        </button>
+      </block>
+    </view>
   </block>
 
   <!-- 共享成员详情弹窗 -->

@@ -13,11 +13,9 @@
   globalData: {
     sky_system:{},
     sky_menu:{},
-    //request_url:"https://www.vhhg.top/api/v1",
-    request_url:"https://ghwtxh.msatmb.com:10443/api/v1",
+    request_url:"https://www.vhhg.top/api/v1",
+    //request_url:"https://ghwtxh.msatmb.com:10443/api/v1",
     static_url:"https://ghwtxh.msatmb.com:10443",
-    key: '7IWBZ-YLWE7-M2EXW-H2J7E-2XW3Z-NSFBM',
-    staticMapUrl: 'https://apis.map.qq.com/ws/staticmap/v2/',
     userInfo: null,
     defaultImages: {
       avatarUrl: '/assets/images/president/default-avatar.png',

@@ -1,6 +1,7 @@
 {
   "setting": {
-    "skylineRenderEnable": false
+    "skylineRenderEnable": false,
+    "urlCheck": false
   },
   "condition": {
     "miniprogram": {

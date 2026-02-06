@@ -109,10 +109,10 @@ Component({
               president_username: club.president_username,
               president_avatar: club.president_avatar
             },
-            // 确保用户关系字段被正确映数
-      cur_user_is_member: club.cur_user_is_member || false,
+            // 确保用户关系字段被正确映射
+            cur_user_is_member: club.cur_user_is_member || false,
             cur_user_managed: club.cur_user_managed || false,
-            // 映射删除状态字?- 后端返回is_deleted，组件期望isDelete
+            // 映射删除状态字段 - 后端返回is_deleted，组件期望isDelete
             isDelete: club.is_deleted || false
           }));          
           const isEmpty = page === 1 && realData.length === 0;

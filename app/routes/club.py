@@ -80,7 +80,8 @@ def get_club_list(show):
             'club_id': club.clubID,
             'club_name': club.clubName,
             'description': club.description,
-            'president': club.president.userID if club.president and not club.president.isDelete else None,
+            'president_username': club.president.user.userName if club.president and not club.president.isDelete and club.president.user else None,
+            'president_avatar': club.president.user.avatar.fileUrl if club.president and not club.president.isDelete and club.president.user and club.president.user.avatar else None,
             # 获取协会成员数量（只统计未删除的成员）
             'member_num': len([m for m in club.members if not m.isDelete]),
             'cover_url': club.cover.fileUrl if club.cover else None,
