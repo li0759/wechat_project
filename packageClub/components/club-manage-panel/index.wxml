@@ -456,9 +456,11 @@
                     bg-color="#f2f3f5"
                     z-index="30000"
                   >
-                    <view slot="trigger" class="people-avatar-trigger">
-                      <image class="people-avatar" src="{{peoplePresident.avatar || '/assets/images/default-avatar.png'}}" mode="aspectFill" />
-                    </view>
+                    <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+                      <view class="people-avatar-trigger">
+                        <image class="people-avatar" src="{{peoplePresident.avatar || '/assets/images/default-avatar.png'}}" mode="aspectFill" />
+                      </view>
+                    </ripple>
                     <view slot="content" class="popup-shell">
                       <view class="member-detail-popup">
                         <image class="member-detail-avatar" src="{{peoplePresident.avatar || '/assets/images/default-avatar.png'}}" mode="aspectFill" />

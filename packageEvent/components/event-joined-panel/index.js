@@ -134,6 +134,7 @@ Component({
         },
         success: (res) => {
           if (res.data.Flag === '4000') {
+            console.log(res.data)
             resolve(res.data);
           } else {
             reject(new Error(res.data.message || '加载失败'));
@@ -440,6 +441,65 @@ Component({
     } catch (error) {
       wx.hideLoading();      wx.showToast({
         title: error.message || '退出失', icon: 'none'
+      });
+    }
+  },
+
+  // 退出活动（底部操作栏调用）
+  async quitEvent() {
+    const result = await new Promise((resolve) => {
+      wx.showModal({
+        title: '确认退出',
+        content: '确定要退出这个活动吗？',
+        confirmText: '退出',
+        confirmColor: '#EF4444',
+        success: resolve,
+        fail: () => resolve({ confirm: false })
+      });
+    });
+
+    if (!result.confirm) return;
+
+    try {
+      wx.showLoading({ title: '处理中...' });
+      
+      const res = await new Promise((resolve, reject) => {
+        wx.request({
+          url: app.globalData.request_url + `/event/${this.data.eventId}/quit`,
+          method: 'GET',
+          header: {
+            'Authorization': 'Bearer ' + wx.getStorageSync('token'),
+            'Content-Type': 'application/json'
+          },
+          success: resolve,
+          fail: reject
+        });
+      });
+
+      wx.hideLoading();
+
+      if (res.data.Flag === '4000') {
+        wx.showToast({
+          title: '退出成功', icon: 'success'
+        });
+        
+        // 记录变更
+        app.recordChange(this.data.eventId, 'update', { 
+          type: 'event',
+          cur_user_is_joined: false 
+        }, this);
+        
+        // 触发 close 事件，关闭弹窗
+        setTimeout(() => {
+          this.triggerEvent('close');
+        }, 1500);
+      } else {
+        throw new Error(res.data.message || '退出失败');
+      }
+    } catch (error) {
+      wx.hideLoading();
+      wx.showToast({
+        title: error.message || '退出失败', icon: 'none'
       });
     }
   },

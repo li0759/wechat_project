@@ -12,7 +12,7 @@
     "t-loading": "tdesign-miniprogram/loading/loading",
     "t-upload": "tdesign-miniprogram/upload/upload",
     "t-popup": "tdesign-miniprogram/popup/popup",
-    "t-image-viewer": "tdesign-miniprogram/image-viewer/image-viewer"
+    "t-image-viewer": "tdesign-miniprogram/image-viewer/image-viewer",
+    "ripple": "/components/ripple/index"
   }
 }
-

@@ -50,9 +50,9 @@
 
 /* 主滚动区域 */
 .page-scroll {
-  height: calc(100vh - 200rpx);
-  padding-bottom: 140rpx;
+  height: 1350rpx;
   -webkit-overflow-scrolling: touch;
+  background: #fff;
 }
 
 /* 协会基本信息区域 */
@@ -138,9 +138,7 @@
   right: 0;
   width: 500rpx;
   height: 350rpx;
-  z-index: 1;
   border-radius: 0 16rpx 16rpx 0;
-  overflow: hidden;
 }
 
 .map-bg-image {
@@ -365,52 +363,81 @@
   height: 160rpx;
 }
 
-/* 底部操作栏 */
+/* 底部操作栏（完全参考 event-manage-panel）*/
 .bottom-actions {
   position: absolute;
-  bottom: 0;
+  bottom: 0rpx;
   left: 0;
   right: 0;
   z-index: 100;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16rpx 32rpx;
-  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
-  background: linear-gradient(0deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.9) 70%, transparent 100%);
+  padding-top: 32rpx;
+  background: linear-gradient(0deg, rgba(255, 255, 255, 1) 0%, rgba(246, 246, 246, 0.9) 70%, transparent 100%);
   backdrop-filter: blur(20rpx);
 }
 
-.action-left,
-.action-right {
+.action-left {
   display: flex;
   gap: 16rpx;
 }
 
+.action-right {
+  display: flex;
+  gap: 16rpx;
+  flex: 1;
+  justify-content: flex-end;
+}
+
 .action-btn {
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 8rpx;
-  min-width: 160rpx;
+  min-width: 120rpx;
   height: 80rpx;
   border-radius: 40rpx;
   font-size: 28rpx;
   font-weight: 500;
-  padding: 0 32rpx;
   transition: all 0.3s ease;
+  gap: 8rpx;
 }
 
 .action-btn.secondary {
   background: rgba(0,0,0,0.05);
   color: #666;
+  padding: 0 24rpx;
 }
 
-.action-btn.danger {
-  background: rgba(255, 77, 79, 0.1);
-  color: #ff4d4f;
+.action-btn.secondary:active {
+  background: rgba(0,0,0,0.1);
+  transform: scale(0.98);
 }
 
-.action-btn:active {
-  transform: scale(0.95);
+.action-btn.tertiary {
+  background: transparent;
+  color: #EF4444;
+  border: 1rpx solid #FEE2E2;
+  padding: 0 24rpx;
+  min-width: 100rpx;
+}
+
+.action-btn.tertiary:active {
+  background: #FEE2E2;
+  transform: scale(0.98);
+}
+
+/* 移除原生 button 的边框 */
+.action-btn.secondary::after,
+.action-btn.tertiary::after {
+  border: none;
+}
+
+
+/* 嵌套弹窗样式 */
+.nested-popup-shell {
+  width: 100%;
+  height: 100%;
+  background: transparent;
 }

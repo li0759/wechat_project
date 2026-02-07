@@ -33,7 +33,7 @@
 .club-item {
   background: #fff;
   border-radius: 16rpx;
-  padding: 16rpx;
+  padding: 10rpx;
   box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.06), 0 1rpx 2rpx rgba(0, 0, 0, 0.04);
   border: 1rpx solid #E5E7EB;
   transition: all 0.3s;

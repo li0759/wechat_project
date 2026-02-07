@@ -42,58 +42,60 @@
     <!-- 2. 最近一次活动或当前正在进行的活动 -->
     <view class="featured-event-section">
       <!-- 有活动时显示 -->
-      <view wx:if="{{featuredEvent}}" 
-        class="featured-event-card"
-        bindtap="viewEventDetail"
-        data-event-id="{{featuredEvent.event_id}}"
-      >
-        <!-- 地图背景 -->
-        <view class="event-map-bg" wx:if="{{featuredEvent.mapImageUrl}}">
-          <image class="map-bg-image" src="{{featuredEvent.mapImageUrl}}" mode="aspectFill" />
-          <view class="map-fade-left"></view>
-          <view class="map-fade-bottom"></view>
-          <view class="map-fade-corner"></view>
-        </view>
-        
-        <!-- 活动信息内容 -->
-        <view class="event-content">
-          <view class="event-title">{{featuredEvent.title}}</view>
-          <view class="event-desc" wx:if="{{featuredEvent.content}}">{{featuredEvent.content}}</view>
-          
-          <view class="event-meta">
-            <view class="meta-row" wx:if="{{featuredEvent.pre_startTime}}">
-              <t-icon name="time" size="28rpx" color="#666" />
-              <text class="meta-text">{{featuredEvent.pre_startTime}}</text>
-            </view>
-            <view class="meta-row" wx:if="{{featuredEvent.location}}">
-              <t-icon name="location" size="28rpx" color="#666" />
-              <text class="meta-text">{{featuredEvent.location}}</text>
-            </view>
-            <view class="meta-row">
-              <t-icon name="usergroup" size="28rpx" color="#666" />
-              <text class="meta-text">{{featuredEvent.join_count || 0}}人参与</text>
-            </view>
+      <ripple wx:if="{{featuredEvent}}" rippleColor="rgba(0, 0, 0, 0.5)" duration="800">
+        <view 
+          class="featured-event-card"
+          bindtap="onEventTap"
+          data-event-id="{{featuredEvent.event_id}}"
+        >
+          <!-- 地图背景 -->
+          <view class="event-map-bg" wx:if="{{featuredEvent.mapImageUrl}}">
+            <image class="map-bg-image" src="{{featuredEvent.mapImageUrl}}" mode="aspectFill" />
+            <view class="map-fade-left"></view>
+            <view class="map-fade-bottom"></view>
+            <view class="map-fade-corner"></view>
           </view>
           
-          <!-- 状态和按钮 -->
-          <view class="event-action-row">
-            <view class="event-status {{featuredEvent.statusClass}}">
-              {{featuredEvent.statusText}}
+          <!-- 活动信息内容 -->
+          <view class="event-content">
+            <view class="event-title">{{featuredEvent.title}}</view>
+            <view class="event-desc" wx:if="{{featuredEvent.content}}">{{featuredEvent.content}}</view>
+            
+            <view class="event-meta">
+              <view class="meta-row" wx:if="{{featuredEvent.pre_startTime}}">
+                <t-icon name="time" size="28rpx" color="#666" />
+                <text class="meta-text">{{featuredEvent.pre_startTime}}</text>
+              </view>
+              <view class="meta-row" wx:if="{{featuredEvent.location}}">
+                <t-icon name="location" size="28rpx" color="#666" />
+                <text class="meta-text">{{featuredEvent.location}}</text>
+              </view>
+              <view class="meta-row">
+                <t-icon name="usergroup" size="28rpx" color="#666" />
+                <text class="meta-text">{{featuredEvent.join_count || 0}}人参与</text>
+              </view>
             </view>
-            <t-button 
-              wx:if="{{featuredEvent.showButton}}"
-              size="small" 
-              theme="{{featuredEvent.buttonTheme}}" 
-              bindtap="onEventAction"
-              catchtap="onEventAction"
-              data-event-id="{{featuredEvent.event_id}}"
-              data-action="{{featuredEvent.buttonAction}}"
-            >
-              {{featuredEvent.buttonText}}
-            </t-button>
+            
+            <!-- 状态和按钮 -->
+            <view class="event-action-row">
+              <view class="event-status {{featuredEvent.statusClass}}">
+                {{featuredEvent.statusText}}
+              </view>
+              <t-button 
+                wx:if="{{featuredEvent.showButton}}"
+                size="small" 
+                theme="{{featuredEvent.buttonTheme}}" 
+                bindtap="onEventAction"
+                catchtap="onEventAction"
+                data-event-id="{{featuredEvent.event_id}}"
+                data-action="{{featuredEvent.buttonAction}}"
+              >
+                {{featuredEvent.buttonText}}
+              </t-button>
+            </view>
           </view>
         </view>
-      </view>
+      </ripple>
       
       <!-- 没有活动时显示占位 -->
       <view wx:else class="featured-event-placeholder">
@@ -128,36 +130,38 @@
             </view>
             
             <!-- 真实内容 -->
-            <view wx:else bind:tap="viewEventDetail" data-event-id="{{item.event_id}}">
-              <!-- 主内容：左边封面 + 右边信息 -->
-              <view class="event-main-content">
-                <!-- 左边：活动封面 -->
-                <view class="event-cover-wrapper">
-                  <t-image 
-                    src="{{item.cover_url_thumb}}" 
-                    width="150rpx" 
-                    height="150rpx" 
-                    mode="aspectFill"
-                    error="default"
-                    style="border-radius: 8rpx;"
-                  />
-                </view>
-                
-                <!-- 右边：活动信息 -->
-                <view class="event-info-wrapper">
-                  <text class="event-title">{{item.title}}</text>
-                  <text class="event-time" wx:if="{{item.actual_startTime}}">
-                    <t-icon name="time" size="24rpx" color="#52c41a" />
-                    实际开始：{{item.actual_startTime}}
-                  </text>
-                  <text class="event-time" wx:else>
-                    <t-icon name="time" size="24rpx" color="#ff6b9d" />
-                    预计开始：{{item.pre_startTime}}
-                  </text>
-                  <text class="event-description">{{item.content}}</text>
+            <ripple wx:else rippleColor="rgba(0, 0, 0, 0.5)" duration="800">
+              <view bind:tap="onEventTap" data-event-id="{{item.event_id}}">
+                <!-- 主内容：左边封面 + 右边信息 -->
+                <view class="event-main-content">
+                  <!-- 左边：活动封面 -->
+                  <view class="event-cover-wrapper">
+                    <t-image 
+                      src="{{item.cover_url_thumb}}" 
+                      width="150rpx" 
+                      height="150rpx" 
+                      mode="aspectFill"
+                      error="default"
+                      style="border-radius: 8rpx;"
+                    />
+                  </view>
+                  
+                  <!-- 右边：活动信息 -->
+                  <view class="event-info-wrapper">
+                    <text class="event-title">{{item.title}}</text>
+                    <text class="event-time" wx:if="{{item.actual_startTime}}">
+                      <t-icon name="time" size="24rpx" color="#52c41a" />
+                      实际开始：{{item.actual_startTime}}
+                    </text>
+                    <text class="event-time" wx:else>
+                      <t-icon name="time" size="24rpx" color="#ff6b9d" />
+                      预计开始：{{item.pre_startTime}}
+                    </text>
+                    <text class="event-description">{{item.content}}</text>
+                  </view>
                 </view>
               </view>
-            </view>
+            </ripple>
           </view>
         </view>
         
@@ -175,19 +179,87 @@
   </scroll-view>
 
   <!-- 底部操作栏 -->
-  <view class="bottom-actions" wx:if="{{!isLoading && club}}">
+  <view class="bottom-actions" wx:if="{{!isLoading && club && !club.isDelete}}">
     <view class="action-left">
-      <view class="action-btn secondary" bindtap="viewClubDetail">
-        <t-icon name="info-circle" size="40rpx" color="#666" />
-        <text>协会详情</text>
-      </view>
+      <!-- 左侧可以添加其他按钮 -->
     </view>
     
     <view class="action-right">
-      <view class="action-btn danger" bindtap="quitClub">
-        <t-icon name="close-circle" size="40rpx" color="#ff4d4f" />
-        <text>退出协会</text>
-      </view>
+      <!-- 协会详情按钮 -->
+      <ripple ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}" bindtap="viewClubDetail">
+        <view class="action-btn secondary">
+          <t-icon name="info-circle" size="18" color="#666" />
+          <text>协会详情</text>
+        </view>
+      </ripple>
+      
+      <!-- 退出协会按钮 -->
+      <ripple ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}" bindtap="quitClub">
+        <view class="action-btn tertiary">
+          <t-icon name="close-circle" size="18" color="#EF4444" />
+          <text>退出协会</text>
+        </view>
+      </ripple>
     </view>
   </view>
+
+  <!-- 嵌套的 event-detail 弹窗 -->
+  <expandable-container_fullscreen 
+    wx:if="{{nestedEventDetail.visible}}"
+    id="nestedEventDetailPopup" 
+    expanded-width="750" 
+    expanded-height="1800" 
+    bg-color="#f7f8fa"
+    fullscreen-top-padding="{{0}}"
+    bind:collapse="onNestedEventDetailCollapse"
+    bind:contentReady="onNestedEventDetailContentReady"
+  >
+    <view slot="trigger"></view>
+    <view slot="content" class="nested-popup-shell">
+      <!-- 骨架屏 -->
+      <view wx:if="{{nestedEventDetail.loading}}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 999; background: #f7f8fa;">
+        <event-detail-skeleton />
+      </view>
+      
+      <!-- 真实 panel 组件 -->
+      <block wx:if="{{nestedEventDetail.renderPanel}}">
+        <event-detail-panel
+          id="nestedEventDetailPanel"
+          event-id="{{nestedEventDetail.eventId}}"
+          bind:loaded="onNestedEventDetailLoaded"
+          bind:close="closeNestedEventDetail"
+        />
+      </block>
+    </view>
+  </expandable-container_fullscreen>
+
+  <!-- 嵌套的 event-joined 弹窗 -->
+  <expandable-container_fullscreen 
+    wx:if="{{nestedEventJoined.visible}}"
+    id="nestedEventJoinedPopup" 
+    expanded-width="750" 
+    expanded-height="1800" 
+    bg-color="#f7f8fa"
+    fullscreen-top-padding="{{0}}"
+    bind:collapse="onNestedEventJoinedCollapse"
+    bind:contentReady="onNestedEventJoinedContentReady"
+  >
+    <view slot="trigger"></view>
+    <view slot="content" class="nested-popup-shell">
+      <!-- 骨架屏 -->
+      <view wx:if="{{nestedEventJoined.loading}}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 999; background: #f7f8fa;">
+        <event-joined-skeleton />
+      </view>
+      
+      <!-- 真实 panel 组件 -->
+      <block wx:if="{{nestedEventJoined.renderPanel}}">
+        <event-joined-panel
+          id="nestedEventJoinedPanel"
+          event-id="{{nestedEventJoined.eventId}}"
+          bind:loaded="onNestedEventJoinedLoaded"
+          bind:close="closeNestedEventJoined"
+        />
+      </block>
+    </view>
+  </expandable-container_fullscreen>
 </view>

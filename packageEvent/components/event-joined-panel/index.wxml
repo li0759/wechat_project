@@ -1,4 +1,4 @@
-<view class="event-manage-panel">
+<view class="event-joind-panel">
   <!-- 灰色蒙层 - 当活动被取消或协会被删除时显示 -->
   <view wx:if="{{featuredEvent && (featuredEvent.is_cancelled || featuredEvent.club_deleted)}}" class="disabled-overlay">
     <view class="disabled-overlay-content">
@@ -364,12 +364,29 @@
     </view>
   </t-popup>
 
+  <!-- 底部操作栏 -->
+  <view class="bottom-actions" wx:if="{{featuredEvent && !featuredEvent.is_cancelled && !featuredEvent.club_deleted}}">
+    <view class="action-left">
+      <!-- 左侧可以添加其他按钮 -->
+    </view>
+
+    <view class="action-right">
+      <!-- 分享按钮 -->
+      <button class="action-btn secondary" open-type="share">
+        <t-icon name="share" size="18" color="#666" />
+        <text>分享</text>
+      </button>
+      
+      <!-- 退出活动按钮 -->
+      <ripple ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}" bindtap="quitEvent">
+        <view class="action-btn tertiary">
+          <t-icon name="close-circle" size="18" color="#EF4444" />
+          <text>退出活动</text>
+        </view>
+      </ripple>
+    </view>
   </view>
 
-  <!-- 加载中状态 -->
-  <view class="loading-container" wx:if="{{isLoading}}">
-    <t-loading theme="circular" size="40rpx" color="#ff6b9d" />
-    <text class="loading-text">加载中...</text>
   </view>
 </view>
 

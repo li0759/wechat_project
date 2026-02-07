@@ -5,9 +5,17 @@
     "t-icon": "tdesign-miniprogram/icon/icon",
     "t-button": "tdesign-miniprogram/button/button",
     "t-skeleton": "tdesign-miniprogram/skeleton/skeleton",
-    "club-joined-skeleton": "/components/panel-skeleton/club-joined-skeleton/index"
+    "club-joined-skeleton": "/components/panel-skeleton/club-joined-skeleton/index",
+    "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",
+    "event-detail-panel": "/packageEvent/components/event-detail-panel/index",
+    "event-joined-panel": "/packageEvent/components/event-joined-panel/index",
+    "event-detail-skeleton": "/components/panel-skeleton/event-detail-skeleton/index",
+    "event-joined-skeleton": "/components/panel-skeleton/event-joined-skeleton/index",
+    "ripple": "/components/ripple/index"
   },
   "componentPlaceholder": {
-    "club-joined-panel": "club-joined-skeleton"
+    "club-joined-panel": "club-joined-skeleton",
+    "event-detail-panel": "event-detail-skeleton",
+    "event-joined-panel": "event-joined-skeleton"
   }
 }

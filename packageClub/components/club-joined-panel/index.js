@@ -17,7 +17,27 @@ Component({
     eventsLoading: false,
     eventsEmpty: false,
     eventsPage: 1,
-    eventsTotalPages: 1
+    eventsTotalPages: 1,
+    
+    // 嵌套弹窗状态 - event-detail-panel
+    nestedEventDetail: {
+      visible: false,
+      loading: true,
+      renderPanel: false,
+      eventId: '',
+      tapX: 0,
+      tapY: 0
+    },
+    
+    // 嵌套弹窗状态 - event-joined-panel
+    nestedEventJoined: {
+      visible: false,
+      loading: true,
+      renderPanel: false,
+      eventId: '',
+      tapX: 0,
+      tapY: 0
+    }
   },
 
   lifetimes: {
@@ -111,7 +131,8 @@ Component({
     // 处理活动数据
   processEventsData(data) {
       const events = data.events || data.records || [];
-      
+      console
+      console.log('Events data:', events);
       if (events.length === 0) {
         this.setData({
           featuredEvent: null,
@@ -136,7 +157,12 @@ Component({
         // 添加缩略数
       const cover_url_thumb = event.cover_url ? getApp().convertToThumbnailUrl(event.cover_url, 150) : '';
         
-        return { ...event, mapImageUrl, cover_url_thumb, loading: false };
+        return { 
+          ...event, 
+          mapImageUrl, 
+          cover_url_thumb, 
+          loading: false
+        };
       });
 
       // 找出最近的活动作为特色活动
@@ -250,7 +276,12 @@ Component({
   }
             
             const cover_url_thumb = event.cover_url ? getApp().convertToThumbnailUrl(event.cover_url, 150) : '';
-            return { ...event, mapImageUrl, cover_url_thumb, loading: false };
+            return { 
+              ...event, 
+              mapImageUrl, 
+              cover_url_thumb, 
+              loading: false
+            };
           });
           
           // 移除骨架屏，添加真实数据
@@ -277,17 +308,36 @@ Component({
       }
     },
 
-    // 查看活动详情
-  viewEventDetail(e) {
+    // 点击活动 - 打开嵌套弹窗
+    onEventTap(e) {
       const eventId = e.currentTarget.dataset.eventId;
-      if (eventId) {
-        this.triggerEvent('navigateEvent', { eventId });
+      
+      // 获取点击坐标
+      let tapX, tapY;
+      const touch = e.changedTouches && e.changedTouches[0];
+      if (touch) {
+        tapX = touch.clientX;
+        tapY = touch.clientY;
+      } else {
+        const sys = wx.getSystemInfoSync();
+        tapX = sys.windowWidth / 2;
+        tapY = sys.windowHeight / 2;
       }
+      
+      console.log('onEventTap:', { eventId, tapX, tapY });
+      
+      // club-joined-panel 中的活动，用户一定是参加了的
+      // 所以打开 event-joined-panel
+      console.log('打开活动参加弹窗');
+      this.openNestedEventJoined(eventId, tapX, tapY);
     },
 
-    // 活动操作（打开参加载
+    // 活动操作（打卡或参加）
     async onEventAction(e) {
-      e.stopPropagation();
+      // 安全检查：确保 stopPropagation 方法存在
+      if (e && typeof e.stopPropagation === 'function') {
+        e.stopPropagation();
+      }
       const eventId = e.currentTarget.dataset.eventId;
       const action = e.currentTarget.dataset.action;
       
@@ -380,6 +430,157 @@ Component({
           }
         }
       });
+    },
+
+    // ========= 嵌套弹窗方法 =========
+    
+    /**
+     * 打开活动详情弹窗
+     */
+    openNestedEventDetail(eventId, tapX, tapY) {
+      this.setData({
+        nestedEventDetail: {
+          visible: true,
+          loading: true,
+          renderPanel: false,
+          eventId,
+          tapX,
+          tapY
+        }
+      }, () => {
+        setTimeout(() => {
+          const popup = this.selectComponent('#nestedEventDetailPopup');
+          if (popup && popup.expand) {
+            popup.expand(tapX, tapY);
+          }
+        }, 50);
+      });
+    },
+
+    /**
+     * 活动详情弹窗内容准备好
+     */
+    onNestedEventDetailContentReady() {
+      console.log('活动详情弹窗contentReady，开始渲染panel');
+      this.setData({
+        'nestedEventDetail.renderPanel': true
+      }, () => {
+        setTimeout(() => {
+          const panel = this.selectComponent('#nestedEventDetailPanel');
+          if (panel && panel.loadData) {
+            panel.loadData();
+          }
+        }, 100);
+      });
+    },
+
+    /**
+     * 活动详情弹窗加载完成
+     */
+    onNestedEventDetailLoaded() {
+      this.setData({
+        'nestedEventDetail.loading': false
+      });
+    },
+
+    /**
+     * 关闭活动详情弹窗
+     */
+    closeNestedEventDetail() {
+      const popup = this.selectComponent('#nestedEventDetailPopup');
+      if (popup && popup.collapse) {
+        popup.collapse();
+      }
+    },
+
+    /**
+     * 活动详情弹窗收起回调
+     */
+    onNestedEventDetailCollapse() {
+      setTimeout(() => {
+        this.setData({
+          'nestedEventDetail.visible': false,
+          'nestedEventDetail.loading': true,
+          'nestedEventDetail.renderPanel': false,
+          'nestedEventDetail.eventId': ''
+        });
+      }, 800);
+    },
+
+    /**
+     * 打开活动参加弹窗
+     */
+    openNestedEventJoined(eventId, tapX, tapY) {
+      this.setData({
+        nestedEventJoined: {
+          visible: true,
+          loading: true,
+          renderPanel: false,
+          eventId,
+          tapX,
+          tapY
+        }
+      }, () => {
+        setTimeout(() => {
+          const popup = this.selectComponent('#nestedEventJoinedPopup');
+          if (popup && popup.expand) {
+            popup.expand(tapX, tapY);
+          }
+        }, 50);
+      });
+    },
+
+    /**
+     * 活动参加弹窗内容准备好
+     */
+    onNestedEventJoinedContentReady() {
+      console.log('活动参加弹窗contentReady，开始渲染panel');
+      this.setData({
+        'nestedEventJoined.renderPanel': true
+      }, () => {
+        setTimeout(() => {
+          const panel = this.selectComponent('#nestedEventJoinedPanel');
+          if (panel && panel.loadData) {
+            panel.loadData();
+          }
+        }, 100);
+      });
+    },
+
+    /**
+     * 活动参加弹窗加载完成
+     */
+    onNestedEventJoinedLoaded() {
+      this.setData({
+        'nestedEventJoined.loading': false
+      });
+    },
+
+    /**
+     * 关闭活动参加弹窗
+     */
+    closeNestedEventJoined() {
+      const popup = this.selectComponent('#nestedEventJoinedPopup');
+      if (popup && popup.collapse) {
+        popup.collapse();
+      }
+    },
+
+    /**
+     * 活动参加弹窗收起回调
+     */
+    onNestedEventJoinedCollapse() {
+      // 刷新数据
+      this.loadClubData();
+      
+      setTimeout(() => {
+        this.setData({
+          'nestedEventJoined.visible': false,
+          'nestedEventJoined.loading': true,
+          'nestedEventJoined.renderPanel': false,
+          'nestedEventJoined.eventId': ''
+        });
+      }, 800);
     }
   }
 });
