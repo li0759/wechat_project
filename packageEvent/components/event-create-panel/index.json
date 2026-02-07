@@ -31,6 +31,7 @@
     "expandable-container": "/components/expandable-container/index",
     "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",
     "addressbook-tree": "/components/addressbook-tree/index",
-    "search-suggest": "/components/search_suggest/index"
+    "search-suggest": "/components/search_suggest/index",
+    "ripple": "/components/ripple/index"
   }
 } 
