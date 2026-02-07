@@ -987,20 +987,20 @@
       const { index, id, item } = e.currentTarget.dataset;
       
       // 获取触摸结束坐标 - touchend 事件使用 changedTouches
-    const t = e?.changedTouches?.[0] || e?.touches?.[0];
+      const t = e?.changedTouches?.[0] || e?.touches?.[0];
       if (!t) return;
       
       const tapX = t.clientX;
       const tapY = t.clientY;
       
-      // 判断是否为拖动操作（移动距离超过阈值或时间过长数
+      // 判断是否为拖动操作（移动距离超过阈值）
+      // 移除时间限制，允许长按后松手也能触发
       if (this.__itemTouchStartX !== undefined) {
         const dx = Math.abs(tapX - this.__itemTouchStartX);
         const dy = Math.abs(tapY - this.__itemTouchStartY);
-        const dt = Date.now() - (this.__itemTouchStartTime || 0);
         
-        // 如果移动距离超过10px或时间超时00ms，认为是拖动而非点击
-    if (dx > 10 || dy > 10 || dt > 300) {
+        // 如果移动距离超过10px，认为是拖动而非点击
+        if (dx > 10 || dy > 10) {
           return;
         }
       }
