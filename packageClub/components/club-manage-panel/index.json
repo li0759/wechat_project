@@ -18,6 +18,7 @@
     "t-cell-group": "tdesign-miniprogram/cell-group/cell-group",
     "t-avatar": "tdesign-miniprogram/avatar/avatar",
     "isotope": "/components/isotope/index",
+    "ripple": "/components/ripple/index",
     "expandable-container": "/components/expandable-container/index",
     "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",
     "addressbook-tree": "/components/addressbook-tree/index",
