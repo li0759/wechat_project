@@ -60,16 +60,18 @@
       <view class="rows">
         <!-- 标题（独立框） -->
         <expandable-container id="row-title" expanded-width="700" expanded-height="520" bg-color="#f2f3f5">
-          <view slot="trigger" class="row row-100 row-editable">
-            <view class="row-left">
-              <text class="row-label">标题</text>
-              <text class="edit-hint">点击编辑</text>
+          <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+            <view class="row row-100 row-editable">
+              <view class="row-left">
+                <text class="row-label">标题</text>
+                <text class="edit-hint">点击编辑</text>
+              </view>
+              <view class="row-right">
+                <text class="row-value {{!event.title ? 'muted' : ''}}">{{event.title || '未设置'}}</text>
+                <t-icon name="edit" size="20" color="var(--md-sys-color-primary)" />
+              </view>
             </view>
-            <view class="row-right">
-              <text class="row-value {{!event.title ? 'muted' : ''}}">{{event.title || '未设置'}}</text>
-              <t-icon name="edit" size="20" color="var(--md-sys-color-primary)" />
-            </view>
-          </view>
+          </ripple>
           <view slot="content" class="popup-shell">
             <view class="popup-header">
               <view class="popup-title">编辑标题</view>
@@ -85,19 +87,21 @@
 
         <!-- 简介（独立框） -->
         <expandable-container id="row-content" expanded-width="700" expanded-height="980" bg-color="#f2f3f5">
-          <view slot="trigger" class="row row-basic row-editable">
-            <view class="row-basic-left">
-              <text class="row-label">简介</text>
-              <text class="edit-hint">点击编辑</text>
+          <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+            <view class="row row-basic row-editable">
+              <view class="row-basic-left">
+                <text class="row-label">简介</text>
+                <text class="edit-hint">点击编辑</text>
+              </view>
+              <view class="row-basic-right">
+                <view class="row-basic-title clamp-1">{{event.content ? '已填写' : '未填写'}}</view>
+                <view class="row-basic-desc clamp-2">{{event.content || '暂无简介，点击添加'}}</view>
+              </view>
+              <view class="row-basic-arrow">
+                <t-icon name="edit" size="20" color="var(--md-sys-color-primary)" />
+              </view>
             </view>
-            <view class="row-basic-right">
-              <view class="row-basic-title clamp-1">{{event.content ? '已填写' : '未填写'}}</view>
-              <view class="row-basic-desc clamp-2">{{event.content || '暂无简介，点击添加'}}</view>
-            </view>
-            <view class="row-basic-arrow">
-              <t-icon name="edit" size="20" color="var(--md-sys-color-primary)" />
-            </view>
-          </view>
+          </ripple>
           <view slot="content" class="popup-shell">
             <view class="popup-header">
               <view class="popup-title">编辑简介</view>
@@ -121,16 +125,18 @@
 
         <!-- 第3行：预计开始（100rpx） -->
         <expandable-container id="pre-start-box" expanded-width="700" expanded-height="700" bg-color="#f2f3f5" bind:expand="onPreStartBoxExpand">
-          <view slot="trigger" class="row row-100 row-editable">
-            <view class="row-left">
-              <text class="row-label">预计开始</text>
-              <text class="edit-hint">点击修改</text>
+          <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+            <view class="row row-100 row-editable">
+              <view class="row-left">
+                <text class="row-label">预计开始</text>
+                <text class="edit-hint">点击修改</text>
+              </view>
+              <view class="row-right">
+                <text class="row-value {{!event.pre_startTime ? 'muted' : ''}}">{{event.pre_startTime_display || '未设置'}}</text>
+                <t-icon name="edit" size="20" color="var(--md-sys-color-primary)" />
+              </view>
             </view>
-            <view class="row-right">
-              <text class="row-value {{!event.pre_startTime ? 'muted' : ''}}">{{event.pre_startTime_display || '未设置'}}</text>
-              <t-icon name="edit" size="20" color="var(--md-sys-color-primary)" />
-            </view>
-          </view>
+          </ripple>
           <view slot="content" class="popup-shell">
             <view class="popup-header">
               <view class="popup-title">修改预计开始时间</view>
@@ -158,16 +164,18 @@
 
         <!-- 第4行：预计结束（100rpx） -->
         <expandable-container id="pre-end-box" expanded-width="700" expanded-height="700" bg-color="#f2f3f5" bind:expand="onPreEndBoxExpand">
-          <view slot="trigger" class="row row-100 row-editable">
-            <view class="row-left">
-              <text class="row-label">预计结束</text>
-              <text class="edit-hint">点击修改</text>
+          <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+            <view class="row row-100 row-editable">
+              <view class="row-left">
+                <text class="row-label">预计结束</text>
+                <text class="edit-hint">点击修改</text>
+              </view>
+              <view class="row-right">
+                <text class="row-value {{!event.pre_endTime ? 'muted' : ''}}">{{event.pre_endTime_display || '未设置'}}</text>
+                <t-icon name="edit" size="20" color="var(--md-sys-color-primary)" />
+              </view>
             </view>
-            <view class="row-right">
-              <text class="row-value {{!event.pre_endTime ? 'muted' : ''}}">{{event.pre_endTime_display || '未设置'}}</text>
-              <t-icon name="edit" size="20" color="var(--md-sys-color-primary)" />
-            </view>
-          </view>
+          </ripple>
           <view slot="content" class="popup-shell">
             <view class="popup-header">
               <view class="popup-title">修改预计结束时间</view>
@@ -220,39 +228,43 @@
         <!-- 第7行：封面(左) + 地址地图(右)（300rpx） -->
         <view class="split-row row-300">
           <view class="split-half">
-            <view class="panel panel-300" bindtap="onChangeCover">
-              <view class="panel-header">
-                <view class="panel-title">
-                  <t-icon name="image" color="var(--md-sys-color-primary)" />
-                  <text>封面</text>
+            <ripple ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}" bindtap="onChangeCover">
+              <view class="panel panel-300">
+                <view class="panel-header">
+                  <view class="panel-title">
+                    <t-icon name="image" color="var(--md-sys-color-primary)" />
+                    <text>封面</text>
+                  </view>
+                  <text class="panel-hint">点我更换</text>
                 </view>
-                <text class="panel-hint">点我更换</text>
+                <image class="panel-image" src="{{event.cover_url || defaultCover}}" mode="aspectFill" />
               </view>
-              <image class="panel-image" src="{{event.cover_url || defaultCover}}" mode="aspectFill" />
-            </view>
+            </ripple>
           </view>
           
           <view class="split-half">
-            <view class="panel panel-300" bindtap="chooseLocation">
-              <view class="panel-header">
-                <view class="panel-title">
-                  <t-icon name="location" color="var(--md-sys-color-primary)" />
-                  <text>地址</text>
+            <ripple ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}" bindtap="chooseLocation">
+              <view class="panel panel-300">
+                <view class="panel-header">
+                  <view class="panel-title">
+                    <t-icon name="location" color="var(--md-sys-color-primary)" />
+                    <text>地址</text>
+                  </view>
+                  <text class="panel-hint">点我更换</text>
                 </view>
-                <text class="panel-hint">点我更换</text>
+                <view wx:if="{{locationMapUrl}}" class="panel-map-wrap">
+                  <image
+                    class="panel-map-img"
+                    src="{{locationMapUrl}}"
+                    mode="aspectFill"
+                  />
+                </view>
+                <view wx:else class="panel-map-empty">
+                  <t-icon name="location" size="48" color="#bbb" />
+                  <view class="panel-map-empty-text">未设置地点</view>
+                </view>
               </view>
-              <view wx:if="{{locationMapUrl}}" class="panel-map-wrap">
-                <image
-                  class="panel-map-img"
-                  src="{{locationMapUrl}}"
-                  mode="aspectFill"
-                />
-              </view>
-              <view wx:else class="panel-map-empty">
-                <t-icon name="location" size="48" color="#bbb" />
-                <view class="panel-map-empty-text">未设置地点</view>
-              </view>
-            </view>
+            </ripple>
           </view>
         </view>
 
@@ -262,42 +274,47 @@
         <view class="split-row row-300">
           <view class="split-half">
             <expandable-container_fullscreen id="card-members" expanded-width="750" expanded-height="1600" bg-color="#f2f3f5">
-              <view slot="trigger" class="panel panel-300">
-                <view class="panel-header">
-                  <view class="panel-title">
-                    <t-icon name="usergroup" color="var(--md-sys-color-primary)" />
-                    <text>活动人员</text>
+              <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+                <view class="panel panel-300">
+                  <view class="panel-header">
+                    <view class="panel-title">
+                      <t-icon name="usergroup" color="var(--md-sys-color-primary)" />
+                      <text>活动人员</text>
+                    </view>
+                    <text class="panel-hint">{{members.length}} / {{clubMembers.length}}</text>
                   </view>
-                  <text class="panel-hint">{{members.length}} / {{clubMembers.length}}</text>
+                  <view class="panel-body">
+                    <view class="mini-row">
+                      <text class="mini-k">参与人员</text>
+                      <text class="mini-v">{{members.length}}</text>
+                    </view>
+                    <view class="mini-row">
+                      <text class="mini-k">协会人数</text>
+                      <text class="mini-v">{{clubMembers.length}}</text>
+                    </view>
+                    <view class="mini-row">
+                      <text class="mini-k">已打卡</text>
+                      <text class="mini-v">{{membersClockinCount}}</text>
+                    </view>
+                  </view>
                 </view>
-                <view class="panel-body">
-                  <view class="mini-row">
-                    <text class="mini-k">参与人员</text>
-                    <text class="mini-v">{{members.length}}</text>
-                  </view>
-                  <view class="mini-row">
-                    <text class="mini-k">协会人数</text>
-                    <text class="mini-v">{{clubMembers.length}}</text>
-                  </view>
-                  <view class="mini-row">
-                    <text class="mini-k">已打卡</text>
-                    <text class="mini-v">{{membersClockinCount}}</text>
-                  </view>
-                </view>
-              </view>
+              </ripple>
               <view slot="content" class="popup-shell fullscreen-popup">
                 <view class="popup-body popup-body-full">
                   <view class="members-toolbar" style="padding: 18rpx 16rpx 0;">
                     <view class="hint">{{clubMembers.length}} 人</view>
                     <!-- 排序选择器 -->
                     <view class="member-sort-bar">
-                      <view 
+                      <ripple
                         wx:for="{{sortOptions}}" 
-                        wx:key="value" 
-                        class="sort-option {{memberSortMode === item.value ? 'active' : ''}}"
+                        wx:key="value"
+                        ripple-color="rgba(0, 0, 0, 0.5)"
+                        duration="{{800}}"
                         bindtap="onMemberSortChange"
                         data-mode="{{item.value}}"
-                      >{{item.label}}</view>
+                      >
+                        <view class="sort-option {{memberSortMode === item.value ? 'active' : ''}}">{{item.label}}</view>
+                      </ripple>
                     </view>
                   </view>
                   <view class="members-grid-wrap" wx:if="{{memberIsotopeItems.length > 0}}">
@@ -334,22 +351,30 @@
 
           <view class="split-half">
             <expandable-container_fullscreen id="card-moments" expanded-width="750" expanded-height="1800" bg-color="#f2f3f5">
-              <view slot="trigger" class="panel panel-300">
-                <view class="panel-header">
-                  <view class="panel-title">
-                    <t-icon name="chat" color="var(--md-sys-color-primary)" />
-                    <text>动态</text>
+              <ripple 
+                slot="trigger" 
+                ripple-color="rgba(0, 0, 0, 0.5)" 
+                duration="{{800}}"
+                bindtouchstart="onTriggerTouchStart"
+                bindtouchend="handleTriggerTap"
+              >
+                <view class="panel panel-300">
+                  <view class="panel-header">
+                    <view class="panel-title">
+                      <t-icon name="chat" color="var(--md-sys-color-primary)" />
+                      <text>动态</text>
+                    </view>
+                    <text class="panel-hint">{{momentsCount}} 条</text>
                   </view>
-                  <text class="panel-hint">{{momentsCount}} 条</text>
-                </view>
-                <view class="moment-preview">
-                  <image wx:if="{{latestMoment.firstImage}}" class="moment-preview-img" src="{{latestMoment.firstImage}}" mode="aspectFill" />
-                  <view class="moment-preview-body">
-                    <text class="moment-preview-text clamp-2">{{latestMoment.text || '暂无动态'}}</text>
-                    <text class="moment-preview-meta">{{latestMoment.user_name || ''}}</text>
+                  <view class="moment-preview">
+                    <image wx:if="{{latestMoment.firstImage}}" class="moment-preview-img" src="{{latestMoment.firstImage}}" mode="aspectFill" />
+                    <view class="moment-preview-body">
+                      <text class="moment-preview-text clamp-2">{{latestMoment.text || '暂无动态'}}</text>
+                      <text class="moment-preview-meta">{{latestMoment.user_name || ''}}</text>
+                    </view>
                   </view>
                 </view>
-              </view>
+              </ripple>
 
               <view slot="content" class="popup-shell fullscreen-popup">
                 <view class="popup-body popup-body-full">
@@ -357,11 +382,13 @@
                     <view class="filters">
                       <view class="filter-title">动态列表</view>
                       <expandable-container id="publisher-filter" expanded-width="700" expanded-height="860" bg-color="#f2f3f5">
-                        <view slot="trigger" class="filter-right compact">
-                          <t-icon name="user" color="{{feedFilter.publisherId ? '#52c41a' : '#666'}}" />
-                          <text class="filter-right-text">{{feedFilter.publisherName || '全部'}}</text>
-                          <t-icon name="chevron-right" color="#999" />
-                        </view>
+                        <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+                          <view class="filter-right compact">
+                            <t-icon name="user" color="{{feedFilter.publisherId ? '#52c41a' : '#666'}}" />
+                            <text class="filter-right-text">{{feedFilter.publisherName || '全部'}}</text>
+                            <t-icon name="chevron-right" color="#999" />
+                          </view>
+                        </ripple>
                         <view slot="content" class="popup-shell">
                           <view class="popup-header">
                             <view class="popup-title">只看他/她的</view>
@@ -369,11 +396,21 @@
                           </view>
                           <view class="popup-body">
                             <view class="publisher-grid">
-                              <view wx:for="{{publishers}}" wx:key="user_id" class="publisher-item" bindtap="selectPublisher" data-user-id="{{item.user_id}}" data-user-name="{{item.user_name}}">
-                                <image class="publisher-avatar {{feedFilter.publisherId == item.user_id ? 'publisher-avatar-active' : ''}}" src="{{item.avatar}}" mode="aspectFill" />
-                                <view class="publisher-badge">{{item.count}}</view>
-                                <view class="publisher-name">{{item.user_name}}</view>
-                              </view>
+                              <ripple
+                                wx:for="{{publishers}}"
+                                wx:key="user_id"
+                                ripple-color="rgba(0, 0, 0, 0.5)"
+                                duration="{{800}}"
+                                bindtap="selectPublisher"
+                                data-user-id="{{item.user_id}}"
+                                data-user-name="{{item.user_name}}"
+                              >
+                                <view class="publisher-item">
+                                  <image class="publisher-avatar {{feedFilter.publisherId == item.user_id ? 'publisher-avatar-active' : ''}}" src="{{item.avatar}}" mode="aspectFill" />
+                                  <view class="publisher-badge">{{item.count}}</view>
+                                  <view class="publisher-name">{{item.user_name}}</view>
+                                </view>
+                              </ripple>
                             </view>
                           </view>
                         </view>
@@ -440,9 +477,11 @@
                 <!-- 右下角"+"发布按钮 -->
                 <view class="moments-fab">
                   <expandable-container id="add-moment" expanded-width="700" expanded-height="980" bg-color="#f2f3f5" bind:expand="openAddMoment">
-                    <view slot="trigger" class="moments-fab-btn">
-                      <t-icon name="add" size="28" color="#fff" />
-                    </view>
+                    <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+                      <view class="moments-fab-btn">
+                        <t-icon name="add" size="28" color="#fff" />
+                      </view>
+                    </ripple>
                     <view slot="content" class="popup-shell">
                       <view class="popup-header">
                         <view class="popup-title">发布动态</view>
@@ -481,21 +520,23 @@
 
         <!-- 日程管理 -->
         <expandable-container_fullscreen id="card-schedule" expanded-width="750" expanded-height="1800" bg-color="#f2f3f5" bind:expand="onScheduleExpand">
-          <view slot="trigger" class="panel panel-300 panel-wide">
-            <view class="panel-header">
-              <view class="panel-title">
-                <t-icon name="calendar" color="var(--md-sys-color-primary)" />
-                <text>日程管理</text>
+          <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+            <view class="panel panel-300 panel-wide">
+              <view class="panel-header">
+                <view class="panel-title">
+                  <t-icon name="calendar" color="var(--md-sys-color-primary)" />
+                  <text>日程管理</text>
+                </view>
+                <text class="panel-hint">{{scheduleEnabled ? '已启用' : '无'}}</text>
               </view>
-              <text class="panel-hint">{{scheduleEnabled ? '已启用' : '无'}}</text>
-            </view>
-            <view class="moment-preview">
-              <view class="moment-preview-body">
-                <text class="moment-preview-text clamp-2">{{scheduleEnabled ? (tempScheduleDisplay || '已启用') : '无'}}</text>
-                <text class="moment-preview-meta">{{scheduleEnabled ? '点击编辑' : '点击设置'}}</text>
+              <view class="moment-preview">
+                <view class="moment-preview-body">
+                  <text class="moment-preview-text clamp-2">{{scheduleEnabled ? (tempScheduleDisplay || '已启用') : '无'}}</text>
+                  <text class="moment-preview-meta">{{scheduleEnabled ? '点击编辑' : '点击设置'}}</text>
+                </view>
               </view>
             </view>
-          </view>
+          </ripple>
           <view slot="content" class="popup-shell fullscreen-popup">
             <view class="popup-body popup-body-full" style="padding: 18rpx 16rpx 0;">
               <view class="popup-shell">
@@ -509,8 +550,12 @@
                     <view class="mb-3">
                       <text class="muted">重复频率</text>
                       <view style="display:flex;gap:24rpx;margin-top:16rpx;">
-                        <t-tag variant="{{scheduleForm.schedule_type === 'weekly' ? 'dark' : 'outline'}}" bindtap="onScheduleTypeChangeWrapper" data-type="weekly">每周</t-tag>
-                        <t-tag variant="{{scheduleForm.schedule_type === 'monthly' ? 'dark' : 'outline'}}" bindtap="onScheduleTypeChangeWrapper" data-type="monthly">每月</t-tag>
+                        <ripple ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}" bindtap="onScheduleTypeChangeWrapper" data-type="weekly">
+                          <t-tag variant="{{scheduleForm.schedule_type === 'weekly' ? 'dark' : 'outline'}}">每周</t-tag>
+                        </ripple>
+                        <ripple ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}" bindtap="onScheduleTypeChangeWrapper" data-type="monthly">
+                          <t-tag variant="{{scheduleForm.schedule_type === 'monthly' ? 'dark' : 'outline'}}">每月</t-tag>
+                        </ripple>
                       </view>
                     </view>
 
@@ -518,18 +563,29 @@
                       <text class="muted">执行日期</text>
                       <view wx:if="{{ scheduleForm.schedule_type === 'weekly' }}" class="date-selector mt-1">
                         <expandable-container id="weekday-selector" expanded-width="650" expanded-height="600" bg-color="#f2f3f5" trigger-width="100%" bind:expand="onWeekdaySelectorExpand" bind:collapse="onWeekdaySelectorCollapse">
-                          <view slot="trigger" class="row row-80">
-                            <view class="row-left"><text class="row-label">星期</text></view>
-                            <view class="row-right">
-                              <text class="row-value {{!utils.getWeekdaysDisplay(scheduleForm.weekdays) ? 'muted' : ''}}">{{utils.getWeekdaysDisplay(scheduleForm.weekdays) || '请选择'}}</text>
-                              <t-icon name="chevron-right" color="#999" />
+                          <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+                            <view class="row row-80">
+                              <view class="row-left"><text class="row-label">星期</text></view>
+                              <view class="row-right">
+                                <text class="row-value {{!utils.getWeekdaysDisplay(scheduleForm.weekdays) ? 'muted' : ''}}">{{utils.getWeekdaysDisplay(scheduleForm.weekdays) || '请选择'}}</text>
+                                <t-icon name="chevron-right" color="#999" />
+                              </view>
                             </view>
-                          </view>
+                          </ripple>
                           <view slot="content" class="popup-shell">
                             <view class="popup-header"><view class="popup-title">选择重复星期</view></view>
                             <view class="popup-body">
                               <view class="week-grid">
-                                <view wx:for="{{['周日','周一','周二','周三','周四','周五','周六']}}" wx:key="index" class="week-cell {{tempWeekdaysMap[index] ? 'active' : ''}}" bindtap="toggleWeekday" data-day="{{index}}">{{item}}</view>
+                                <ripple
+                                  wx:for="{{['周日','周一','周二','周三','周四','周五','周六']}}"
+                                  wx:key="index"
+                                  ripple-color="rgba(0, 0, 0, 0.5)"
+                                  duration="{{800}}"
+                                  bindtap="toggleWeekday"
+                                  data-day="{{index}}"
+                                >
+                                  <view class="week-cell {{tempWeekdaysMap[index] ? 'active' : ''}}">{{item}}</view>
+                                </ripple>
                               </view>
                             </view>
                             <view class="popup-footer"><t-button theme="primary" block bindtap="collapsePopup" data-id="weekday-selector">完成</t-button></view>
@@ -539,19 +595,30 @@
 
                       <view wx:if="{{ scheduleForm.schedule_type === 'monthly' }}" class="date-selector mt-1">
                         <expandable-container id="monthday-selector" expanded-width="700" expanded-height="800" bg-color="#f2f3f5" trigger-width="100%" bind:expand="onMonthdaySelectorExpand" bind:collapse="onMonthdaySelectorCollapse">
-                          <view slot="trigger" class="row row-80">
-                            <view class="row-left"><text class="row-label">日期</text></view>
-                            <view class="row-right">
-                              <text class="row-value {{!utils.getMonthdaysDisplay(scheduleForm.month_days) ? 'muted' : ''}}">{{utils.getMonthdaysDisplay(scheduleForm.month_days) || '请选择'}}</text>
-                              <t-icon name="chevron-right" color="#999" />
+                          <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+                            <view class="row row-80">
+                              <view class="row-left"><text class="row-label">日期</text></view>
+                              <view class="row-right">
+                                <text class="row-value {{!utils.getMonthdaysDisplay(scheduleForm.month_days) ? 'muted' : ''}}">{{utils.getMonthdaysDisplay(scheduleForm.month_days) || '请选择'}}</text>
+                                <t-icon name="chevron-right" color="#999" />
+                              </view>
                             </view>
-                          </view>
+                          </ripple>
                           <view slot="content" class="popup-shell">
                             <view class="popup-header"><view class="popup-title">选择每月日期</view></view>
                             <view class="popup-body">
                               <scroll-view scroll-y style="height: 560rpx;">
                                 <view class="calendar-grid">
-                                  <view wx:for="{{31}}" wx:key="index" class="calendar-cell {{tempMonthdaysMap[item + 1] ? 'active' : ''}}" bindtap="toggleMonthday" data-day="{{item + 1}}">{{item + 1}}</view>
+                                  <ripple
+                                    wx:for="{{31}}"
+                                    wx:key="index"
+                                    ripple-color="rgba(0, 0, 0, 0.5)"
+                                    duration="{{800}}"
+                                    bindtap="toggleMonthday"
+                                    data-day="{{item + 1}}"
+                                  >
+                                    <view class="calendar-cell {{tempMonthdaysMap[item + 1] ? 'active' : ''}}">{{item + 1}}</view>
+                                  </ripple>
                                 </view>
                               </scroll-view>
                             </view>
@@ -564,13 +631,15 @@
                     <view class="mb-3">
                       <text class="muted">具体时间</text>
                       <expandable-container id="time-selector" expanded-width="650" expanded-height="780" bg-color="#f2f3f5" trigger-width="100%" bind:expand="onTimeSelectorExpand" bind:collapse="onTimeSelectorCollapse">
-                        <view slot="trigger" class="row row-80">
-                          <view class="row-left"><text class="row-label">时间</text></view>
-                          <view class="row-right">
-                            <text class="row-value {{!scheduleForm.activity_time ? 'muted' : ''}}">{{scheduleForm.activity_time || '请选择'}}</text>
-                            <t-icon name="chevron-right" color="#999" />
+                        <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+                          <view class="row row-80">
+                            <view class="row-left"><text class="row-label">时间</text></view>
+                            <view class="row-right">
+                              <text class="row-value {{!scheduleForm.activity_time ? 'muted' : ''}}">{{scheduleForm.activity_time || '请选择'}}</text>
+                              <t-icon name="chevron-right" color="#999" />
+                            </view>
                           </view>
-                        </view>
+                        </ripple>
                         <view slot="content" class="popup-shell">
                           <view class="popup-header"><view class="popup-title">选择时间</view></view>
                           <view class="popup-body">
@@ -612,34 +681,42 @@
       <view class="action-right">
         <!-- 未开始：显示"开始活动"和"分享" -->
         <block wx:if="{{!event.actual_startTime}}">
-          <view class="action-btn primary" bindtap="beginEvent">
-            <t-icon name="play-circle" size="20" color="#fff" />
-            <text>开始活动</text>
-          </view>
+          <ripple ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}" bindtap="beginEvent">
+            <view class="action-btn primary">
+              <t-icon name="play-circle" size="20" color="#fff" />
+              <text>开始活动</text>
+            </view>
+          </ripple>
           <button class="action-btn secondary" open-type="share">
             <t-icon name="share" size="18" color="#666" />
-            <text>分享</text>
+            <text>分享活动</text>
           </button>
-          <view class="action-btn tertiary" bindtap="cancelEvent">
-            <t-icon name="close-circle" size="18" color="#EF4444" />
-            <text>取消</text>
-          </view>
+          <ripple ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}" bindtap="cancelEvent">
+            <view class="action-btn tertiary">
+              <t-icon name="close-circle" size="18" color="#EF4444" />
+              <text>取消活动</text>
+            </view>
+          </ripple>
         </block>
         
         <!-- 进行中：显示"结束活动"和"分享" -->
         <block wx:elif="{{!event.actual_endTime}}">
-          <view class="action-btn danger" bindtap="endEvent">
-            <t-icon name="stop-circle" size="20" color="#fff" />
-            <text>结束活动</text>
-          </view>
+          <ripple ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}" bindtap="endEvent">
+            <view class="action-btn danger">
+              <t-icon name="stop-circle" size="20" color="#fff" />
+              <text>结束活动</text>
+            </view>
+          </ripple>
           <button class="action-btn secondary" open-type="share">
             <t-icon name="share" size="18" color="#666" />
-            <text>分享</text>
+            <text>分享活动</text>
           </button>
-          <view class="action-btn tertiary" bindtap="cancelEvent">
-            <t-icon name="close-circle" size="18" color="#EF4444" />
-            <text>取消</text>
-          </view>
+          <ripple ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}" bindtap="cancelEvent">
+            <view class="action-btn tertiary">
+              <t-icon name="close-circle" size="18" color="#EF4444" />
+              <text>取消活动</text>
+            </view>
+          </ripple>
         </block>
         
         <!-- 已结束：只显示"分享" -->

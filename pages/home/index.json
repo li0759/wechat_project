@@ -9,6 +9,7 @@
     "t-grid-item": "tdesign-miniprogram/grid-item/grid-item",
     "t-skeleton": "tdesign-miniprogram/skeleton/skeleton",
     "t-icon": "tdesign-miniprogram/icon/icon",
+    "ripple": "/components/ripple/index",
     "isotope": "../../components/isotope/index",
     "expandable-container": "../../components/expandable-container/index",
     "expandable-container_fullscreen": "../../components/expandable-container_fullscreen/index",

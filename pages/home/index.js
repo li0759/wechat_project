@@ -420,7 +420,16 @@ Page({
     // 只在活动tab时处理
     if (this.data.activeTab !== 0) return;
     
-    const touch = e.touches[0];
+    // 兼容原生事件和 ripple 自定义事件
+    let touch;
+    if (e.touches && e.touches[0]) {
+      touch = e.touches[0];
+    } else if (e.detail && e.detail.touches && e.detail.touches[0]) {
+      touch = e.detail.touches[0];
+    } else {
+      return; // 无法获取触摸信息，直接返回
+    }
+    
     this.eventScrollStartTime = Date.now();
     
     this.setData({
@@ -437,7 +446,16 @@ Page({
   onEventScrollTouchMove: function(e) {
     if (!this.data.eventItemTouching && !this.data.swiperToDrawerMode) return;
     
-    const touch = e.touches[0];
+    // 兼容原生事件和 ripple 自定义事件
+    let touch;
+    if (e.touches && e.touches[0]) {
+      touch = e.touches[0];
+    } else if (e.detail && e.detail.touches && e.detail.touches[0]) {
+      touch = e.detail.touches[0];
+    } else {
+      return; // 无法获取触摸信息，直接返回
+    }
+    
     const deltaX = touch.pageX - this.data.eventItemTouchStartX;
     const deltaY = touch.pageY - this.data.eventItemTouchStartY;
     
@@ -1638,31 +1656,8 @@ Page({
 
   // ========= 全局弹窗相关方法 =========
 
-  // 触摸开始 - 记录起始位置和时间
-  onGlobalPopupTouchStart: function(e) {
-    const touch = e.changedTouches && e.changedTouches[0];
-    if (touch) {
-      this._touchStartX = touch.clientX;
-      this._touchStartY = touch.clientY;
-      this._touchStartTime = Date.now();
-    }
-  },
-
-  // 打开全局弹窗 - 增加拖动判断
+  // 打开全局弹窗
   openGlobalPopup: function(e) {
-    // 判断是否为拖动操作（移动距离超过阈值或时间过长）
-    const touch = e.changedTouches && e.changedTouches[0];
-    if (touch && this._touchStartX !== undefined) {
-      const dx = Math.abs(touch.clientX - this._touchStartX);
-      const dy = Math.abs(touch.clientY - this._touchStartY);
-      const dt = Date.now() - (this._touchStartTime || 0);
-      
-      // 如果移动距离超过10px或时间超过300ms，认为是拖动而非点击
-    if (dx > 10 || dy > 10 || dt > 300) {
-        return;
-      }
-    }
-    
     const dataset = e.currentTarget.dataset;
     const type = dataset.popupType;
     const id = dataset.popupId;
@@ -1671,25 +1666,29 @@ Page({
     
     console.log('openGlobalPopup 被调用:', { type, id, loading: true });
     
-    // 获取点击坐标
+    // 从 ripple 组件的 detail 中获取触摸坐标
     let tapX, tapY;
-    if (e.changedTouches && e.changedTouches[0]) {
-      tapX = e.changedTouches[0].clientX;
-      tapY = e.changedTouches[0].clientY;
-    } else if (e.touches && e.touches[0]) {
-      tapX = e.touches[0].clientX;
-      tapY = e.touches[0].clientY;
+    if (e.detail && e.detail.changedTouches && e.detail.changedTouches[0]) {
+      tapX = e.detail.changedTouches[0].clientX;
+      tapY = e.detail.changedTouches[0].clientY;
+      console.log('从 ripple 组件获取坐标:', tapX, tapY);
+    } else if (e.detail && e.detail.touches && e.detail.touches[0]) {
+      tapX = e.detail.touches[0].clientX;
+      tapY = e.detail.touches[0].clientY;
+      console.log('从 ripple 组件 touches 获取坐标:', tapX, tapY);
     } else {
+      // 降级方案：使用屏幕中心
       const sys = wx.getSystemInfoSync();
       tapX = sys.windowWidth / 2;
       tapY = sys.windowHeight / 2;
+      console.log('使用屏幕中心坐标:', tapX, tapY);
     }
     
     this.setData({
       globalPopup: {
         visible: true,
         loading: true,
-        renderPanel: false,  // 先不渲染 panel
+        renderPanel: false,
         type,
         id,
         bgColor,
@@ -1699,7 +1698,6 @@ Page({
       }
     }, () => {
       console.log('globalPopup 数据已设置:', this.data.globalPopup);
-      // 延迟调用 expand，等待组件渲染
       setTimeout(() => {
         const popup = this.selectComponent('#globalFullscreenPopup');
         if (popup && popup.expand) {

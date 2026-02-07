@@ -40,7 +40,6 @@
     <scroll-view 
       class="main-content" 
       scroll-y="{{true}}"
-      scroll-into-view="{{scrollIntoView}}"
       bindscroll="onMainScroll"
       show-scrollbar="{{false}}"
     >

@@ -79,16 +79,17 @@
       <view class="rows">
         <!-- 基本信息（名称 + 简介） -->
         <expandable-container id="row-basic" expanded-width="700" expanded-height="750" bg-color="#f2f3f5" bind:expand="onBasicExpand">
-          <view slot="trigger" class="row row-basic">
+          <view slot="trigger" class="row row-basic row-editable">
             <view class="row-basic-left">
               <text class="row-label">基本信息</text>
+              <text class="edit-hint">点击编辑</text>
             </view>
             <view class="row-basic-right">
               <view class="row-basic-title clamp-1">{{clubDetail.name || '未设置名称'}}</view>
               <view class="row-basic-desc clamp-1">{{clubDetail.description || '未设置简介'}}</view>
             </view>
             <view class="row-basic-arrow">
-              <t-icon name="chevron-right" color="#999" />
+              <t-icon name="edit" size="20" color="var(--md-sys-color-primary)" />
             </view>
           </view>
           <view slot="content" class="popup-shell">
@@ -117,13 +118,14 @@
 
         <!-- 协会章程 -->
         <expandable-container id="row-charter" expanded-width="700" expanded-height="750" bg-color="#f2f3f5" bind:expand="onCharterExpand">
-          <view slot="trigger" class="row row-100">
+          <view slot="trigger" class="row row-100 row-editable">
             <view class="row-left">
               <text class="row-label">协会章程</text>
+              <text class="edit-hint">点击编辑</text>
             </view>
             <view class="row-right">
-              <text class="row-value muted">点击编辑</text>
-              <t-icon name="chevron-right" color="#999" />
+              <text class="row-value {{!clubDetail.charter ? 'muted' : ''}}">{{clubDetail.charter ? '已填写' : '未设置'}}</text>
+              <t-icon name="edit" size="20" color="var(--md-sys-color-primary)" />
             </view>
           </view>
           <view slot="content" class="popup-shell">
@@ -1305,30 +1307,37 @@
           </view>
         </view>
 
-        <!-- 活动管理已移动到封面同行 -->
+        <view class="footer-space"></view>
+      </view>
+    </scroll-view>
 
-        <!-- 分享协会链接按钮 -->
-        <view class="plain-line" wx:if="{{clubDetail && !clubDetail.isDelete}}">
-          <text class="plain-k">分享协会：</text>
-          <button class="share-button-inline" open-type="share">
-            <t-icon name="share" size="16" />
-            <text style="margin-left: 4rpx;">分享协会链接</text>
+    <!-- 底部操作栏 -->
+    <view class="bottom-actions" wx:if="{{clubDetail && !clubDetail.isDelete}}">
+      <block wx:if="{{isPresident}}">
+        <!-- 会长：显示"分享协会"和"删除协会" -->
+        <view class="action-left">
+          <button class="action-btn primary" open-type="share">
+            <t-icon name="share" size="18" color="#fff" />
+            <text>分享协会</text>
           </button>
         </view>
 
-        <!-- 删除协会按钮 - 只有会长可见且协会未删除时显示 -->
-        <view class="plain-line" wx:if="{{isPresident && clubDetail && !clubDetail.isDelete}}">
-          <text class="plain-k">协会状态：</text>
-          <t-button theme="danger" size="small" variant="outline" bindtap="deleteClub">删除协会</t-button>
+        <view class="action-right">
+          <view class="action-btn tertiary" bindtap="deleteClub">
+            <t-icon name="delete" size="18" color="#EF4444" />
+            <text>删除协会</text>
+          </view>
         </view>
-        <view class="plain-line" wx:if="{{clubDetail && clubDetail.isDelete}}">
-          <text class="plain-k">协会状态：</text>
-          <text class="plain-v" style="color: #ff4d4f;">已删除</text>
-        </view>
-
-        <view style="height: 40rpx;"></view>
-      </view>
-    </scroll-view>
+      </block>
+        
+      <!-- 非会长：只显示"分享协会" -->
+      <block wx:else>
+        <button class="action-btn primary" open-type="share" style="flex: 1;">
+          <t-icon name="share" size="18" color="#fff" />
+          <text>分享协会</text>
+        </button>
+      </block>
+    </view>
   </block>
 
   <!-- 共享成员详情弹窗（用于 isotope 点击） -->

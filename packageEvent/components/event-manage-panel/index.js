@@ -174,6 +174,30 @@ Component({
   },
 
   methods: {
+    // 触发器触摸开始 - 传递给 expandable-container_fullscreen
+    onTriggerTouchStart(e) {
+      // 从 ripple 组件传递过来的事件，直接转发给 expandable-container_fullscreen
+      const container = e.currentTarget.dataset.containerId 
+        ? this.selectComponent(`#${e.currentTarget.dataset.containerId}`)
+        : null;
+      
+      if (container && container.onTriggerTouchStart) {
+        container.onTriggerTouchStart(e);
+      }
+    },
+
+    // 处理触发器点击 - 传递给 expandable-container_fullscreen
+    handleTriggerTap(e) {
+      // 从 ripple 组件传递过来的事件，直接转发给 expandable-container_fullscreen
+      const container = e.currentTarget.dataset.containerId 
+        ? this.selectComponent(`#${e.currentTarget.dataset.containerId}`)
+        : null;
+      
+      if (container && container.handleTriggerTap) {
+        container.handleTriggerTap(e);
+      }
+    },
+
     // 懒加载入口：供外部调用，只有弹窗展开时才加载数据
   loadData() {
       this._hasExpanded = true;

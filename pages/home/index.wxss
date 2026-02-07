@@ -428,6 +428,13 @@
   margin-bottom: 0;
 }
 
+/* 卡片包装器 - 用于ripple组件 */
+.card-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
 /* 卡片骨架屏容器 */
 .card-skeleton {
   width: 100%;

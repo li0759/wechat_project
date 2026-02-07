@@ -19,6 +19,7 @@
     "expandable-container": "/components/expandable-container/index",
     "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",
     "isotope": "/components/isotope/index",
-    "addressbook-tree": "/components/addressbook-tree/index"
+    "addressbook-tree": "/components/addressbook-tree/index",
+    "ripple": "/components/ripple/index"
   }
 }

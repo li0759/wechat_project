@@ -59,10 +59,13 @@
       <!-- 发布协会（独立框） -->
       <expandable-container id="ec-club" expanded-width="700" expanded-height="900" bg-color="#f2f3f5">
         <view slot="trigger" class="row row-100">
-          <view class="row-left"><text class="row-label">发布协会</text></view>
+          <view class="row-left">
+            <text class="row-label">发布协会</text>
+            <text class="edit-hint">点击选择</text>
+          </view>
           <view class="row-right">
             <text class="row-value {{!formData.clubName ? 'muted' : ''}}">{{formData.clubName || '请选择'}}</text>
-            <t-icon name="chevron-right" color="#999" />
+            <t-icon name="edit" size="20" color="var(--md-sys-color-primary)" />
           </view>
         </view>
         <view slot="content" class="popup-shell">
@@ -85,10 +88,13 @@
       <!-- 活动标题（独立框） -->
       <expandable-container id="ec-title" expanded-width="700" expanded-height="520" bg-color="#f2f3f5">
         <view slot="trigger" class="row row-100">
-          <view class="row-left"><text class="row-label">活动标题</text></view>
+          <view class="row-left">
+            <text class="row-label">活动标题</text>
+            <text class="edit-hint">点击编辑</text>
+          </view>
           <view class="row-right">
             <text class="row-value {{!formData.title ? 'muted' : ''}}">{{formData.title || '未设置'}}</text>
-            <t-icon name="chevron-right" color="#999" />
+            <t-icon name="edit" size="20" color="var(--md-sys-color-primary)" />
       </view>
         </view>
         <view slot="content" class="popup-shell">
@@ -107,10 +113,13 @@
       <!-- 预计开始（独立框） -->
       <expandable-container id="ec-pre-start" expanded-width="700" expanded-height="700" bg-color="#f2f3f5">
         <view slot="trigger" class="row row-100">
-          <view class="row-left"><text class="row-label">预计开始</text></view>
+          <view class="row-left">
+            <text class="row-label">预计开始</text>
+            <text class="edit-hint">点击编辑</text>
+          </view>
           <view class="row-right">
             <text class="row-value {{!formData.preStartTimeDisplay ? 'muted' : ''}}">{{formData.preStartTimeDisplay || '未设置'}}</text>
-            <t-icon name="chevron-right" color="#999" />
+            <t-icon name="edit" size="20" color="var(--md-sys-color-primary)" />
           </view>
         </view>
         <view slot="content" class="popup-shell">
@@ -139,10 +148,13 @@
       <!-- 预计结束（独立框） -->
       <expandable-container id="ec-pre-end" expanded-width="700" expanded-height="700" bg-color="#f2f3f5">
         <view slot="trigger" class="row row-100">
-          <view class="row-left"><text class="row-label">预计结束</text></view>
+          <view class="row-left">
+            <text class="row-label">预计结束</text>
+            <text class="edit-hint">点击编辑</text>
+          </view>
           <view class="row-right">
             <text class="row-value {{!formData.preEndTimeDisplay ? 'muted' : ''}}">{{formData.preEndTimeDisplay || '未设置'}}</text>
-            <t-icon name="chevron-right" color="#999" />
+            <t-icon name="edit" size="20" color="var(--md-sys-color-primary)" />
           </view>
                      </view>
         <view slot="content" class="popup-shell">
@@ -171,12 +183,15 @@
       <!-- 活动详情（独立框） -->
       <expandable-container id="ec-content" expanded-width="700" expanded-height="980" bg-color="#f2f3f5">
         <view slot="trigger" class="row row-basic">
-          <view class="row-basic-left"><text class="row-label">活动详情</text></view>
+          <view class="row-basic-left">
+            <text class="row-label">活动详情</text>
+            <text class="edit-hint">点击编辑</text>
+          </view>
           <view class="row-basic-right">
             <view class="row-basic-title clamp-1">{{formData.content ? '已填写' : '未填写'}}</view>
-            <view class="row-basic-desc clamp-1">{{formData.content || '点击编辑活动详情'}}</view>
+            <view class="row-basic-desc clamp-2">{{formData.content || '点击编辑活动详情'}}</view>
           </view>
-          <view class="row-basic-arrow"><t-icon name="chevron-right" color="#999" /></view>
+          <view class="row-basic-arrow"><t-icon name="edit" size="20" color="var(--md-sys-color-primary)" /></view>
         </view>
         <view slot="content" class="popup-shell">
           <view class="popup-header">
@@ -244,10 +259,13 @@
 
       <expandable-container id="create-budget" expanded-width="700" expanded-height="520" bg-color="#f2f3f5">
         <view slot="trigger" class="row row-100">
-          <view class="row-left"><text class="row-label">预算</text></view>
+          <view class="row-left">
+            <text class="row-label">预算</text>
+            <text class="edit-hint">点击编辑</text>
+          </view>
           <view class="row-right">
             <text class="row-value {{!formData.budget ? 'muted' : ''}}">{{formData.budget ? ('¥ ' + formData.budget) : '未设置'}}</text>
-            <t-icon name="chevron-right" color="#999" />
+            <t-icon name="edit" size="20" color="var(--md-sys-color-primary)" />
           </view>
         </view>
         <view slot="content" class="popup-shell">

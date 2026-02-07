@@ -3,11 +3,14 @@
     <view class="rows">
       <!-- 协会名称（独立一框） -->
       <expandable-container id="cc-name" expanded-width="700" expanded-height="520" bg-color="#f2f3f5">
-        <view slot="trigger" class="row row-100">
-          <view class="row-left"><text class="row-label">协会名称</text></view>
+        <view slot="trigger" class="row row-100 row-editable">
+          <view class="row-left">
+            <text class="row-label">协会名称</text>
+            <text class="edit-hint">点击编辑</text>
+          </view>
           <view class="row-right">
             <text class="row-value {{!formData.club_name ? 'muted' : ''}}">{{formData.club_name || '未设置'}}</text>
-            <t-icon name="chevron-right" color="#999" />
+            <t-icon name="edit" size="20" color="var(--md-sys-color-primary)" />
           </view>
         </view>
         <view slot="content" class="popup-shell">
@@ -25,11 +28,14 @@
 
       <!-- 章程 -->
       <expandable-container id="cc-charter" expanded-width="700" expanded-height="980" bg-color="#f2f3f5">
-        <view slot="trigger" class="row row-100">
-          <view class="row-left"><text class="row-label">协会章程</text></view>
+        <view slot="trigger" class="row row-100 row-editable">
+          <view class="row-left">
+            <text class="row-label">协会章程</text>
+            <text class="edit-hint">点击编辑</text>
+          </view>
           <view class="row-right">
-            <text class="row-value {{!formData.charter ? 'muted' : ''}}">{{formData.charter ? '已填写' : '点击编辑'}}</text>
-            <t-icon name="chevron-right" color="#999" />
+            <text class="row-value {{!formData.charter ? 'muted' : ''}}">{{formData.charter ? '已填写' : '未设置'}}</text>
+            <t-icon name="edit" size="20" color="var(--md-sys-color-primary)" />
           </view>
         </view>
         <view slot="content" class="popup-shell">

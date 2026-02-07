@@ -27,7 +27,7 @@
   height: 100%;
   background-color: var(--md-sys-color-background);
   color: var(--md-sys-color-on-surface);
-  overflow: hidden;
+
 }
 
 /* 灰色蒙层样式 */
@@ -71,9 +71,8 @@
 
 /* 主内容区域 - 参考 event-detail-panel */
 .main-content {
-  flex: 1;
-  padding-bottom: 140rpx; /* 为底部操作栏留出空间 */
-  -webkit-overflow-scrolling: touch;
+  height: calc(100vh - 200rpx);
+
 }
 .rows { padding: 16rpx 16rpx 24rpx; box-sizing: border-box; }
 
@@ -383,21 +382,19 @@
 .pill-ghost { background: var(--md-sys-color-surface-variant); color: var(--md-sys-color-on-surface); font-weight: 500; font-size: 26rpx; padding: 14rpx 20rpx; border-radius: 999rpx; transition: all 0.2s; }
 .pill-ghost:active { background: #E5E7EB; }
 .loading { margin-top: 120rpx; }
-.footer-space { height: 160rpx; } /* 为底部操作栏留出空间 */
+.footer-space { height: 300rpx; } /* 为底部操作栏留出空间 */
 
 /* ===== 底部操作栏（完全参考 event-detail-panel）===== */
 .bottom-actions {
   position: absolute;
-  bottom: 100rpx; /* 往上移，避免被 tabbar 遮挡 */
+  bottom: 80rpx; /* 往上移，避免被 tabbar 遮挡 */
   left: 0;
   right: 0;
   z-index: 100;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16rpx 32rpx;
-  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
-  background: linear-gradient(0deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.9) 70%, transparent 100%);
+  background: linear-gradient(0deg, rgba(255, 255, 255, 1) 0%, rgba(246, 246, 246, 0.9) 70%, transparent 100%);
   backdrop-filter: blur(20rpx);
 }
 

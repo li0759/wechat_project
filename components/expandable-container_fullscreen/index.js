@@ -158,15 +158,15 @@
   handleTriggerTap(e) {
       if (this.data.isExpanded || this.data.isExpanding) return
       
-      // 判断是否为拖动操作（移动距离超过阈值或时间过长）
+      // 判断是否为拖动操作（仅检查移动距离，不检查时间）
+      // 长按（时间长但不移动）应该允许弹窗
     const t = e?.changedTouches?.[0] || e?.touches?.[0]
       if (t && this.__triggerTouchStartX !== undefined) {
         const dx = Math.abs(t.clientX - this.__triggerTouchStartX)
         const dy = Math.abs(t.clientY - this.__triggerTouchStartY)
-        const dt = Date.now() - (this.__triggerTouchStartTime || 0)
         
-        // 如果移动距离超过10px或时间超过300ms，认为是拖动而非点击
-    if (dx > 10 || dy > 10 || dt > 300) {
+        // 如果移动距离超过10px，认为是拖动而非点击/长按
+    if (dx > 10 || dy > 10) {
           return
         }
       }

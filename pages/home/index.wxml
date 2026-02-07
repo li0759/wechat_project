@@ -196,15 +196,16 @@
         <view class="hot-events-container" wx:if="{{hotActivities.length > 0}}">
           <swiper class="hot-events-swiper" indicator-dots="{{true}}" interval="{{3000}}" duration="{{500}}" circular="{{true}}">
             <swiper-item wx:for="{{hotActivities}}" wx:key="event_id" wx:for-index="hotIndex" list-item>
-              <view 
-                class="hot-event-card"
-                bindtouchstart="onGlobalPopupTouchStart"
-                bindtouchend="openGlobalPopup"
+              <ripple
+                ripple-color="rgba(0, 0, 0, 0.2)"
+                duration="{{800}}"
+                bindtap="openGlobalPopup"
                 data-popup-type="{{item.cur_user_managed ? 'event-manage' : 'event-detail'}}"
                 data-popup-id="{{item.event_id}}"
                 data-bg-color="#f7f8fa"
                 data-sheet-bg-color="#f7f8fa"
               >
+                <view class="hot-event-card">
                 <view class="hot-event-layout" style="height: 430rpx;">
                   <view class="hot-event-map-background" wx:if="{{item.location_data}}">
                     <view class="hot-event-map">
@@ -234,7 +235,8 @@
                     <view class="hot-event-time"><text>{{item.start_time}}</text></view>
                   </view>
                 </view>
-              </view>
+                </view>
+              </ripple>
             </swiper-item>
           </swiper>
         </view>
@@ -254,41 +256,44 @@
                 </view>
                 
                 <!-- 阶段2&3：数据已加载 -->
-                <view 
+                <ripple 
                   wx:else
-                  bindtouchstart="onGlobalPopupTouchStart"
-                  bindtouchend="openGlobalPopup"
+                  ripple-color="rgba(0, 0, 0, 0.5)"
+                  duration="{{800}}"
+                  bindtap="openGlobalPopup"
                   data-popup-type="{{item.cur_user_managed ? 'event-manage' : 'event-detail'}}"
                   data-popup-id="{{item.event_id}}"
                   data-bg-color="#f7f8fa"
                   data-sheet-bg-color="#f7f8fa"
                 >
-                  <!-- 图片区域 -->
-                  <view class="image-container" style="width:100%;height:280rpx;position:relative;">
-                    <!-- 阶段2：图片骨架屏（覆盖在图片上方） -->
-                    <view wx:if="{{!item.imgLoaded}}" class="image-skeleton">
-                      <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '280rpx', borderRadius: '8rpx 8rpx 0 0' }]}}" />
+                  <view class="card-wrapper">
+                    <!-- 图片区域 -->
+                    <view class="image-container" style="width:100%;height:280rpx;position:relative;">
+                      <!-- 阶段2：图片骨架屏（覆盖在图片上方） -->
+                      <view wx:if="{{!item.imgLoaded}}" class="image-skeleton">
+                        <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '280rpx', borderRadius: '8rpx 8rpx 0 0' }]}}" />
+                      </view>
+                      <!-- 图片始终渲染，但在未加载完成时被骨架屏遮挡 -->
+                      <image class="card-image" src="{{item.cover_url_thumb}}" mode="aspectFill" bindload="onEventImgLoad" binderror="onEventImgLoad" data-index="{{index}}" style="{{item.imgLoaded ? '' : 'opacity: 0;'}}" />
+                      <!-- 阶段3：遮罩和标签只在图片加载完成后显示 -->
+                      <block wx:if="{{item.imgLoaded}}">
+                        <view class="image-gradient-mask"></view>
+                        <view class="tag-managed" wx:if="{{item.cur_user_managed}}"><t-icon name="user-list" size="36rpx" color="#fff"></t-icon></view>
+                        <view class="tag-ended" wx:elif="{{item.is_ended}}"><t-icon name="close-circle" size="36rpx" color="#fff"></t-icon></view>
+                        <view class="tag-joined" wx:elif="{{item.cur_user_is_joined}}"><t-icon name="bookmark-checked" size="36rpx" color="#fff"></t-icon></view>
+                      </block>
                     </view>
-                    <!-- 图片始终渲染，但在未加载完成时被骨架屏遮挡 -->
-                    <image class="card-image" src="{{item.cover_url_thumb}}" mode="aspectFill" bindload="onEventImgLoad" binderror="onEventImgLoad" data-index="{{index}}" style="{{item.imgLoaded ? '' : 'opacity: 0;'}}" />
-                    <!-- 阶段3：遮罩和标签只在图片加载完成后显示 -->
-                    <block wx:if="{{item.imgLoaded}}">
-                      <view class="image-gradient-mask"></view>
-                      <view class="tag-managed" wx:if="{{item.cur_user_managed}}"><t-icon name="user-list" size="36rpx" color="#fff"></t-icon></view>
-                      <view class="tag-ended" wx:elif="{{item.is_ended}}"><t-icon name="close-circle" size="36rpx" color="#fff"></t-icon></view>
-                      <view class="tag-joined" wx:elif="{{item.cur_user_is_joined}}"><t-icon name="bookmark-checked" size="36rpx" color="#fff"></t-icon></view>
-                    </block>
-                  </view>
-                  
-                  <!-- 文字内容区域 - 阶段2&3都显示 -->
-                  <view class="card-content">
-                    <view class="card-title"><text>{{item.title}}</text></view>
-                    <view class="card-info-row">
-                      <view class="card-club-name" wx:if="{{item.club_name}}"><text>{{item.club_name}}</text></view>
-                      <view class="card-tag"><text>{{item.start_time}}</text></view>
+                    
+                    <!-- 文字内容区域 - 阶段2&3都显示 -->
+                    <view class="card-content">
+                      <view class="card-title"><text>{{item.title}}</text></view>
+                      <view class="card-info-row">
+                        <view class="card-club-name" wx:if="{{item.club_name}}"><text>{{item.club_name}}</text></view>
+                        <view class="card-tag"><text>{{item.start_time}}</text></view>
+                      </view>
                     </view>
                   </view>
-                </view>
+                </ripple>
               </view>
             </block>
           </view>
@@ -306,41 +311,44 @@
                 </view>
                 
                 <!-- 阶段2&3：数据已加载 -->
-                <view 
+                <ripple 
                   wx:else
-                  bindtouchstart="onGlobalPopupTouchStart"
-                  bindtouchend="openGlobalPopup"
+                  ripple-color="rgba(0, 0, 0, 0.5)"
+                  duration="{{800}}"
+                  bindtap="openGlobalPopup"
                   data-popup-type="{{item.cur_user_managed ? 'event-manage' : 'event-detail'}}"
                   data-popup-id="{{item.event_id}}"
                   data-bg-color="#f7f8fa"
                   data-sheet-bg-color="#f7f8fa"
                 >
-                  <!-- 图片区域 -->
-                  <view class="image-container" style="width:100%;height:280rpx;position:relative;">
-                    <!-- 阶段2：图片骨架屏（覆盖在图片上方） -->
-                    <view wx:if="{{!item.imgLoaded}}" class="image-skeleton">
-                      <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '280rpx', borderRadius: '8rpx 8rpx 0 0' }]}}" />
+                  <view class="card-wrapper">
+                    <!-- 图片区域 -->
+                    <view class="image-container" style="width:100%;height:280rpx;position:relative;">
+                      <!-- 阶段2：图片骨架屏（覆盖在图片上方） -->
+                      <view wx:if="{{!item.imgLoaded}}" class="image-skeleton">
+                        <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '280rpx', borderRadius: '8rpx 8rpx 0 0' }]}}" />
+                      </view>
+                      <!-- 图片始终渲染，但在未加载完成时被骨架屏遮挡 -->
+                      <image class="card-image" src="{{item.cover_url_thumb}}" mode="aspectFill" bindload="onEventImgLoad" binderror="onEventImgLoad" data-index="{{index}}" style="{{item.imgLoaded ? '' : 'opacity: 0;'}}" />
+                      <!-- 阶段3：遮罩和标签只在图片加载完成后显示 -->
+                      <block wx:if="{{item.imgLoaded}}">
+                        <view class="image-gradient-mask"></view>
+                        <view class="tag-managed" wx:if="{{item.cur_user_managed}}"><t-icon name="user-list" size="36rpx" color="#fff"></t-icon></view>
+                        <view class="tag-ended" wx:elif="{{item.is_ended}}"><t-icon name="close-circle" size="36rpx" color="#fff"></t-icon></view>
+                        <view class="tag-joined" wx:elif="{{item.cur_user_is_joined}}"><t-icon name="bookmark-checked" size="36rpx" color="#fff"></t-icon></view>
+                      </block>
                     </view>
-                    <!-- 图片始终渲染，但在未加载完成时被骨架屏遮挡 -->
-                    <image class="card-image" src="{{item.cover_url_thumb}}" mode="aspectFill" bindload="onEventImgLoad" binderror="onEventImgLoad" data-index="{{index}}" style="{{item.imgLoaded ? '' : 'opacity: 0;'}}" />
-                    <!-- 阶段3：遮罩和标签只在图片加载完成后显示 -->
-                    <block wx:if="{{item.imgLoaded}}">
-                      <view class="image-gradient-mask"></view>
-                      <view class="tag-managed" wx:if="{{item.cur_user_managed}}"><t-icon name="user-list" size="36rpx" color="#fff"></t-icon></view>
-                      <view class="tag-ended" wx:elif="{{item.is_ended}}"><t-icon name="close-circle" size="36rpx" color="#fff"></t-icon></view>
-                      <view class="tag-joined" wx:elif="{{item.cur_user_is_joined}}"><t-icon name="bookmark-checked" size="36rpx" color="#fff"></t-icon></view>
-                    </block>
-                  </view>
-                  
-                  <!-- 文字内容区域 - 阶段2&3都显示 -->
-                  <view class="card-content">
-                    <view class="card-title"><text>{{item.title}}</text></view>
-                    <view class="card-info-row">
-                      <view class="card-club-name" wx:if="{{item.club_name}}"><text>{{item.club_name}}</text></view>
-                      <view class="card-tag"><text>{{item.start_time}}</text></view>
+                    
+                    <!-- 文字内容区域 - 阶段2&3都显示 -->
+                    <view class="card-content">
+                      <view class="card-title"><text>{{item.title}}</text></view>
+                      <view class="card-info-row">
+                        <view class="card-club-name" wx:if="{{item.club_name}}"><text>{{item.club_name}}</text></view>
+                        <view class="card-tag"><text>{{item.start_time}}</text></view>
+                      </view>
                     </view>
                   </view>
-                </view>
+                </ripple>
               </view>
             </block>
           </view>
@@ -363,15 +371,16 @@
         <view class="hot-clubs-container" wx:if="{{hotClubs.length > 0}}">
           <swiper class="hot-clubs-swiper" indicator-dots="{{true}}" interval="{{4000}}" duration="{{600}}" circular="{{true}}" bindchange="onClubSwiperChange">
             <swiper-item wx:for="{{hotClubs}}" wx:key="club_id" wx:for-index="hotIndex" list-item>
-              <view 
-                class="hot-club-poster-card"
-                bindtouchstart="onGlobalPopupTouchStart"
-                bindtouchend="openGlobalPopup"
+              <ripple
+                ripple-color="rgba(0, 0, 0, 0.2)"
+                duration="{{800}}"
+                bindtap="openGlobalPopup"
                 data-popup-type="{{item.cur_user_managed ? 'club-manage' : 'club-detail'}}"
                 data-popup-id="{{item.club_id}}"
                 data-bg-color="{{item.cur_user_managed ? '#f5f5f5' : '#fff'}}"
                 data-sheet-bg-color="{{item.cur_user_managed ? '#f5f5f5' : '#fff'}}"
               >
+                <view class="hot-club-poster-card">
                 <view class="hot-club-trigger">
                   <!-- isotope背景 -->
                   <view class="isotope-background-container">
@@ -419,7 +428,8 @@
                     <view class="badge-text">{{item.cur_user_managed ? '我管理' : '热门协会'}}</view>
                   </view>
                 </view>
-              </view>
+                </view>
+              </ripple>
             </swiper-item>
           </swiper>
         </view>
@@ -439,15 +449,17 @@
                 </view>
                 
                 <!-- 阶段2&3：数据已加载 -->
-                <view 
+                <ripple 
                   wx:else
-                  bindtouchstart="onGlobalPopupTouchStart"
-                  bindtouchend="openGlobalPopup"
+                  ripple-color="rgba(0, 0, 0, 0.2)"
+                  duration="{{800}}"
+                  bindtap="openGlobalPopup"
                   data-popup-type="{{item.cur_user_managed ? 'club-manage' : 'club-detail'}}"
                   data-popup-id="{{item.club_id}}"
                   data-bg-color="{{item.cur_user_managed ? '#f5f5f5' : '#fff'}}"
                   data-sheet-bg-color="{{item.cur_user_managed ? '#f5f5f5' : '#fff'}}"
                 >
+                  <view class="card-wrapper">
                   <!-- 图片区域 -->
                   <view class="image-container" style="width:100%;height:280rpx;position:relative;">
                     <!-- 阶段2：图片骨架屏（覆盖在图片上方） -->
@@ -469,7 +481,8 @@
                     <view class="card-title"><text>{{item.club_name}}</text></view>
                     <view class="card-desc"><text>{{item.description}}</text></view>
                   </view>
-                </view>
+                  </view>
+                </ripple>
               </view>
             </block>
           </view>
@@ -487,15 +500,17 @@
                 </view>
                 
                 <!-- 阶段2&3：数据已加载 -->
-                <view 
+                <ripple 
                   wx:else
-                  bindtouchstart="onGlobalPopupTouchStart"
-                  bindtouchend="openGlobalPopup"
+                  ripple-color="rgba(0, 0, 0, 0.2)"
+                  duration="{{800}}"
+                  bindtap="openGlobalPopup"
                   data-popup-type="{{item.cur_user_managed ? 'club-manage' : 'club-detail'}}"
                   data-popup-id="{{item.club_id}}"
                   data-bg-color="{{item.cur_user_managed ? '#f5f5f5' : '#fff'}}"
                   data-sheet-bg-color="{{item.cur_user_managed ? '#f5f5f5' : '#fff'}}"
                 >
+                  <view class="card-wrapper">
                   <!-- 图片区域 -->
                   <view class="image-container" style="width:100%;height:280rpx;position:relative;">
                     <!-- 阶段2：图片骨架屏（覆盖在图片上方） -->
@@ -517,7 +532,8 @@
                     <view class="card-title"><text>{{item.club_name}}</text></view>
                     <view class="card-desc"><text>{{item.description}}</text></view>
                   </view>
-                </view>
+                  </view>
+                </ripple>
               </view>
             </block>
           </view>
