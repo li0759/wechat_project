@@ -45,46 +45,47 @@
                   <view wx:if="{{item.is_cancelled || item.club_deleted}}" class="event-overlay">
                     <text>{{item.is_cancelled ? '活动已取消' : '协会已删除'}}</text>
                   </view>
-                
-                <!-- 上部分：协会名称 -->
-                <view class="event-club-header">
-                  <text class="club-name">{{item.club_info.club_name}}</text>
-                  <!-- 状态标签 - 只在显示"全部"活动时显示 -->
-                  <view class="event-status" wx:if="{{showAllEvents}}">
-                    <text wx:if="{{item.is_cancelled}}" class="status-tag cancelled">已取消</text>
-                    <text wx:elif="{{item.club_deleted}}" class="status-tag club-deleted">协会已删除</text>
-                    <text wx:elif="{{item.actual_endTime}}" class="status-tag ended">已结束</text>
-                    <text wx:elif="{{item.actual_startTime}}" class="status-tag going">进行中</text>
-                    <text wx:else class="status-tag prego">预计开始</text>
-                  </view>
-                </view>
-                
-                <!-- 下部分：左边封面，右边信息 -->
-                <view class="event-main-content">
-                  <!-- 左边：活动封面 -->
-                  <view class="event-cover-wrapper">
-                    <t-image 
-                      src="{{item.cover_url_thumb}}" 
-                      width="150rpx" 
-                      height="150rpx" 
-                      mode="aspectFill"
-                      error="default"
-                      style="border-radius: 8rpx;"
-                    />
+                  
+                  <!-- 上部分：协会名称 -->
+                  <view class="event-club-header">
+                    <text class="club-name">{{item.club_info.club_name}}</text>
+                    <!-- 状态标签 - 只在显示"全部"活动时显示 -->
+                    <view class="event-status" wx:if="{{showAllEvents}}">
+                      <text wx:if="{{item.is_cancelled}}" class="status-tag cancelled">已取消</text>
+                      <text wx:elif="{{item.club_deleted}}" class="status-tag club-deleted">协会已删除</text>
+                      <text wx:elif="{{item.actual_endTime}}" class="status-tag ended">已结束</text>
+                      <text wx:elif="{{item.actual_startTime}}" class="status-tag going">进行中</text>
+                      <text wx:else class="status-tag prego">预计开始</text>
+                    </view>
                   </view>
                   
-                  <!-- 右边：活动信息 -->
-                  <view class="event-info-wrapper">
-                    <text class="event-title">{{item.title}}</text>
-                    <text class="event-time" wx:if="{{item.actual_startTime}}">
-                      <t-icon name="time" size="24rpx" color="#52c41a" />
-                      实际开始：{{item.actual_startTime}}
-                    </text>
-                    <text class="event-time" wx:else>
-                      <t-icon name="time" size="24rpx" color="#ff6b9d" />
-                      预计开始：{{item.pre_startTime}}
-                    </text>
-                    <text class="event-description">{{item.content}}</text>
+                  <!-- 下部分：左边封面，右边信息 -->
+                  <view class="event-main-content">
+                    <!-- 左边：活动封面 -->
+                    <view class="event-cover-wrapper">
+                      <t-image 
+                        src="{{item.cover_url_thumb}}" 
+                        width="150rpx" 
+                        height="150rpx" 
+                        mode="aspectFill"
+                        error="default"
+                        style="border-radius: 8rpx;"
+                      />
+                    </view>
+                    
+                    <!-- 右边：活动信息 -->
+                    <view class="event-info-wrapper">
+                      <text class="event-title">{{item.title}}</text>
+                      <text class="event-time" wx:if="{{item.actual_startTime}}">
+                        <t-icon name="time" size="24rpx" color="#52c41a" />
+                        实际开始：{{item.actual_startTime}}
+                      </text>
+                      <text class="event-time" wx:else>
+                        <t-icon name="time" size="24rpx" color="#ff6b9d" />
+                        预计开始：{{item.pre_startTime}}
+                      </text>
+                      <text class="event-description">{{item.content}}</text>
+                    </view>
                   </view>
                 </view>
               </ripple>

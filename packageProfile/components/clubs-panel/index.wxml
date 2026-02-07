@@ -42,35 +42,36 @@
               <view wx:if="{{item.isDelete}}" class="club-overlay">
                 <text>协会已删除</text>
               </view>
-            
-            <!-- 上部分：协会名称 -->
-            <view class="club-name-header">
-              <text class="club-name">{{item.club_name}}</text>
-              <!-- 状态标签 -->
-              <view class="club-status" wx:if="{{item.isDelete}}">
-                <text class="status-tag deleted">已删除</text>
-              </view>
-            </view>
-            
-            <!-- 下部分：左边封面，右边信息 -->
-            <view class="club-main-content">
-              <!-- 左边：协会封面 -->
-              <view class="club-cover-wrapper">
-                <t-image 
-                  src="{{item.cover_url_thumb}}" 
-                  width="150rpx" 
-                  height="150rpx" 
-                  mode="aspectFill"
-                  error="default"
-                  style="border-radius: 8rpx;"
-                />
+              
+              <!-- 上部分：协会名称 -->
+              <view class="club-name-header">
+                <text class="club-name">{{item.club_name}}</text>
+                <!-- 状态标签 -->
+                <view class="club-status" wx:if="{{item.isDelete}}">
+                  <text class="status-tag deleted">已删除</text>
+                </view>
               </view>
               
-              <!-- 右边：协会信息 -->
-              <view class="club-info-wrapper">
-                <text class="club-title">{{item.club_name}}</text>
-                <text class="club-president">会长：{{item.president_info.president_username || '暂无'}}</text>
-                <text class="club-description">{{item.description}}</text>
+              <!-- 下部分：左边封面，右边信息 -->
+              <view class="club-main-content">
+                <!-- 左边：协会封面 -->
+                <view class="club-cover-wrapper">
+                  <t-image 
+                    src="{{item.cover_url_thumb}}" 
+                    width="150rpx" 
+                    height="150rpx" 
+                    mode="aspectFill"
+                    error="default"
+                    style="border-radius: 8rpx;"
+                  />
+                </view>
+                
+                <!-- 右边：协会信息 -->
+                <view class="club-info-wrapper">
+                  <text class="club-title">{{item.club_name}}</text>
+                  <text class="club-president">会长：{{item.president_info.president_username || '暂无'}}</text>
+                  <text class="club-description">{{item.description}}</text>
+                </view>
               </view>
             </view>
           </ripple>
