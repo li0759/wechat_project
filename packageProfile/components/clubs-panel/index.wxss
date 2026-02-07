@@ -32,9 +32,17 @@
 /* 协会项 */
 .club-item {
   background: #fff;
-  border-radius: 12rpx;
+  border-radius: 16rpx;
   padding: 16rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.06), 0 1rpx 2rpx rgba(0, 0, 0, 0.04);
+  border: 1rpx solid #E5E7EB;
+  transition: all 0.3s;
+}
+
+.club-item:active {
+  border-color: #DF76B0;
+  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.08), 0 2rpx 4rpx rgba(0, 0, 0, 0.06);
+  transform: scale(0.99);
 }
 
 /* 协会上部分：协会名称 */
@@ -74,7 +82,7 @@
 .club-title {
   font-size: 28rpx;
   line-height: 1.3;
-  color: #333;
+  color: #1A1D1F;
   font-weight: 600;
   word-break: break-word;
   display: -webkit-box;
@@ -86,7 +94,7 @@
 
 .club-president {
   font-size: 22rpx;
-  color: #999;
+  color: #6F767E;
   display: flex;
   align-items: center;
   gap: 4rpx;
@@ -94,7 +102,7 @@
 
 .club-description {
   font-size: 22rpx;
-  color: #999;
+  color: #6F767E;
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;

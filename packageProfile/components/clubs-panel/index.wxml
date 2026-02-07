@@ -36,11 +36,12 @@
           </view>
 
           <!-- 真实内容 -->
-          <view wx:else bind:tap="onClubTap" data-club-id="{{item.club_id}}">
-            <!-- 灰色蒙层 -->
-            <view wx:if="{{item.isDelete}}" class="club-overlay">
-              <text>协会已删除</text>
-            </view>
+          <ripple wx:if="{{!item.loading}}" color="rgba(0, 0, 0, 0.5)" duration="800">
+            <view bind:tap="onClubTap" data-club-id="{{item.club_id}}">
+              <!-- 灰色蒙层 -->
+              <view wx:if="{{item.isDelete}}" class="club-overlay">
+                <text>协会已删除</text>
+              </view>
             
             <!-- 上部分：协会名称 -->
             <view class="club-name-header">
@@ -72,7 +73,7 @@
                 <text class="club-description">{{item.description}}</text>
               </view>
             </view>
-          </view>
+          </ripple>
         </view>
       </view>
       

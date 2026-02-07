@@ -4,6 +4,7 @@
     "t-image": "tdesign-miniprogram/image/image",
     "t-icon": "tdesign-miniprogram/icon/icon",
     "t-skeleton": "tdesign-miniprogram/skeleton/skeleton",
+    "ripple": "/components/ripple/index",
     "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",
     "club-manage-panel": "/packageClub/components/club-manage-panel/index",
     "club-detail-panel": "/packageClub/components/club-detail-panel/index",

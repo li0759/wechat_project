@@ -13,6 +13,7 @@
     "t-icon": "tdesign-miniprogram/icon/icon",
     "t-loading": "tdesign-miniprogram/loading/loading",
     "t-skeleton": "tdesign-miniprogram/skeleton/skeleton",
+    "ripple": "/components/ripple/index",
     "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",
     "event-manage-panel": "/packageEvent/components/event-manage-panel/index",
     "event-manage-skeleton": "/components/panel-skeleton/event-manage-skeleton/index",

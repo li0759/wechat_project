@@ -37,10 +37,18 @@ page {
 /* 活动项 */
 .event-item {
   background: #fff;
-  border-radius: 12rpx;
+  border-radius: 16rpx;
   padding: 16rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.06), 0 1rpx 2rpx rgba(0, 0, 0, 0.04);
+  border: 1rpx solid #E5E7EB;
   position: relative;
+  transition: all 0.3s;
+}
+
+.event-item:active {
+  border-color: #DF76B0;
+  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.08), 0 2rpx 4rpx rgba(0, 0, 0, 0.06);
+  transform: scale(0.99);
 }
 
 /* 活动上部分：协会名称 */
@@ -80,7 +88,7 @@ page {
 .event-title {
   font-size: 28rpx;
   line-height: 1.3;
-  color: #333;
+  color: #1A1D1F;
   font-weight: 600;
   word-break: break-word;
   display: -webkit-box;
@@ -92,7 +100,7 @@ page {
 
 .event-time {
   font-size: 22rpx;
-  color: #999;
+  color: #6F767E;
   display: flex;
   align-items: center;
   gap: 4rpx;
@@ -100,7 +108,7 @@ page {
 
 .event-description {
   font-size: 22rpx;
-  color: #999;
+  color: #6F767E;
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -124,23 +132,23 @@ page {
 }
 
 .status-tag.prego {
-  background: #1890ff;
+  background: #3B82F6;
 }
 
 .status-tag.going {
-  background: #52c41a;
+  background: #10B981;
 }
 
 .status-tag.ended {
-  background: #999;
+  background: #9A9FA5;
 }
 
 .status-tag.cancelled {
-  background: #ff4757;
+  background: #EF4444;
 }
 
 .status-tag.club-deleted {
-  background: #666;
+  background: #6F767E;
 }
 
 /* 灰色蒙层效果 */

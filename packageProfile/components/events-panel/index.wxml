@@ -39,11 +39,12 @@
                 </view>
                 
                 <!-- 真实内容 -->
-              <view wx:else bind:tap="onEventTap" data-event_id="{{item.event_id}}" data-user_managed="{{item.cur_user_managed}}">
-                <!-- 灰色蒙层 -->
-                <view wx:if="{{item.is_cancelled || item.club_deleted}}" class="event-overlay">
-                  <text>{{item.is_cancelled ? '活动已取消' : '协会已删除'}}</text>
-                </view>
+              <ripple wx:if="{{!item.loading}}" color="rgba(0, 0, 0, 0.5)" duration="800">
+                <view bind:tap="onEventTap" data-event_id="{{item.event_id}}" data-user_managed="{{item.cur_user_managed}}">
+                  <!-- 灰色蒙层 -->
+                  <view wx:if="{{item.is_cancelled || item.club_deleted}}" class="event-overlay">
+                    <text>{{item.is_cancelled ? '活动已取消' : '协会已删除'}}</text>
+                  </view>
                 
                 <!-- 上部分：协会名称 -->
                 <view class="event-club-header">
@@ -86,7 +87,7 @@
                     <text class="event-description">{{item.content}}</text>
                   </view>
                 </view>
-              </view>
+              </ripple>
             </view>
           </view>
           
