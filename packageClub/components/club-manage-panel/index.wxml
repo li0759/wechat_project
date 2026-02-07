@@ -203,43 +203,46 @@
                 <view class="popup-body popup-body-full">
                   <scroll-view class="activities-scroll" scroll-y lower-threshold="120">
                     <view wx:if="{{clubActivities.length > 0}}" class="activities-list">
-                      <view
+                      <ripple
                         wx:for="{{clubActivities}}"
                         wx:key="event_id"
-                        class="activity-item {{item.is_cancelled ? 'activity-cancelled' : ''}}"
+                        ripple-color="rgba(0, 0, 0, 0.5)"
+                        duration="{{800}}"
                         bindtap="onActivityItemTap"
                         data-id="{{item.event_id}}"
                       >
-                        <!-- 取消状态遮罩层 -->
-                        <view wx:if="{{item.is_cancelled}}" class="activity-overlay">
-                          <text>活动已取消</text>
-                        </view>
-                        
-                        <view class="activity-cover">
-                          <image class="activity-cover-img" src="{{item.cover}}" mode="aspectFill" wx:if="{{item.cover}}" />
-                          <view class="activity-cover-ph" wx:else>
-                            <t-icon name="image" size="36" color="#ccc" />
+                        <view class="activity-item {{item.is_cancelled ? 'activity-cancelled' : ''}}">
+                          <!-- 取消状态遮罩层 -->
+                          <view wx:if="{{item.is_cancelled}}" class="activity-overlay">
+                            <text>活动已取消</text>
+                          </view>
+                          
+                          <view class="activity-cover">
+                            <image class="activity-cover-img" src="{{item.cover}}" mode="aspectFill" wx:if="{{item.cover}}" />
+                            <view class="activity-cover-ph" wx:else>
+                              <t-icon name="image" size="36" color="#ccc" />
+                            </view>
+                          </view>
+                          <view class="activity-info">
+                            <view class="activity-title-row">
+                              <text class="activity-title clamp-1">{{item.title}}</text>
+                              <!-- 状态标签 -->
+                              <text wx:if="{{item.is_cancelled}}" class="activity-status-tag cancelled">已取消</text>
+                              <text wx:elif="{{item.actual_endTime}}" class="activity-status-tag ended">已结束</text>
+                              <text wx:elif="{{item.actual_startTime}}" class="activity-status-tag going">进行中</text>
+                              <text wx:else class="activity-status-tag prego">预计开始</text>
+                            </view>
+                            <view class="activity-sub clamp-1">{{item.content}}</view>
+                            <view class="activity-meta">
+                              <t-icon name="time" size="14" color="#999" />
+                              <text>{{item.pre_startTime || item.startTime || ''}}</text>
+                            </view>
+                          </view>
+                          <view class="activity-arrow">
+                            <t-icon name="chevron-right" size="18" color="#999" />
                           </view>
                         </view>
-                        <view class="activity-info">
-                          <view class="activity-title-row">
-                            <text class="activity-title clamp-1">{{item.title}}</text>
-                            <!-- 状态标签 -->
-                            <text wx:if="{{item.is_cancelled}}" class="activity-status-tag cancelled">已取消</text>
-                            <text wx:elif="{{item.actual_endTime}}" class="activity-status-tag ended">已结束</text>
-                            <text wx:elif="{{item.actual_startTime}}" class="activity-status-tag going">进行中</text>
-                            <text wx:else class="activity-status-tag prego">预计开始</text>
-                          </view>
-                          <view class="activity-sub clamp-1">{{item.content}}</view>
-                          <view class="activity-meta">
-                            <t-icon name="time" size="14" color="#999" />
-                            <text>{{item.pre_startTime || item.startTime || ''}}</text>
-                          </view>
-                        </view>
-                        <view class="activity-arrow">
-                          <t-icon name="chevron-right" size="18" color="#999" />
-                        </view>
-                      </view>
+                      </ripple>
                     </view>
                     <view wx:else class="empty-state">
                       <t-icon name="calendar" size="120rpx" color="#ddd" />
@@ -758,10 +761,12 @@
               bind:expand="onMemberPickerExpand"
               bind:collapse="onAddMemberCollapse"
             >
-              <view slot="trigger" class="people-item">
-                <view class="people-plus">+</view>
-                <view class="people-label">成员</view>
-              </view>
+              <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+                <view class="people-item">
+                  <view class="people-plus">+</view>
+                  <view class="people-label">成员</view>
+                </view>
+              </ripple>
 
                 <view slot="content" class="am-sheet">
                   <!-- 头像墙 -->
@@ -1331,10 +1336,12 @@
         </view>
 
         <view class="action-right">
-          <view class="action-btn tertiary" bindtap="deleteClub">
-            <t-icon name="delete" size="18" color="#EF4444" />
-            <text>删除协会</text>
-          </view>
+          <ripple ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}" bindtap="deleteClub">
+            <view class="action-btn tertiary">
+              <t-icon name="delete" size="18" color="#EF4444" />
+              <text>删除协会</text>
+            </view>
+          </ripple>
         </view>
       </block>
         

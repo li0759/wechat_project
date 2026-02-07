@@ -235,6 +235,13 @@
   margin: 0 auto 16rpx;
 }
 
+/* 移除人员管理面板的 active 效果 */
+.panel-people:active {
+  border-color: #E5E7EB;
+  box-shadow: var(--md-sys-elevation-1);
+  transform: none;
+}
+
 /* 成员排序选择器 */
 .member-sort-bar {
   display: flex;
