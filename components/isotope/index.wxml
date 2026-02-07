@@ -5,12 +5,19 @@
     wx:key="id"
     class="isotope-item-wrapper {{item._isPending ? 'isotope-item-pending' : ''}} {{item.status ? 'isotope-item-status-' + item.status : ''}}"
     style="position: absolute; left: {{item.x}}rpx; top: {{item.y}}rpx; width: {{item.width}}rpx; height: {{item.height + (showLabel ? labelHeight : 0)}}rpx; transition: {{item._noTransition ? 'none' : 'all ' + transitionDuration}}; opacity: {{item.opacity !== undefined ? item.opacity : (item.loaded ? 1 : 0)}}; transform: translate3d({{item.translateX || 0}}rpx, {{item.translateY || 0}}rpx, 0);"
-    bindtouchstart="onItemTouchStart"
-    bindtouchend="onItemTouchEnd"
     data-index="{{index}}"
     data-id="{{item.id}}"
     data-item="{{item}}"
   >
+    <ripple 
+      ripple-color="rgba(0, 0, 0, 0.5)" 
+      duration="{{800}}"
+      bindtouchstart="onItemTouchStart"
+      bindtouchend="onItemTouchEnd"
+      data-index="{{index}}"
+      data-id="{{item.id}}"
+      data-item="{{item}}"
+    >
     <!-- 图片区域 -->
     <view class="isotope-item-image" style="width: 100%; height: {{item.height}}rpx; {{imageStyleStr ? imageStyleStr + ';' : ''}} {{item._isPending ? 'border: 4rpx solid rgba(0,0,0,0.28); box-sizing: border-box;' : ''}} overflow: hidden; position: relative;">
       <t-image
@@ -58,6 +65,7 @@
       class="isotope-item-label"
       style="width: 100%; height: {{labelHeight}}rpx; {{labelStyleStr}}"
     >{{item.label}}</view>
+    </ripple>
   </view>
 </view>
 

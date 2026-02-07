@@ -2,7 +2,8 @@
   "component": true,
   "usingComponents": {
     "t-image": "tdesign-miniprogram/image/image",
-    "t-icon": "tdesign-miniprogram/icon/icon"
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "ripple": "/components/ripple/index"
   }
 }
 
