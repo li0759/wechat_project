@@ -197,12 +197,12 @@
           <swiper class="hot-events-swiper" indicator-dots="{{true}}" interval="{{3000}}" duration="{{500}}" circular="{{true}}">
             <swiper-item wx:for="{{hotActivities}}" wx:key="event_id" wx:for-index="hotIndex" list-item>
               <ripple
-                ripple-color="rgba(0, 0, 0, 0.2)"
+                ripple-color="rgba(223, 118, 176, 0.8)"
                 duration="{{800}}"
                 bindtap="openGlobalPopup"
                 data-popup-type="{{item.cur_user_managed ? 'event-manage' : 'event-detail'}}"
                 data-popup-id="{{item.event_id}}"
-                data-bg-color="#f7f8fa"
+                data-bg-color="rgba(223, 118, 176, 0.8)"
                 data-sheet-bg-color="#f7f8fa"
               >
                 <view class="hot-event-card">
@@ -258,12 +258,12 @@
                 <!-- 阶段2&3：数据已加载 -->
                 <ripple 
                   wx:else
-                  ripple-color="rgba(0, 0, 0, 0.5)"
+                  ripple-color="rgba(223, 118, 176, 0.8)"
                   duration="{{800}}"
                   bindtap="openGlobalPopup"
                   data-popup-type="{{item.cur_user_managed ? 'event-manage' : 'event-detail'}}"
                   data-popup-id="{{item.event_id}}"
-                  data-bg-color="#f7f8fa"
+                  data-bg-color="rgba(223, 118, 176, 0.8)"
                   data-sheet-bg-color="#f7f8fa"
                 >
                   <view class="card-wrapper">
@@ -313,12 +313,12 @@
                 <!-- 阶段2&3：数据已加载 -->
                 <ripple 
                   wx:else
-                  ripple-color="rgba(0, 0, 0, 0.5)"
+                  ripple-color="rgba(223, 118, 176, 0.8)"
                   duration="{{800}}"
                   bindtap="openGlobalPopup"
                   data-popup-type="{{item.cur_user_managed ? 'event-manage' : 'event-detail'}}"
                   data-popup-id="{{item.event_id}}"
-                  data-bg-color="#f7f8fa"
+                  data-bg-color="rgba(223, 118, 176, 0.8)"
                   data-sheet-bg-color="#f7f8fa"
                 >
                   <view class="card-wrapper">
@@ -372,12 +372,12 @@
           <swiper class="hot-clubs-swiper" indicator-dots="{{true}}" interval="{{4000}}" duration="{{600}}" circular="{{true}}" bindchange="onClubSwiperChange">
             <swiper-item wx:for="{{hotClubs}}" wx:key="club_id" wx:for-index="hotIndex" list-item>
               <ripple
-                ripple-color="rgba(0, 0, 0, 0.2)"
+                ripple-color="rgba(223, 118, 176, 0.8)"
                 duration="{{800}}"
                 bindtap="openGlobalPopup"
                 data-popup-type="{{item.cur_user_managed ? 'club-manage' : 'club-detail'}}"
                 data-popup-id="{{item.club_id}}"
-                data-bg-color="{{item.cur_user_managed ? '#f5f5f5' : '#fff'}}"
+                data-bg-color="rgba(223, 118, 176, 0.8)"
                 data-sheet-bg-color="{{item.cur_user_managed ? '#f5f5f5' : '#fff'}}"
               >
                 <view class="hot-club-poster-card">
@@ -451,12 +451,12 @@
                 <!-- 阶段2&3：数据已加载 -->
                 <ripple 
                   wx:else
-                  ripple-color="rgba(0, 0, 0, 0.2)"
+                  ripple-color="rgba(223, 118, 176, 0.8)"
                   duration="{{800}}"
                   bindtap="openGlobalPopup"
                   data-popup-type="{{item.cur_user_managed ? 'club-manage' : 'club-detail'}}"
                   data-popup-id="{{item.club_id}}"
-                  data-bg-color="{{item.cur_user_managed ? '#f5f5f5' : '#fff'}}"
+                  data-bg-color="rgba(223, 118, 176, 0.8)"
                   data-sheet-bg-color="{{item.cur_user_managed ? '#f5f5f5' : '#fff'}}"
                 >
                   <view class="card-wrapper">
@@ -502,12 +502,12 @@
                 <!-- 阶段2&3：数据已加载 -->
                 <ripple 
                   wx:else
-                  ripple-color="rgba(0, 0, 0, 0.2)"
+                  ripple-color="rgba(223, 118, 176, 0.8)"
                   duration="{{800}}"
                   bindtap="openGlobalPopup"
                   data-popup-type="{{item.cur_user_managed ? 'club-manage' : 'club-detail'}}"
                   data-popup-id="{{item.club_id}}"
-                  data-bg-color="{{item.cur_user_managed ? '#f5f5f5' : '#fff'}}"
+                  data-bg-color="rgba(223, 118, 176, 0.8)"
                   data-sheet-bg-color="{{item.cur_user_managed ? '#f5f5f5' : '#fff'}}"
                 >
                   <view class="card-wrapper">

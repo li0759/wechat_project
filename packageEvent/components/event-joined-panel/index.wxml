@@ -378,7 +378,7 @@
       </button>
       
       <!-- 退出活动按钮 -->
-      <ripple ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}" bindtap="quitEvent">
+      <ripple ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}" bindtap="quitEvent">
         <view class="action-btn tertiary">
           <t-icon name="close-circle" size="18" color="#EF4444" />
           <text>退出活动</text>

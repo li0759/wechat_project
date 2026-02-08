@@ -302,34 +302,9 @@ Component({
     },
 
     /**
-     * 触摸开始 - 记录起始位置和时间（协会封面）
-     */
-    onClubTouchStart(e) {
-      const touch = e.changedTouches && e.changedTouches[0];
-      if (touch) {
-        this._clubTouchStartX = touch.clientX;
-        this._clubTouchStartY = touch.clientY;
-        this._clubTouchStartTime = Date.now();
-      }
-    },
-
-    /**
      * 点击协会封面 - 打开嵌套弹窗
      */
     onClubTap(e) {
-      // 判断是否为拖动操作
-    const touch = e.changedTouches && e.changedTouches[0];
-      if (touch && this._clubTouchStartX !== undefined) {
-        const dx = Math.abs(touch.clientX - this._clubTouchStartX);
-        const dy = Math.abs(touch.clientY - this._clubTouchStartY);
-        const dt = Date.now() - (this._clubTouchStartTime || 0);
-        
-        // 如果移动距离超过10px或时间超过300ms，认为是拖动而非点击
-    if (dx > 10 || dy > 10 || dt > 300) {
-          return;
-        }
-      }
-
       const dataset = e.currentTarget.dataset;
       const clubId = dataset.clubId;
       const isManaged = dataset.isManaged;
@@ -338,10 +313,13 @@ Component({
       console.log('onClubTap - clubId:', clubId, 'isManaged:', isManaged, 'type:', typeof isManaged);
       
       // 获取点击坐标
-    let tapX, tapY;
-      if (touch) {
-        tapX = touch.clientX;
-        tapY = touch.clientY;
+      let tapX, tapY;
+      if (e.changedTouches && e.changedTouches[0]) {
+        tapX = e.changedTouches[0].clientX;
+        tapY = e.changedTouches[0].clientY;
+      } else if (e.touches && e.touches[0]) {
+        tapX = e.touches[0].clientX;
+        tapY = e.touches[0].clientY;
       } else {
         const sys = wx.getSystemInfoSync();
         tapX = sys.windowWidth / 2;
@@ -351,7 +329,7 @@ Component({
       console.log('onClubTap:', { clubId, isManaged, tapX, tapY });
       
       // 根据是否管理该协会，打开不同的弹窗
-    if (isManaged) {
+      if (isManaged) {
         console.log('打开协会管理弹窗');
         this.openNestedClubManage(clubId, tapX, tapY);
       } else {

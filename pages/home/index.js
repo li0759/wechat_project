@@ -82,8 +82,6 @@ Page({
       renderPanel: false,  // 是否渲染 panel 组件
       type: '', // 'event-detail', 'event-manage', 'club-detail', 'club-manage'
       id: '',
-      bgColor: '#f7f8fa',
-      sheetBgColor: '#f7f8fa',
       tapX: 0,
       tapY: 0
     }

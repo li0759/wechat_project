@@ -36,7 +36,7 @@
           </view>
 
           <!-- 真实内容 -->
-          <ripple wx:if="{{!item.loading}}" rippleColor="rgba(0, 0, 0, 0.5)" duration="800">
+          <ripple wx:if="{{!item.loading}}" rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
             <view bind:tap="onClubTap" data-club-id="{{item.club_id}}">
               <!-- 灰色蒙层 -->
               <view wx:if="{{item.isDelete}}" class="club-overlay">

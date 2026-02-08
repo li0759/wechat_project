@@ -58,7 +58,7 @@
     <view class="rows">
       <!-- 发布协会（独立框） -->
       <expandable-container id="ec-club" expanded-width="700" expanded-height="900" bg-color="#f2f3f5">
-        <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+        <ripple slot="trigger" ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}">
           <view class="row row-100">
             <view class="row-left">
               <text class="row-label">发布协会</text>
@@ -91,7 +91,7 @@
 
       <!-- 活动标题（独立框） -->
       <expandable-container id="ec-title" expanded-width="700" expanded-height="520" bg-color="#f2f3f5">
-        <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+        <ripple slot="trigger" ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}">
           <view class="row row-100">
             <view class="row-left">
               <text class="row-label">活动标题</text>
@@ -120,7 +120,7 @@
 
       <!-- 预计开始（独立框） -->
       <expandable-container id="ec-pre-start" expanded-width="700" expanded-height="700" bg-color="#f2f3f5">
-        <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+        <ripple slot="trigger" ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}">
           <view class="row row-100">
             <view class="row-left">
               <text class="row-label">预计开始</text>
@@ -159,7 +159,7 @@
 
       <!-- 预计结束（独立框） -->
       <expandable-container id="ec-pre-end" expanded-width="700" expanded-height="700" bg-color="#f2f3f5">
-        <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+        <ripple slot="trigger" ripple-color="rgbrgba(223, 118, 176, 0.8)a(0, 0, 0, 0.5)" duration="{{800}}">
           <view class="row row-100">
             <view class="row-left">
               <text class="row-label">预计结束</text>
@@ -198,7 +198,7 @@
 
       <!-- 活动详情（独立框） -->
       <expandable-container id="ec-content" expanded-width="700" expanded-height="980" bg-color="#f2f3f5">
-        <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+        <ripple slot="trigger" ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}">
           <view class="row row-basic">
             <view class="row-basic-left">
               <text class="row-label">活动详情</text>
@@ -238,7 +238,7 @@
       <view class="split-row row-300">
         <view class="split-half">
           <!-- 直接触发选择封面（不再先弹窗） -->
-          <ripple ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}" bindtap="manualTriggerUpload">
+          <ripple ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}" bindtap="manualTriggerUpload">
             <view class="panel panel-300">
               <view class="panel-header">
                 <view class="panel-title">
@@ -260,7 +260,7 @@
 
         <view class="split-half">
           <!-- 直接触发地图选择（不再先弹窗） -->
-          <ripple ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}" bindtap="chooseLocation">
+          <ripple ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}" bindtap="chooseLocation">
             <view class="panel panel-300">
               <view class="panel-header">
                 <view class="panel-title">
@@ -282,7 +282,7 @@
       </view>
 
       <expandable-container id="create-budget" expanded-width="700" expanded-height="520" bg-color="#f2f3f5">
-        <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+        <ripple slot="trigger" ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}">
           <view class="row row-100">
             <view class="row-left">
               <text class="row-label">预算</text>
@@ -313,7 +313,7 @@
       <view class="split-row row-300">
         <view class="split-half">
           <expandable-container_fullscreen id="card-schedule" expanded-width="750" expanded-height="1800" bg-color="#f2f3f5">
-            <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+            <ripple slot="trigger" ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}">
               <view class="panel panel-300">
                 <view class="panel-header">
                   <view class="panel-title">
@@ -442,7 +442,7 @@
 
         <view class="split-half">
           <!-- 模板选择状态显示面板 -->
-          <ripple ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}" bindtap="openSelectorPopup">
+          <ripple ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}" bindtap="openSelectorPopup">
             <view class="panel panel-300">
               <view class="panel-header">
                 <view class="panel-title">
@@ -468,7 +468,7 @@
         <view class="split-half">
           <!-- 对齐 event-manage：活动人员（全屏弹窗 + 同款网格/详情/右上角 +/-） -->
           <expandable-container_fullscreen id="card-members" expanded-width="750" expanded-height="1600" bg-color="#f2f3f5" bind:expand="onMemberPanelExpand">
-            <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+            <ripple slot="trigger" ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}">
               <view class="panel panel-300">
                 <view class="panel-header">
                   <view class="panel-title">
@@ -510,7 +510,7 @@
                           expanded-height="900"
                           bg-color="#f2f3f5"
                         >
-                          <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+                          <ripple slot="trigger" ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}">
                             <view class="member-avatar-trigger">
                               <image class="member-avatar status-{{item.status}}" src="{{item.image || defaultAvatarUrl}}" mode="aspectFill"  data-user-id="{{item.user_id}}" />
                               <view
@@ -601,7 +601,7 @@
 
         <view class="split-half">
           <expandable-container id="ec-first-moment" expanded-width="700" expanded-height="980" bg-color="#f2f3f5">
-            <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+            <ripple slot="trigger" ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}">
               <view class="panel panel-300">
                 <view class="panel-header">
                   <view class="panel-title">

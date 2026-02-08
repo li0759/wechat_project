@@ -1,35 +1,26 @@
+/* club-overview-panel 组件样式 - 对齐设计系统规范 */
 .club-overview-panel {
+  --md-sys-color-primary: #DF76B0;
+  --md-sys-color-primary-dark: #C85A9E;
+  --md-sys-color-primary-light: rgba(223, 118, 176, 0.1);
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-surface: #FFFFFF;
+  --md-sys-color-on-surface: #1A1D1F;
+  --md-sys-color-surface-variant: #F2F4F7;
+  --md-sys-color-on-surface-variant: #6F767E;
+  --md-sys-color-background: #F8F9FB;
+  --md-sys-elevation-1: 0 2rpx 4rpx rgba(0, 0, 0, 0.06), 0 1rpx 2rpx rgba(0, 0, 0, 0.04);
+  --md-sys-elevation-2: 0 4rpx 8rpx rgba(0, 0, 0, 0.08), 0 2rpx 4rpx rgba(0, 0, 0, 0.06);
+  --md-sys-shape-corner-medium: 16rpx;
   width: 100%;
   height: 100vh;
-  background: #f7f8fa;
+  background: rgba(223, 118, 176, 0.3);
+  color: var(--md-sys-color-on-surface);
 }
 
 .overview-scroll {
   width: 100%;
   height: 100vh;
-}
-
-/* 加载状态 */
-.loading-container {
-  padding: 20rpx;
-}
-
-.club-skeleton {
-  display: flex;
-  gap: 20rpx;
-  padding: 20rpx;
-  margin-bottom: 20rpx;
-  background: #fff;
-  border-radius: 16rpx;
-}
-
-.club-skeleton-left {
-  width: 200rpx;
-  flex-shrink: 0;
-}
-
-.club-skeleton-right {
-  flex: 1;
 }
 
 /* 协会列表 */
@@ -42,23 +33,30 @@
   gap: 20rpx;
   padding: 20rpx;
   margin-bottom: 20rpx;
-  background: #fff;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+  border-radius: var(--md-sys-shape-corner-medium);
+  box-shadow: var(--md-sys-elevation-1);
+  background: rgba(223, 118, 176, 0.1);
   height: 380rpx;
+  overflow: hidden;
 }
 
 /* 左侧协会信息 */
 .club-info {
   width: 200rpx;
+  height: 380rpx;  /* 明确高度，与 club-item 一致 */
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  border-radius: 12rpx;
+  overflow: hidden;
 }
 
 .club-cover {
-  width: 200rpx;
+  width: 100%;
   height: 250rpx;
-  background: #f0f0f0;
+  background: var(--md-sys-color-surface-variant);
+  display: block;
+  flex-shrink: 0;
 }
 
 .club-details {
@@ -72,7 +70,7 @@
 .club-name {
   font-size: 28rpx;
   font-weight: 600;
-  color: #333;
+  color: var(--md-sys-color-on-surface);
   margin-bottom: 8rpx;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -83,7 +81,7 @@
 
 .club-desc {
   font-size: 22rpx;
-  color: #666;
+  color: var(--md-sys-color-on-surface-variant);
   line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -97,7 +95,7 @@
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: #f8f9fa;
+  border-radius: 12rpx;
 }
 
 .events-loading {
@@ -111,7 +109,8 @@
 
 .loading-text {
   font-size: 24rpx;
-  color: #999;
+  color: var(--md-sys-color-on-surface-variant);
+  margin-top: 8rpx;
 }
 
 /* 加载更多 */
@@ -124,7 +123,7 @@
 
 .load-more-text {
   font-size: 24rpx;
-  color: #999;
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 .no-more {
@@ -136,7 +135,7 @@
 
 .no-more text {
   font-size: 24rpx;
-  color: #999;
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 /* 空状态 */

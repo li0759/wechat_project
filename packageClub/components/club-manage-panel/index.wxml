@@ -79,7 +79,7 @@
       <view class="rows">
         <!-- 基本信息（名称 + 简介） -->
         <expandable-container id="row-basic" expanded-width="700" expanded-height="750" bg-color="#f2f3f5" bind:expand="onBasicExpand">
-          <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+          <ripple slot="trigger" ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}">
             <view class="row row-basic row-editable">
               <view class="row-basic-left">
                 <text class="row-label">基本信息</text>
@@ -120,7 +120,7 @@
 
         <!-- 协会章程 -->
         <expandable-container id="row-charter" expanded-width="700" expanded-height="750" bg-color="#f2f3f5" bind:expand="onCharterExpand">
-          <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+          <ripple slot="trigger" ripple-color="rgba(rgba(223, 118, 176, 0.8)0, 0, 0, 0.5)" duration="{{800}}">
             <view class="row row-100 row-editable">
               <view class="row-left">
                 <text class="row-label">协会章程</text>
@@ -159,7 +159,7 @@
         <!-- 封面 + 活动管理：同一行 -->
         <view class="split-row">
           <view class="split-half">
-            <ripple ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}" bindtap="onCoverClick">
+            <ripple ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}" bindtap="onCoverClick">
               <view class="panel panel-300">
                 <view class="panel-header">
                   <view class="panel-title">
@@ -177,7 +177,7 @@
 
           <view class="split-half">
             <expandable-container_fullscreen id="card-activities" expanded-width="750" expanded-height="1800" bg-color="#f2f3f5" fullscreen-top-padding="{{0}}">
-              <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+              <ripple slot="trigger" ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}">
                 <view class="panel panel-300">
                   <view class="panel-header">
                     <view class="panel-title">
@@ -206,7 +206,7 @@
                       <ripple
                         wx:for="{{clubActivities}}"
                         wx:key="event_id"
-                        ripple-color="rgba(0, 0, 0, 0.5)"
+                        ripple-color="rgba(223, 118, 176, 0.8)"
                         duration="{{800}}"
                         bindtap="onActivityItemTap"
                         data-id="{{item.event_id}}"
@@ -456,7 +456,7 @@
                     bg-color="#f2f3f5"
                     z-index="30000"
                   >
-                    <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+                    <ripple slot="trigger" ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}">
                       <view class="people-avatar-trigger">
                         <image class="people-avatar" src="{{peoplePresident.avatar || '/assets/images/default-avatar.png'}}" mode="aspectFill" />
                       </view>
@@ -763,7 +763,7 @@
               bind:expand="onMemberPickerExpand"
               bind:collapse="onAddMemberCollapse"
             >
-              <ripple slot="trigger" ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}">
+              <ripple slot="trigger" ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}">
                 <view class="people-item">
                   <view class="people-plus">+</view>
                   <view class="people-label">成员</view>
@@ -1338,7 +1338,7 @@
         </view>
 
         <view class="action-right">
-          <ripple ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}" bindtap="deleteClub">
+          <ripple ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}" bindtap="deleteClub">
             <view class="action-btn tertiary">
               <t-icon name="delete" size="18" color="#EF4444" />
               <text>删除协会</text>

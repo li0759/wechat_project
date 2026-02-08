@@ -40,53 +40,45 @@
       <view class="function-group">
         <view class="function-title">个人中心</view>
         <view class="function-grid">
-          <view class="grid-item {{activeGridItem === 0 ? 'grid-item-active' : ''}}" 
-                bindtap="navigateToUserInfo" 
-                bindtouchstart="handleGridItemTouchStart" 
-                bindtouchend="handleGridItemTouchEnd" 
-                data-index="0">
-            <view class="grid-icon">
-              <van-icon name="user-o" size="24px" color="rgb(223, 118, 176)" />
-              <view class="badge" wx:if="{{false}}">0</view>
+          <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+            <view class="grid-item" bind:tap="navigateToUserInfo">
+              <view class="grid-icon">
+                <van-icon name="user-o" size="24px" color="rgb(223, 118, 176)" />
+                <view class="badge" wx:if="{{false}}">0</view>
+              </view>
+              <view class="grid-text">个人信息</view>
             </view>
-            <view class="grid-text">个人信息</view>
-          </view>
+          </ripple>
           
-          <view class="grid-item {{activeGridItem === 1 ? 'grid-item-active' : ''}}" 
-                bindtap="navigateToJoinedClubs" 
-                bindtouchstart="handleGridItemTouchStart" 
-                bindtouchend="handleGridItemTouchEnd" 
-                data-index="1">
-            <view class="grid-icon">
-              <van-icon name="friends-o" size="24px" color="rgb(223, 118, 176)" />
-              <view class="badge" wx:if="{{statistics.joinedClubs > 0}}">{{statistics.joinedClubs}}</view>
+          <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+            <view class="grid-item" bind:tap="navigateToJoinedClubs">
+              <view class="grid-icon">
+                <van-icon name="friends-o" size="24px" color="rgb(223, 118, 176)" />
+                <view class="badge" wx:if="{{statistics.joinedClubs > 0}}">{{statistics.joinedClubs}}</view>
+              </view>
+              <view class="grid-text">我的协会</view>
             </view>
-            <view class="grid-text">我的协会</view>
-          </view>
+          </ripple>
           
-          <view class="grid-item {{activeGridItem === 2 ? 'grid-item-active' : ''}}" 
-                bindtap="navigateToMyApplications" 
-                bindtouchstart="handleGridItemTouchStart" 
-                bindtouchend="handleGridItemTouchEnd" 
-                data-index="2">
-            <view class="grid-icon">
-              <van-icon name="records" size="24px" color="rgb(223, 118, 176)" />
-              <view class="badge" wx:if="{{statistics.pendingApplications > 0}}">{{statistics.pendingApplications}}</view>
+          <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+            <view class="grid-item" bind:tap="navigateToMyApplications">
+              <view class="grid-icon">
+                <van-icon name="records" size="24px" color="rgb(223, 118, 176)" />
+                <view class="badge" wx:if="{{statistics.pendingApplications > 0}}">{{statistics.pendingApplications}}</view>
+              </view>
+              <view class="grid-text">入会申请</view>
             </view>
-            <view class="grid-text">入会申请</view>
-          </view>
+          </ripple>
           
-          <view class="grid-item {{activeGridItem === 3 ? 'grid-item-active' : ''}}" 
-                bindtap="navigateToPaypersonal" 
-                bindtouchstart="handleGridItemTouchStart" 
-                bindtouchend="handleGridItemTouchEnd" 
-                data-index="3">
-            <view class="grid-icon">
-              <van-icon name="balance-pay" size="24px" color="rgb(223, 118, 176)" />
-              <view class="badge" wx:if="{{statistics.unpaidPayments > 0}}">{{statistics.unpaidPayments}}</view>
+          <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+            <view class="grid-item" bind:tap="navigateToPaypersonal">
+              <view class="grid-icon">
+                <van-icon name="balance-pay" size="24px" color="rgb(223, 118, 176)" />
+                <view class="badge" wx:if="{{statistics.unpaidPayments > 0}}">{{statistics.unpaidPayments}}</view>
+              </view>
+              <view class="grid-text">我的缴费</view>
             </view>
-            <view class="grid-text">我的缴费</view>
-          </view>
+          </ripple>
         </view>
       </view>
 
@@ -94,61 +86,51 @@
       <view class="function-group">
         <view class="function-title-row">
           <view class="function-title">我的活动</view>
-          <view class="title-action" bindtap="navigateToMyEvents" data-type="all">
-            <t-icon name="view-list" size="20px" color="rgb(223, 118, 176)" />
-          </view>
+          <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+            <view class="title-action" bind:tap="navigateToMyEvents" data-type="all">
+              <t-icon name="view-list" size="24px" color="rgb(223, 118, 176)" />
+            </view>
+          </ripple>
         </view>
         <view class="function-grid">
-          <view class="grid-item {{activeGridItem === 10 ? 'grid-item-active' : ''}}" 
-                bindtap="navigateToMyEvents" 
-                bindtouchstart="handleGridItemTouchStart" 
-                bindtouchend="handleGridItemTouchEnd" 
-                data-type="prego"
-                data-index="10">
-            <view class="grid-icon">
-              <t-icon name="calendar-event" size="24px" color="rgb(223, 118, 176)" />
-              <view class="badge" wx:if="{{statistics.pregoEvents > 0}}">{{statistics.pregoEvents}}</view>
+          <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+            <view class="grid-item" bind:tap="navigateToMyEvents" data-type="prego">
+              <view class="grid-icon">
+                <t-icon name="calendar-event" size="24px" color="rgb(223, 118, 176)" />
+                <view class="badge" wx:if="{{statistics.pregoEvents > 0}}">{{statistics.pregoEvents}}</view>
+              </view>
+              <view class="grid-text">预计开始</view>
             </view>
-            <view class="grid-text">预计开始</view>
-          </view>
+          </ripple>
           
-          <view class="grid-item {{activeGridItem === 11 ? 'grid-item-active' : ''}}" 
-                bindtap="navigateToMyEvents" 
-                bindtouchstart="handleGridItemTouchStart" 
-                bindtouchend="handleGridItemTouchEnd" 
-                data-type="going"
-                data-index="11">
-            <view class="grid-icon">
-              <t-icon name="cardmembership" size="24px" color="rgb(223, 118, 176)" />
-              <view class="badge" wx:if="{{statistics.goingEvents > 0}}">{{statistics.goingEvents}}</view>
+          <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+            <view class="grid-item" bind:tap="navigateToMyEvents" data-type="going">
+              <view class="grid-icon">
+                <t-icon name="cardmembership" size="24px" color="rgb(223, 118, 176)" />
+                <view class="badge" wx:if="{{statistics.goingEvents > 0}}">{{statistics.goingEvents}}</view>
+              </view>
+              <view class="grid-text">正在进行</view>
             </view>
-            <view class="grid-text">正在进行</view>
-          </view>
+          </ripple>
           
-          <view class="grid-item {{activeGridItem === 12 ? 'grid-item-active' : ''}}" 
-                bindtap="navigateToMyEvents" 
-                bindtouchstart="handleGridItemTouchStart" 
-                bindtouchend="handleGridItemTouchEnd" 
-                data-type="ended"
-                data-index="12">
-            <view class="grid-icon">
-              <t-icon name="calendar-2" size="24px" color="rgb(223, 118, 176)" />
-              <view class="badge" wx:if="{{statistics.endedEvents > 0}}">{{statistics.endedEvents}}</view>
+          <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+            <view class="grid-item" bind:tap="navigateToMyEvents" data-type="ended">
+              <view class="grid-icon">
+                <t-icon name="calendar-2" size="24px" color="rgb(223, 118, 176)" />
+                <view class="badge" wx:if="{{statistics.endedEvents > 0}}">{{statistics.endedEvents}}</view>
+              </view>
+              <view class="grid-text">已结束</view>
             </view>
-            <view class="grid-text">已结束</view>
-          </view>
+          </ripple>
           
-          <view class="grid-item {{activeGridItem === 13 ? 'grid-item-active' : ''}}" 
-                bindtap="navigateToMyEvents" 
-                bindtouchstart="handleGridItemTouchStart" 
-                bindtouchend="handleGridItemTouchEnd" 
-                data-type="quit"
-                data-index="13">
-            <view class="grid-icon">
-              <t-icon name="close-rectangle" size="24px" color="rgb(223, 118, 176)" />
+          <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+            <view class="grid-item" bind:tap="navigateToMyEvents" data-type="quit">
+              <view class="grid-icon">
+                <t-icon name="close-rectangle" size="24px" color="rgb(223, 118, 176)" />
+              </view>
+              <view class="grid-text">已退出</view>
             </view>
-            <view class="grid-text">已退出</view>
-          </view>
+          </ripple>
         </view>
       </view>
 
@@ -156,67 +138,59 @@
       <view class="function-group" wx:if="{{isClubAdmin}}">
         <view class="function-title-row">
           <view class="function-title">我管理的活动</view>
-          <view class="title-action" bindtap="showAllManagedEvents">
-            <t-icon name="view-list" size="20px" color="rgb(223, 118, 176)" />
-          </view>
+          <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+            <view class="title-action" bind:tap="showAllManagedEvents">
+              <t-icon name="view-list" size="24px" color="rgb(223, 118, 176)" />
+            </view>
+          </ripple>
         </view>
         <view class="function-grid">
-          <view class="grid-item {{activeGridItem === 20 ? 'grid-item-active' : ''}}" 
-                bindtap="showPregoEvents" 
-                bindtouchstart="handleGridItemTouchStart" 
-                bindtouchend="handleGridItemTouchEnd" 
-                data-index="20">
-            <view class="grid-icon">
-              <t-icon name="calendar-event" size="24px" color="rgb(223, 118, 176)" />
-              <view class="badge" wx:if="{{statistics.managedPregoEvents > 0}}">{{statistics.managedPregoEvents}}</view>
+          <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+            <view class="grid-item" bind:tap="showPregoEvents">
+              <view class="grid-icon">
+                <t-icon name="calendar-event" size="24px" color="rgb(223, 118, 176)" />
+                <view class="badge" wx:if="{{statistics.managedPregoEvents > 0}}">{{statistics.managedPregoEvents}}</view>
+              </view>
+              <view class="grid-text">预计开始</view>
             </view>
-            <view class="grid-text">预计开始</view>
-          </view>
+          </ripple>
           
-          <view class="grid-item {{activeGridItem === 21 ? 'grid-item-active' : ''}}" 
-                bindtap="showGoingEvents" 
-                bindtouchstart="handleGridItemTouchStart" 
-                bindtouchend="handleGridItemTouchEnd" 
-                data-index="21">
-            <view class="grid-icon">
-              <t-icon name="cardmembership" size="24px" color="rgb(223, 118, 176)" />
-              <view class="badge" wx:if="{{statistics.managedGoingEvents > 0}}">{{statistics.managedGoingEvents}}</view>
+          <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+            <view class="grid-item" bind:tap="showGoingEvents">
+              <view class="grid-icon">
+                <t-icon name="cardmembership" size="24px" color="rgb(223, 118, 176)" />
+                <view class="badge" wx:if="{{statistics.managedGoingEvents > 0}}">{{statistics.managedGoingEvents}}</view>
+              </view>
+              <view class="grid-text">正在进行</view>
             </view>
-            <view class="grid-text">正在进行</view>
-          </view>
+          </ripple>
           
-          <view class="grid-item {{activeGridItem === 22 ? 'grid-item-active' : ''}}" 
-                bindtap="showEndedEvents" 
-                bindtouchstart="handleGridItemTouchStart" 
-                bindtouchend="handleGridItemTouchEnd" 
-                data-index="22">
-            <view class="grid-icon">
-              <t-icon name="calendar-2" size="24px" color="rgb(223, 118, 176)" />
+          <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+            <view class="grid-item" bind:tap="showEndedEvents">
+              <view class="grid-icon">
+                <t-icon name="calendar-2" size="24px" color="rgb(223, 118, 176)" />
+              </view>
+              <view class="grid-text">已结束</view>
             </view>
-            <view class="grid-text">已结束</view>
-          </view>
+          </ripple>
           
-          <view class="grid-item {{activeGridItem === 23 ? 'grid-item-active' : ''}}" 
-                bindtap="showCancelledEvents" 
-                bindtouchstart="handleGridItemTouchStart" 
-                bindtouchend="handleGridItemTouchEnd" 
-                data-index="23">
-            <view class="grid-icon">
-              <t-icon name="close-rectangle" size="24px" color="rgb(223, 118, 176)" />
+          <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+            <view class="grid-item" bind:tap="showCancelledEvents">
+              <view class="grid-icon">
+                <t-icon name="close-rectangle" size="24px" color="rgb(223, 118, 176)" />
+              </view>
+              <view class="grid-text">已取消</view>
             </view>
-            <view class="grid-text">已取消</view>
-          </view>
+          </ripple>
           
-          <view class="grid-item {{activeGridItem === 25 ? 'grid-item-active' : ''}}" 
-                bindtouchstart="onCreatePopupTouchStart" 
-                bindtouchend="navigateToCreateEvent" 
-                data-type="event-create"
-                data-index="25">
-            <view class="grid-icon">
-              <van-icon name="add-o" size="24px" color="rgb(223, 118, 176)" />
+          <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+            <view class="grid-item" bind:tap="navigateToCreateEvent" data-type="event-create">
+              <view class="grid-icon">
+                <van-icon name="add-o" size="24px" color="rgb(223, 118, 176)" />
+              </view>
+              <view class="grid-text">创建活动</view>
             </view>
-            <view class="grid-text">创建活动</view>
-          </view>
+          </ripple>
         </view>
       </view>
       
@@ -224,37 +198,45 @@
       <view class="function-group" wx:if="{{userInfo.isSuperUser}}">
         <view class="function-title">超会管理</view>
         <view class="function-grid">
-          <view class="grid-item" bindtouchstart="onCreatePopupTouchStart" bindtouchend="navigateToCreateClub" data-type="club-create">
-            <view class="grid-icon">
-              <van-icon name="add-square" size="24px" color="rgb(223, 118, 176)" />
-              <view class="badge" wx:if="{{false}}">0</view>
+          <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+            <view class="grid-item" bind:tap="navigateToCreateClub" data-type="club-create">
+              <view class="grid-icon">
+                <van-icon name="add-square" size="24px" color="rgb(223, 118, 176)" />
+                <view class="badge" wx:if="{{false}}">0</view>
+              </view>
+              <view class="grid-text">创建协会</view>
             </view>
-            <view class="grid-text">创建协会</view>
-          </view>
+          </ripple>
 
-          <view class="grid-item" bindtap="navigateToAllClubs">
-            <view class="grid-icon">
-              <van-icon name="friends-o" size="24px" color="rgb(223, 118, 176)" />
-              <view class="badge" wx:if="{{false}}">0</view>
+          <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+            <view class="grid-item" bind:tap="navigateToAllClubs">
+              <view class="grid-icon">
+                <van-icon name="friends-o" size="24px" color="rgb(223, 118, 176)" />
+                <view class="badge" wx:if="{{false}}">0</view>
+              </view>
+              <view class="grid-text">所有协会</view>
             </view>
-            <view class="grid-text">所有协会</view>
-          </view>
+          </ripple>
 
-          <view class="grid-item" bindtap="navigateToShowAllClubsEvents">
-            <view class="grid-icon">
-              <van-icon name="bar-chart-o" size="24px" color="rgb(223, 118, 176)" />
-              <view class="badge" wx:if="{{false}}">0</view>
+          <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+            <view class="grid-item" bind:tap="navigateToShowAllClubsEvents">
+              <view class="grid-icon">
+                <van-icon name="bar-chart-o" size="24px" color="rgb(223, 118, 176)" />
+                <view class="badge" wx:if="{{false}}">0</view>
+              </view>
+              <view class="grid-text">活动数据</view>
             </view>
-            <view class="grid-text">活动数据</view>
-          </view>
+          </ripple>
           
-          <view class="grid-item" bindtap="navigateToShowAllClubsUsers">
-            <view class="grid-icon">
-              <van-icon name="friends-o" size="24px" color="rgb(223, 118, 176)" />
-              <view class="badge" wx:if="{{false}}">0</view>
+          <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+            <view class="grid-item" bind:tap="navigateToShowAllClubsUsers">
+              <view class="grid-icon">
+                <van-icon name="friends-o" size="24px" color="rgb(223, 118, 176)" />
+                <view class="badge" wx:if="{{false}}">0</view>
+              </view>
+              <view class="grid-text">用户数据</view>
             </view>
-            <view class="grid-text">用户数据</view>
-          </view>
+          </ripple>
         </view>
       </view>
       
@@ -267,54 +249,65 @@
           <view class="club-title">{{item.club_name}}</view>
           
           <view class="function-grid">
-            <view class="grid-item" 
-              bindtouchstart="onManagePopupTouchStart" 
-              bindtouchend="openManagePopup" 
-              data-popup-type="club-manage" 
-              data-popup-id="{{item.club_id}}">
-              <view class="grid-icon">
-                <van-icon name="cluster-o" size="24px" color="rgb(223, 118, 176)" />
-                <view class="badge" wx:if="{{false}}">0</view>
+            <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+              <view class="grid-item" bind:tap="openManagePopup" data-popup-type="club-manage" data-popup-id="{{item.club_id}}">
+                <view class="grid-icon">
+                  <van-icon name="cluster-o" size="24px" color="rgb(223, 118, 176)" />
+                  <view class="badge" wx:if="{{false}}">0</view>
+                </view>
+                <view class="grid-text">管理协会</view>
               </view>
-              <view class="grid-text">管理协会</view>
-            </view>
-            <view class="grid-item" bindtap="navigateToShowClubEvents" data-club_id="{{item.club_id}}">
-              <view class="grid-icon">
-                <van-icon name="bar-chart-o" size="24px" color="rgb(223, 118, 176)" />
-                <view class="badge" wx:if="{{false}}">0</view>
-              </view>
-              <view class="grid-text">活动统计</view>
-            </view>        
-            <view class="grid-item" bindtap="navigateToClubMembers" data-club_id="{{item.club_id}}">
-              <view class="grid-icon">
-                <van-icon name="manager-o" size="24px" color="rgb(223, 118, 176)" />
-                <view class="badge" wx:if="{{false}}">0</view>
-              </view>
-              <view class="grid-text">成员管理</view>
-            </view>
+            </ripple>
             
-            <view class="grid-item" bindtap="navigateToClubApplications" data-club_id="{{item.club_id}}">
-              <view class="grid-icon">
-                <van-icon name="description" size="24px" color="rgb(223, 118, 176)" />
-                <view class="badge" wx:if="{{item.pending_applications > 0}}">{{item.pending_applications}}</view>
+            <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+              <view class="grid-item" bind:tap="navigateToShowClubEvents" data-club_id="{{item.club_id}}">
+                <view class="grid-icon">
+                  <van-icon name="bar-chart-o" size="24px" color="rgb(223, 118, 176)" />
+                  <view class="badge" wx:if="{{false}}">0</view>
+                </view>
+                <view class="grid-text">活动统计</view>
               </view>
-              <view class="grid-text">入会审批</view>
-            </view>
-            <view class="grid-item" bindtap="navigateToClubTimeline" data-club_id="{{item.club_id}}">
-              <view class="grid-icon">
-                <van-icon name="balance-list-o" size="24px" color="rgb(223, 118, 176)" />
-                <view class="badge" wx:if="{{false}}">0</view>
-              </view>
-              <view class="grid-text">协会收支</view>
-            </view>
+            </ripple>
             
-            <view class="grid-item" bindtap="navigateToClubFinancial" data-club_id="{{item.club_id}}" data-club_name="{{item.club_name}}">
-              <view class="grid-icon">
-                <van-icon name="chart-trending-o" size="24px" color="rgb(223, 118, 176)" />
-                <view class="badge" wx:if="{{false}}">0</view>
+            <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+              <view class="grid-item" bind:tap="navigateToClubMembers" data-club_id="{{item.club_id}}">
+                <view class="grid-icon">
+                  <van-icon name="manager-o" size="24px" color="rgb(223, 118, 176)" />
+                  <view class="badge" wx:if="{{false}}">0</view>
+                </view>
+                <view class="grid-text">成员管理</view>
               </view>
-              <view class="grid-text">收支统计</view>
-            </view>
+            </ripple>
+            
+            <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+              <view class="grid-item" bind:tap="navigateToClubApplications" data-club_id="{{item.club_id}}">
+                <view class="grid-icon">
+                  <van-icon name="description" size="24px" color="rgb(223, 118, 176)" />
+                  <view class="badge" wx:if="{{item.pending_applications > 0}}">{{item.pending_applications}}</view>
+                </view>
+                <view class="grid-text">入会审批</view>
+              </view>
+            </ripple>
+            
+            <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+              <view class="grid-item" bind:tap="navigateToClubTimeline" data-club_id="{{item.club_id}}">
+                <view class="grid-icon">
+                  <van-icon name="balance-list-o" size="24px" color="rgb(223, 118, 176)" />
+                  <view class="badge" wx:if="{{false}}">0</view>
+                </view>
+                <view class="grid-text">协会收支</view>
+              </view>
+            </ripple>
+            
+            <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+              <view class="grid-item" bind:tap="navigateToClubFinancial" data-club_id="{{item.club_id}}" data-club_name="{{item.club_name}}">
+                <view class="grid-icon">
+                  <van-icon name="chart-trending-o" size="24px" color="rgb(223, 118, 176)" />
+                  <view class="badge" wx:if="{{false}}">0</view>
+                </view>
+                <view class="grid-text">收支统计</view>
+              </view>
+            </ripple>
           </view>
           <view class="club-divider" wx:if="{{index < managedClubs.length - 1}}"></view>
         </view>
@@ -327,15 +320,12 @@
       
       <!-- 系统功能 -->
       <view class="function-group">
-        <view class="function-item logout {{activeFunctionItem === 2 ? 'function-item-active' : ''}}" 
-              bindtap="handleLogout" 
-              bindtouchstart="handleFunctionItemTouchStart" 
-              bindtouchend="handleFunctionItemTouchEnd" 
-              data-index="2" 
-              list-item>
-          <view class="item-icon"><van-icon name="close" size="24px" color="#ff5252" /></view>
-          <view class="item-text">退出登录</view>
-        </view>
+        <ripple rippleColor="rgba(239, 68, 68, 0.8)" duration="800">
+          <view class="function-item logout" bind:tap="handleLogout">
+            <view class="item-icon"><van-icon name="close" size="24px" color="#ff5252" /></view>
+            <view class="item-text">退出登录</view>
+          </view>
+        </ripple>
       </view>
     </view>
   </scroll-view>

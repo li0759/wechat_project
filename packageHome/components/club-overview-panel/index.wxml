@@ -6,20 +6,7 @@
     lower-threshold="100"
   >
     <!-- 骨架屏 - 在未初始化或加载中时显示 -->
-    <view wx:if="{{!initialized || (loading && clubList.length === 0)}}" class="loading-container">
-      <view wx:for="{{[1,2,3,4,5,6]}}" wx:key="*this" class="club-skeleton">
-        <view class="club-skeleton-left">
-          <t-skeleton animation="gradient" rowCol="{{[{ width: '200rpx', height: '200rpx', borderRadius: '12rpx' }]}}" />
-          <view style="margin-top: 12rpx;">
-            <t-skeleton animation="gradient" rowCol="{{[{ width: '160rpx', height: '32rpx', marginBottom: '8rpx' }]}}" />
-            <t-skeleton animation="gradient" rowCol="{{[{ width: '180rpx', height: '24rpx' }]}}" />
-          </view>
-        </view>
-        <view class="club-skeleton-right">
-          <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '400rpx', borderRadius: '12rpx' }]}}" />
-        </view>
-      </view>
-    </view>
+    <club-overview-skeleton wx:if="{{!initialized || (loading && clubList.length === 0)}}" />
 
     <!-- 协会列表 - 初始化完成且有数据时显示 -->
     <view wx:else class="club-list">
@@ -28,29 +15,30 @@
         wx:key="club_id" 
         class="club-item"
       >
-        <!-- 左侧：协会信息 -->
-        <view 
-          class="club-info"
-          bindtouchstart="onClubTouchStart"
-          bindtouchend="onClubTap"
-          data-club-id="{{item.club_id}}"
-          data-is-managed="{{item.cur_user_managed}}"
-        >
-          <image 
-            class="club-cover" 
-            src="{{item.cover_url}}" 
-            mode="aspectFill"
-          />
-          <view class="club-details">
-            <text class="club-name">{{item.club_name}}</text>
-            <text class="club-desc">{{item.description}}</text>
+        <!-- 左侧：协会信息（使用 ripple）-->
+        <ripple ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}">
+          <view 
+            class="club-info"
+            bind:tap="onClubTap"
+            data-club-id="{{item.club_id}}"
+            data-is-managed="{{item.cur_user_managed}}"
+          >
+            <image 
+              class="club-cover" 
+              src="{{item.cover_url}}" 
+              mode="aspectFill"
+            />
+            <view class="club-details">
+              <text class="club-name">{{item.club_name}}</text>
+              <text class="club-desc">{{item.description}}</text>
+            </view>
           </view>
-        </view>
+        </ripple>
 
-        <!-- 右侧：活动列表（isotope） -->
+        <!-- 右侧：活动列表（isotope）-->
         <view class="club-events">
           <view wx:if="{{item.eventsLoading}}" class="events-loading">
-            <van-loading size="24px" />
+            <t-loading theme="circular" size="32rpx" />
             <text class="loading-text">加载活动中...</text>
           </view>
           <isotope
@@ -61,7 +49,7 @@
             width="530rpx"
             height="380rpx"
             gutter="10"
-            transitionDuration="0.6s"
+            transitionDuration="0.3s"
             backgroundColor="transparent"
             showLabel="{{true}}"
             labelHeight="80"
@@ -125,7 +113,7 @@
     id="nestedClubManagePopup" 
     expanded-width="750" 
     expanded-height="1800" 
-    bg-color="#f5f5f5"
+    bg-color="rgba(223, 118, 176, 0.8)"
     fullscreen-top-padding="{{0}}"
     bind:collapse="onNestedClubManageCollapse"
     bind:contentReady="onNestedClubManageContentReady"
@@ -155,7 +143,7 @@
     id="nestedEventDetailPopup" 
     expanded-width="750" 
     expanded-height="1800" 
-    bg-color="#f7f8fa"
+    bg-color="rgba(223, 118, 176, 0.8)"
     fullscreen-top-padding="{{0}}"
     bind:collapse="onNestedEventDetailCollapse"
     bind:contentReady="onNestedEventDetailContentReady"
@@ -185,7 +173,7 @@
     id="nestedEventManagePopup" 
     expanded-width="750" 
     expanded-height="1800" 
-    bg-color="#f7f8fa"
+    bg-color="rgba(223, 118, 176, 0.8)"
     fullscreen-top-padding="{{0}}"
     bind:collapse="onNestedEventManageCollapse"
     bind:contentReady="onNestedEventManageContentReady"

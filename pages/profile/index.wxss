@@ -1,8 +1,20 @@
 /* pages/profile/index.wxss */
+
+/* CSS Variables - Design System */
+page {
+  --md-sys-color-primary: #DF76B0;
+  --md-sys-color-primary-dark: #C85A9E;
+  --md-sys-color-primary-light: rgba(223, 118, 176, 0.1);
+  --md-sys-color-surface: #FFFFFF;
+  --md-sys-color-surface-variant: #F2F4F7;
+  --md-sys-color-on-surface: #1A1D1F;
+  --md-sys-color-on-surface-variant: #6F767E;
+}
+
 .container {
   display: flex;
   flex-direction: column;
-  background-color: #f5f5f5;
+  background-color: #F8F9FB;
   height: 100vh;
   padding-bottom: 100rpx;
   padding-top: 0rpx!important；
@@ -17,13 +29,13 @@
 
 /* 头部用户信息 */
 .header {
-  background-color:rgb(223, 118, 176);
-  width:500rpx;
+  background: linear-gradient(135deg, #DF76B0 0%, #C85A9E 100%);
+  width: 500rpx;
   margin-left: 100rpx;
   margin-top: 10rpx;
-  color: #fff;
+  color: #FFFFFF;
   border-radius: 30rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4rpx 12rpx rgba(223, 118, 176, 0.25);
 }
 
 .user-card {
@@ -51,11 +63,13 @@
   font-size: 36rpx;
   font-weight: 500;
   margin-bottom: 6rpx;
+  color: #FFFFFF;
 }
 
 .role {
   font-size: 24rpx;
-  opacity: 0.8;
+  opacity: 0.9;
+  color: #FFFFFF;
 }
 
 .edit-btn {
@@ -97,42 +111,46 @@
   font-size: 32rpx;
   font-weight: bold;
   margin-bottom: 6rpx;
+  color: #FFFFFF;
 }
 
 .stat-label {
   font-size: 24rpx;
-  opacity: 0.7;
+  opacity: 0.9;
+  color: #FFFFFF;
 }
 
 /* 功能列表 */
 .function-list {
   min-height: 90vh;
-  width:700rpx;
+  width: 700rpx;
   padding: 20rpx;
   position: relative;
 }
 
 .function-group {
   margin-bottom: 20rpx;
-  background-color: #fff;
-  border-radius: 20rpx;
+  background-color: var(--md-sys-color-surface);
+  border-radius: 16rpx;
   overflow: hidden;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.06), 0 1rpx 2rpx rgba(0, 0, 0, 0.04);
+  border: 1rpx solid #E5E7EB;
 }
 
 .function-title {
-  font-size: 28rpx;
-  color: #999;
+  font-size: 26rpx;
+  color: var(--md-sys-color-on-surface-variant);
   padding: 20rpx 30rpx;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid #E5E7EB;
+  font-weight: 500;
 }
 
 .function-title-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20rpx 30rpx;
-  border-bottom: 1rpx solid #f5f5f5;
+  padding: 5rpx 10rpx;
+  border-bottom: 1rpx solid #E5E7EB;
 }
 
 .function-title-row .function-title {
@@ -140,27 +158,46 @@
   border-bottom: none;
 }
 
+/* Ripple wrapper for title-action */
+.function-title-row > ripple {
+  display: inline-flex;
+  width: 90rpx;
+  height: 90rpx;
+}
+
 .title-action {
   display: flex;
   align-items: center;
-  cursor: pointer;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
+
 
 /* 网格布局 */
 .function-grid {
   display: flex;
-  flex-direction: row; /* 显式指定flex-direction */
+  flex-direction: row;
   flex-wrap: wrap;
   padding: 0rpx;
 }
 
-.grid-item {
+/* Ripple wrapper - must maintain grid layout */
+.function-grid > ripple {
   width: 20%;
+  display: block;
+}
+
+.grid-item {
+  width: 100%;
+  min-height: 120rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start;
+  padding-top: 10rpx;
   padding-bottom: 20rpx;
-  padding-left: 20rpx;
+  box-sizing: border-box;
 }
 
 .grid-icon {
@@ -168,32 +205,38 @@
   width: 80rpx;
   height: 80rpx;
   display: flex;
-  flex-direction: row; /* 显式指定flex-direction */
+  flex-direction: row;
   justify-content: center;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .badge {
   position: absolute;
-  top: -8rpx;
-  right: -8rpx;
-  background-color:rgb(255, 77, 77);
+  top: -10rpx;
+  right: -10rpx;
+  background: linear-gradient(135deg, #EF4444, #DC2626);
   color: #fff;
   font-size: 20rpx;
   min-width: 32rpx;
   height: 32rpx;
   border-radius: 16rpx;
   display: flex;
-  flex-direction: row; /* 显式指定flex-direction */
+  flex-direction: row;
   align-items: center;
   justify-content: center;
   padding: 0 6rpx;
+  box-shadow: 0 2rpx 8rpx rgba(239, 68, 68, 0.3);
+  font-weight: 600;
+  z-index: 10;
 }
 
 .grid-text {
   font-size: 24rpx;
-  color: #333;
+  color: var(--md-sys-color-on-surface);
   text-align: center;
+  margin-top: 8rpx;
+  width: 100%;
 }
 
 /* 原列表布局 */
@@ -201,12 +244,19 @@
   position: relative;
 }
 
+/* Ripple wrapper for function-item */
+.function-group > ripple {
+  display: block;
+  width: 100%;
+}
+
 .function-item {
   display: flex;
-  flex-direction: row; /* 显式指定flex-direction */
+  flex-direction: row;
   align-items: center;
   padding: 30rpx;
   position: relative;
+  transition: all 0.3s;
 }
 
 /* 使用真实视图替代伪元素 */
@@ -216,13 +266,13 @@
   left: 30rpx;
   right: 30rpx;
   height: 1rpx;
-  background-color: #f5f5f5;
+  background-color: #E5E7EB;
 }
 
 .item-icon {
   margin-right: 20rpx;
   display: flex;
-  flex-direction: row; /* 显式指定flex-direction */
+  flex-direction: row;
   align-items: center;
   justify-content: center;
 }
@@ -230,35 +280,18 @@
 .item-text {
   flex: 1;
   font-size: 30rpx;
-  color: #333;
+  color: var(--md-sys-color-on-surface);
 }
 
 .item-arrow {
-  color: #ccc;
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 .logout {
-  color:rgb(223, 118, 176);
+  color: #EF4444;
 }
 
-/* 动画效果 */
-.function-item {
-  transition: background-color 0.3s;
-}
-
-/* 使用JS控制active状态，添加class */
-.function-item-active {
-  background-color: #f5f5f5;
-}
-
-.grid-item {
-  transition: transform 0.2s;
-}
-
-/* 使用JS控制active状态，添加class */
-.grid-item-active {
-  transform: scale(0.95);
-}
+/* Remove old active state classes - ripple handles feedback now */
 
 /* 协会管理行 */
 .club-management-row {
@@ -267,24 +300,25 @@
 
 .club-title {
   font-size: 28rpx;
-  font-weight: 500;
-  color: white;
+  font-weight: 600;
+  color: #FFFFFF !important;
   padding: 20rpx 30rpx 10rpx;
-  background-color:rgb(223, 118, 176);
-  border-radius: 8rpx;
+  background: linear-gradient(135deg, #DF76B0 0%, #C85A9E 100%);
+  border-radius: 12rpx;
   margin: 10rpx 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(223, 118, 176, 0.25);
 }
 
 .club-divider {
   height: 1rpx;
-  background-color: #eee;
+  background-color: #E5E7EB;
   margin: 10rpx 30rpx;
 }
 
 .no-clubs {
   padding: 40rpx 0;
   text-align: center;
-  color: #999;
+  color: var(--md-sys-color-on-surface-variant);
   font-size: 28rpx;
 }
 

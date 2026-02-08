@@ -13,7 +13,9 @@
     "club-detail-skeleton": "/components/panel-skeleton/club-detail-skeleton/index",
     "club-manage-skeleton": "/components/panel-skeleton/club-manage-skeleton/index",
     "event-detail-skeleton": "/components/panel-skeleton/event-detail-skeleton/index",
-    "event-manage-skeleton": "/components/panel-skeleton/event-manage-skeleton/index"
+    "event-manage-skeleton": "/components/panel-skeleton/event-manage-skeleton/index",
+    "club-overview-skeleton": "/components/panel-skeleton/club-overview-skeleton/index",
+    "ripple": "/components/ripple/index"
   },
   "componentPlaceholder": {
     "club-detail-panel": "club-detail-skeleton",

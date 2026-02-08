@@ -29,9 +29,6 @@ Page({
   },
     hasEverManaged: false,  // Task 8.2: 是否曾经管理过活数
       currentlyManaging: false, // Task 8.2: 是否当前正在管理活动
-    // 添加处理active状态的数据
-    activeGridItem: null,
-    activeFunctionItem: null,
     
     // 全局弹窗状态管理（统一管理所?panel数
       globalPopup: {
@@ -153,36 +150,6 @@ Page({
   },
 
   onCustomTabItemTap() {
-  },
-  /**
-   * 检查登录状态   */
-
-  // 处理grid-item的active状数
-      handleGridItemTouchStart(e) {
-    const index = e.currentTarget.dataset.index;
-    this.setData({
-      activeGridItem: index
-    });
-  },
-  
-  handleGridItemTouchEnd() {
-    this.setData({
-      activeGridItem: null
-    });
-  },
-  
-  // 处理function-item的active状数
-      handleFunctionItemTouchStart(e) {
-    const index = e.currentTarget.dataset.index;
-    this.setData({
-      activeFunctionItem: index
-    });
-  },
-  
-  handleFunctionItemTouchEnd() {
-    this.setData({
-      activeFunctionItem: null
-    });
   },
 
   /**
