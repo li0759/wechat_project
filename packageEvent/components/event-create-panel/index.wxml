@@ -661,11 +661,9 @@
   <!-- 底部提交（固定） -->
   <view class="step-navigation">
     <view class="nav-buttons">
-      <ripple ripple-color="rgba(255, 255, 255, 0.3)" duration="{{800}}">
-        <t-button theme="primary" size="large" shape="round" bindtap="submitForm" loading="{{submitting}}" class="nav-btn">
-          发布活动
-        </t-button>
-      </ripple>
+      <t-button theme="primary" size="large" shape="round" bindtap="submitForm" loading="{{submitting}}" class="nav-btn">
+        发布活动
+      </t-button>
     </view>
   </view>
 

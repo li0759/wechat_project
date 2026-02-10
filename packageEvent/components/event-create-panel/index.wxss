@@ -501,6 +501,8 @@ page {
 
 .nav-btn {
   flex: 1;
+  background: rgba(223, 118, 176, 0.8) !important;
+  color: #FFFFFF !important;
 }
 
 .container {

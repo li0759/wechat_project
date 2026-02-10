@@ -34,6 +34,11 @@ Component({
     spreadRatio: {
       type: Number,
       value: 1.0
+    },
+    // 是否阻止 touchmove 冒泡（用于解决与 van-tabs 等组件的冲突）
+    stopTouchMove: {
+      type: Boolean,
+      value: false
     }
   },
 
@@ -90,13 +95,6 @@ Component({
       // 记录触摸坐标（用于 onTap 传递给 expandable-container）
       this.tapX = touch.clientX;
       this.tapY = touch.clientY;
-
-      // 传递 touchstart 事件给父组件（用于 expandable-container_fullscreen）
-      this.triggerEvent('touchstart', {
-        touches: e.touches,
-        changedTouches: e.changedTouches,
-        timeStamp: e.timeStamp
-      }, { bubbles: true, composed: true });
 
       const query = this.createSelectorQuery();
       
@@ -197,20 +195,19 @@ Component({
     },
 
     onTouchMove(e) {
-      // 传递 touchmove 事件给父组件
-      this.triggerEvent('touchmove', {
-        touches: e.touches,
-        changedTouches: e.changedTouches,
-        timeStamp: e.timeStamp
-      }, { bubbles: true, composed: true });
+      const touch = e.touches[0];
       
       // 标记为移动，但不取消涟漪（允许拖动滚动）
-      const touch = e.touches[0];
       const deltaX = Math.abs(touch.pageX - this.touchStartX);
       const deltaY = Math.abs(touch.pageY - this.touchStartY);
       
       if (deltaX > 5 || deltaY > 5) {
         this.touchMoved = true;
+      }
+      
+      // 如果设置了 stopTouchMove，阻止事件冒泡
+      if (this.data.stopTouchMove) {
+        return false;
       }
     },
 

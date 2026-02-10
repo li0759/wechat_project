@@ -28,8 +28,13 @@ def generate_map_url():
     if not latitude or not longitude:
         return jsonify({'Flag': '4001', 'message': '缺少经纬度参数'}), 200
     
-    api_key = current_app.config.get('GEOAPIFY_API_KEY', '')
-    map_url = f"https://maps.geoapify.com/v1/staticmap?style=osm-bright-grey&width={width}&height={height}&center=lonlat:{longitude},{latitude}&zoom={zoom}&styleCustomization=road_label_primary:36|road_label_secondary:36|place_label_park:36|place_label_village:36|place_label_city:36|place_label_town:36|place_state-label:36|place_label_country:36&marker=lonlat:{longitude},{latitude};type:awesome;color:%23ff0000;size:28&scaleFactor=2&apiKey={api_key}"
+    map_url = current_app.config['GEOAPIFY_MAP_URL'].format(
+        width=width, 
+        height=height, 
+        longitude=longitude, 
+        latitude=latitude, 
+        zoom=zoom
+    ) + f"&apiKey={current_app.config['GEOAPIFY_API_KEY']}"
     
     return jsonify({
         'Flag': '4000',
@@ -654,8 +659,16 @@ def get_event(event_id):
             'location': event_show.location,
             'location_data': location_data,  # 新增位置数据字段
             'premap_url': (
-                f"https://maps.geoapify.com/v1/staticmap?style=osm-bright-grey&width=600&height=400&center=lonlat:{event_show.location_longitude},{event_show.location_latitude}&zoom=14&styleCustomization=road_label_primary:36|road_label_secondary:36|place_label_park:36|place_label_village:36|place_label_city:36|place_label_town:36|place_state-label:36|place_label_country:36&marker=lonlat:{event_show.location_longitude},{event_show.location_latitude};type:awesome;color:%23ff0000;size:28&scaleFactor=2&apiKey={current_app.config.get('GEOAPIFY_API_KEY', '')}"
-                if (hasattr(event_show, 'location_latitude') and event_show.location_latitude and hasattr(event_show, 'location_longitude') and event_show.location_longitude) else None
+                current_app.config['GEOAPIFY_MAP_URL'].format(
+                    width=600, 
+                    height=400, 
+                    longitude=event_show.location_longitude, 
+                    latitude=event_show.location_latitude, 
+                    zoom=14
+                ) + f"&apiKey={current_app.config['GEOAPIFY_API_KEY']}"
+                if (hasattr(event_show, 'location_latitude') and event_show.location_latitude and 
+                    hasattr(event_show, 'location_longitude') and event_show.location_longitude) 
+                else None
             ),
             'pre_startTime': event_show.pre_startTime.isoformat(),
             'pre_endTime': event_show.pre_endTime.isoformat(),
@@ -1388,8 +1401,16 @@ def get_club_public_eventlist(club_id, show):
                     'title': e.title,
                     'content': e.message,
                     'premap_url': (
-                        f"https://maps.geoapify.com/v1/staticmap?style=osm-bright-grey&width=600&height=400&center=lonlat:{e.location_longitude},{e.location_latitude}&zoom=14&styleCustomization=road_label_primary:36|road_label_secondary:36|place_label_park:36|place_label_village:36|place_label_city:36|place_label_town:36|place_state-label:36|place_label_country:36&marker=lonlat:{e.location_longitude},{e.location_latitude};type:awesome;color:%23ff0000;size:28&scaleFactor=2&apiKey={current_app.config.get('GEOAPIFY_API_KEY', '')}"
-                        if (hasattr(e, 'location_latitude') and e.location_latitude and hasattr(e, 'location_longitude') and e.location_longitude) else None
+                        current_app.config['GEOAPIFY_MAP_URL'].format(
+                            width=600, 
+                            height=400, 
+                            longitude=e.location_longitude, 
+                            latitude=e.location_latitude, 
+                            zoom=14
+                        ) + f"&apiKey={current_app.config['GEOAPIFY_API_KEY']}"
+                        if (hasattr(e, 'location_latitude') and e.location_latitude and 
+                            hasattr(e, 'location_longitude') and e.location_longitude) 
+                        else None
                     ),
                     'location_data': {
                         'name': e.location_name,
@@ -1598,8 +1619,16 @@ def get_hot_events():
                 'address': e.location_address if hasattr(e, 'location_address') else None
             } if (hasattr(e, 'location_latitude') and e.location_latitude) else None,
             'premap_url': (
-                f"https://maps.geoapify.com/v1/staticmap?style=osm-bright-grey&width=600&height=400&center=lonlat:{e.location_longitude},{e.location_latitude}&zoom=14&styleCustomization=road_label_primary:36|road_label_secondary:36|place_label_park:36|place_label_village:36|place_label_city:36|place_label_town:36|place_state-label:36|place_label_country:36&marker=lonlat:{e.location_longitude},{e.location_latitude};type:awesome;color:%23ff0000;size:28&scaleFactor=2&apiKey={current_app.config.get('GEOAPIFY_API_KEY', '')}"
-                if (hasattr(e, 'location_latitude') and e.location_latitude and hasattr(e, 'location_longitude') and e.location_longitude) else None
+                current_app.config['GEOAPIFY_MAP_URL'].format(
+                    width=600, 
+                    height=400, 
+                    longitude=e.location_longitude, 
+                    latitude=e.location_latitude, 
+                    zoom=14
+                ) + f"&apiKey={current_app.config['GEOAPIFY_API_KEY']}"
+                if (hasattr(e, 'location_latitude') and e.location_latitude and 
+                    hasattr(e, 'location_longitude') and e.location_longitude) 
+                else None
             ),
             'description': e.message,
             'join_count': len(e.eventjoins),

@@ -155,8 +155,16 @@ def get_club_detail(club_id):
                     'longitude': e.location_longitude
                 } if (hasattr(e, 'location_latitude') and hasattr(e, 'location_longitude') and e.location_latitude and e.location_longitude) else None),
                 'premap_url': (
-                    f"https://maps.geoapify.com/v1/staticmap?style=osm-bright-grey&width=600&height=400&center=lonlat:{e.location_longitude},{e.location_latitude}&zoom=14&styleCustomization=road_label_primary:36|road_label_secondary:36|place_label_park:36|place_label_village:36|place_label_city:36|place_label_town:36|place_state-label:36|place_label_country:36&marker=lonlat:{e.location_longitude},{e.location_latitude};type:awesome;color:%23ff0000;size:28&scaleFactor=2&apiKey={current_app.config.get('GEOAPIFY_API_KEY', '')}"
-                    if (hasattr(e, 'location_latitude') and hasattr(e, 'location_longitude') and e.location_latitude and e.location_longitude) else None
+                    current_app.config['GEOAPIFY_MAP_URL'].format(
+                        width=600, 
+                        height=400, 
+                        longitude=e.location_longitude, 
+                        latitude=e.location_latitude, 
+                        zoom=14
+                    ) + f"&apiKey={current_app.config['GEOAPIFY_API_KEY']}"
+                    if (hasattr(e, 'location_latitude') and hasattr(e, 'location_longitude') and 
+                        e.location_latitude and e.location_longitude) 
+                    else None
                 ),
 				'cover_url': e.cover.fileUrl if e.cover else None,
                 'recent_moments': [

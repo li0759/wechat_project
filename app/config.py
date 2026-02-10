@@ -74,6 +74,7 @@ class Config:
     
     # Geoapify 地图API配置
     GEOAPIFY_API_KEY = os.environ.get('GEOAPIFY_API_KEY') or 'b8568cb9afc64fad861a69edbddb2658'
+    GEOAPIFY_MAP_URL = os.environ.get('GEOAPIFY_MAP_URL') or 'https://maps.geoapify.com/v1/staticmap?style=osm-bright-grey&width={width}&height={height}&center=lonlat:{longitude},{latitude}&zoom={zoom}&styleCustomization=road_label_primary:36|road_label_secondary:36|place_label_park:36|place_label_village:36|place_label_city:36|place_label_town:36|place_state-label:36|place_label_country:36&marker=lonlat:{longitude},{latitude};type:awesome;color:%23ff0000;size:28&scaleFactor=2'
     
     @classmethod
     def init_app(cls, app):

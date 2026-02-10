@@ -42,7 +42,7 @@
     <!-- 2. 最近一次活动或当前正在进行的活动 -->
     <view class="featured-event-section">
       <!-- 有活动时显示 -->
-      <ripple wx:if="{{featuredEvent}}" rippleColor="rgba(0, 0, 0, 0.5)" duration="800">
+      <ripple wx:if="{{featuredEvent}}" rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
         <view 
           class="featured-event-card"
           bindtap="onEventTap"
@@ -130,7 +130,7 @@
             </view>
             
             <!-- 真实内容 -->
-            <ripple wx:else rippleColor="rgba(0, 0, 0, 0.5)" duration="800">
+            <ripple wx:else rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
               <view bind:tap="onEventTap" data-event-id="{{item.event_id}}">
                 <!-- 主内容：左边封面 + 右边信息 -->
                 <view class="event-main-content">
@@ -186,7 +186,7 @@
     
     <view class="action-right">
       <!-- 协会详情按钮 -->
-      <ripple ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}" bindtap="viewClubDetail">
+      <ripple ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}" bindtap="viewClubDetail">
         <view class="action-btn secondary">
           <t-icon name="info-circle" size="18" color="#666" />
           <text>协会详情</text>
@@ -194,7 +194,7 @@
       </ripple>
       
       <!-- 退出协会按钮 -->
-      <ripple ripple-color="rgba(0, 0, 0, 0.5)" duration="{{800}}" bindtap="quitClub">
+      <ripple ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}" bindtap="quitClub">
         <view class="action-btn tertiary">
           <t-icon name="close-circle" size="18" color="#EF4444" />
           <text>退出协会</text>

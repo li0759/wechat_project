@@ -38,8 +38,8 @@ Page({
       type: '', // 'club-create' | 'event-create' | 'event-manage' | 'club-manage'
       id: '',
       clubId: '',  // 用于 event-create
-      bgColor: '#f3e3f3ff',
-      sheetBgColor: '#f3e3f3ff',
+      bgColor: 'rgba(223, 118, 176, 0.8)',
+      sheetBgColor: 'rgba(223, 118, 176, 0.8)',
       tapX: 0,
       tapY: 0
     },

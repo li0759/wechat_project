@@ -248,7 +248,7 @@
               <view wx:if="{{index % 2 === 0}}" class="card" style="width:100%;margin-bottom:15rpx;">
                 <!-- 阶段1：数据未加载 - 完整骨架屏 -->
                 <view wx:if="{{item.loading}}" class="card-skeleton">
-                  <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '280rpx', borderRadius: '8rpx' }]}}" />
+                  <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '260rpx', borderRadius: '8rpx' }]}}" />
                   <view class="card-content">
                     <t-skeleton animation="gradient" rowCol="{{[{ width: '80%', height: '28rpx', marginBottom: '12rpx' }]}}" />
                     <t-skeleton animation="gradient" rowCol="{{[{ width: '50%', height: '22rpx' }]}}" />
@@ -268,10 +268,10 @@
                 >
                   <view class="card-wrapper">
                     <!-- 图片区域 -->
-                    <view class="image-container" style="width:100%;height:280rpx;position:relative;">
+                    <view class="image-container" style="width:100%;height:260rpx;position:relative;">
                       <!-- 阶段2：图片骨架屏（覆盖在图片上方） -->
                       <view wx:if="{{!item.imgLoaded}}" class="image-skeleton">
-                        <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '280rpx', borderRadius: '8rpx 8rpx 0 0' }]}}" />
+                        <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '260rpx', borderRadius: '8rpx 8rpx 0 0' }]}}" />
                       </view>
                       <!-- 图片始终渲染，但在未加载完成时被骨架屏遮挡 -->
                       <image class="card-image" src="{{item.cover_url_thumb}}" mode="aspectFill" bindload="onEventImgLoad" binderror="onEventImgLoad" data-index="{{index}}" style="{{item.imgLoaded ? '' : 'opacity: 0;'}}" />
@@ -303,7 +303,7 @@
               <view wx:if="{{index % 2 === 1}}" class="card" style="width:100%;margin-bottom:15rpx;">
                 <!-- 阶段1：数据未加载 - 完整骨架屏 -->
                 <view wx:if="{{item.loading}}" class="card-skeleton">
-                  <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '280rpx', borderRadius: '8rpx' }]}}" />
+                  <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '260rpx', borderRadius: '8rpx' }]}}" />
                   <view class="card-content">
                     <t-skeleton animation="gradient" rowCol="{{[{ width: '80%', height: '28rpx', marginBottom: '12rpx' }]}}" />
                     <t-skeleton animation="gradient" rowCol="{{[{ width: '50%', height: '22rpx' }]}}" />
@@ -323,10 +323,10 @@
                 >
                   <view class="card-wrapper">
                     <!-- 图片区域 -->
-                    <view class="image-container" style="width:100%;height:280rpx;position:relative;">
+                    <view class="image-container" style="width:100%;height:260rpx;position:relative;">
                       <!-- 阶段2：图片骨架屏（覆盖在图片上方） -->
                       <view wx:if="{{!item.imgLoaded}}" class="image-skeleton">
-                        <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '280rpx', borderRadius: '8rpx 8rpx 0 0' }]}}" />
+                        <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '260rpx', borderRadius: '8rpx 8rpx 0 0' }]}}" />
                       </view>
                       <!-- 图片始终渲染，但在未加载完成时被骨架屏遮挡 -->
                       <image class="card-image" src="{{item.cover_url_thumb}}" mode="aspectFill" bindload="onEventImgLoad" binderror="onEventImgLoad" data-index="{{index}}" style="{{item.imgLoaded ? '' : 'opacity: 0;'}}" />
@@ -394,7 +394,7 @@
                       gutter="{{10}}"
                       transitionDuration="0.8s"
                       groupInterval="5000"
-                      backgroundColor="rgb(108, 99, 104)">
+                      backgroundColor="rgba(122, 54, 92, 0.66)">
                     </isotope>
                     <view class="isotope-overlay"></view>
                   </view>
@@ -547,7 +547,6 @@
     wx:if="{{globalPopup.visible}}"
     id="globalFullscreenPopup"
     bg-color="{{globalPopup.bgColor}}"
-    fullscreen-sheet-bg-color="{{globalPopup.sheetBgColor}}"
     fullscreen-top-padding="{{0}}"
     bind:collapse="onGlobalPopupCollapse"
     bind:contentReady="onGlobalPopupContentReady"

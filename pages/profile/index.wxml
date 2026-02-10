@@ -320,7 +320,7 @@
       
       <!-- 系统功能 -->
       <view class="function-group">
-        <ripple rippleColor="rgba(239, 68, 68, 0.8)" duration="800">
+        <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
           <view class="function-item logout" bind:tap="handleLogout">
             <view class="item-icon"><van-icon name="close" size="24px" color="#ff5252" /></view>
             <view class="item-text">退出登录</view>
@@ -334,8 +334,8 @@
   <expandable-container_fullscreen 
     wx:if="{{globalPopup.visible}}"
     id="globalFullscreenPopup"
-    bg-color="{{globalPopup.bgColor}}"
-    fullscreen-sheet-bg-color="{{globalPopup.sheetBgColor}}"
+    bg-color="rgba(223, 118, 176, 0.8)"
+    fullscreen-sheet-bg-color="rgba(223, 118, 176, 0.8)"
     fullscreen-top-padding="{{0}}"
     bind:collapse="onGlobalPopupCollapse"
     bind:contentReady="onGlobalPopupContentReady"

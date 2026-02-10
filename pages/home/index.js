@@ -418,16 +418,7 @@ Page({
     // 只在活动tab时处理
     if (this.data.activeTab !== 0) return;
     
-    // 兼容原生事件和 ripple 自定义事件
-    let touch;
-    if (e.touches && e.touches[0]) {
-      touch = e.touches[0];
-    } else if (e.detail && e.detail.touches && e.detail.touches[0]) {
-      touch = e.detail.touches[0];
-    } else {
-      return; // 无法获取触摸信息，直接返回
-    }
-    
+    const touch = e.touches[0];
     this.eventScrollStartTime = Date.now();
     
     this.setData({
@@ -444,16 +435,7 @@ Page({
   onEventScrollTouchMove: function(e) {
     if (!this.data.eventItemTouching && !this.data.swiperToDrawerMode) return;
     
-    // 兼容原生事件和 ripple 自定义事件
-    let touch;
-    if (e.touches && e.touches[0]) {
-      touch = e.touches[0];
-    } else if (e.detail && e.detail.touches && e.detail.touches[0]) {
-      touch = e.detail.touches[0];
-    } else {
-      return; // 无法获取触摸信息，直接返回
-    }
-    
+    const touch = e.touches[0];
     const deltaX = touch.pageX - this.data.eventItemTouchStartX;
     const deltaY = touch.pageY - this.data.eventItemTouchStartY;
     

@@ -1,4 +1,7 @@
-<t-tabbar value="{{active}}" bind:change="onTabChange" activeColor="#ff4daf">
+<t-tabbar 
+  value="{{active}}" 
+  bind:change="onTabChange" 
+  style="--td-primary-color-7: rgb(223, 118, 176);">
   <t-tabbar-item wx:for="{{list}}" wx:key="index" icon="{{item.icon}}">
     {{item.text}}
   </t-tabbar-item>
