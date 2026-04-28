@@ -20,7 +20,16 @@
     fullscreenContentTopGap: { type: Number, value: 0 },
     fullscreenSheetBgColor: { type: String, value: '#ffffff' },
     swipeLeftUrl: { type: String, value: '' },
-    fullSize: { type: Boolean, value: false }
+    fullSize: { type: Boolean, value: false },
+    /** 同时允许的全屏 expandable 栈深（含当前页已展开并成功入栈的数量）；≥ 此次数时再点展开改为 navigateTo shell 页 */
+    maxStackDepth: { type: Number, value: 4 },
+    /** 超限时跳转的宿主页面路径（可换成分包页） */
+    shellPagePath: { type: String, value: '/packageFullscreen/fullscreen-shell/index' },
+    /** depth 超限时带给承接页的业务场景：eventDetail / clubDetail（与 fullscreen-shell 内 wx:if 一致） */
+    shellScene: { type: String, value: '' },
+    /** 超限时一并传递的 id（与下面哪个 panel 对应由 shellScene 决定） */
+    shellEventId: { type: String, value: '' },
+    shellClubId: { type: String, value: '' }
   },
 
   data: {
@@ -308,6 +317,71 @@
     // 展开 - 从点击位置涟漪扩散
   expand(tapX, tapY) {
       if (this.data.isExpanded || this.data.isExpanding) return
+
+      const maxDepth = Number(this.properties.maxStackDepth)
+      if (!Number.isNaN(maxDepth) && maxDepth > 0) {
+        try {
+          const gd = this.getGlobalData()
+          const stack = this.ensureStack(gd)
+          if (stack.length >= maxDepth) {
+            const shell = String(this.properties.shellPagePath || '/packageFullscreen/fullscreen-shell/index').trim()
+            try {
+              if (gd) {
+                gd.__fullscreenShellPending = {
+                  depth: stack.length,
+                  limit: maxDepth,
+                  tapX: tapX != null ? tapX : 0,
+                  tapY: tapY != null ? tapY : 0,
+                  at: Date.now()
+                }
+                const ev = String(this.properties.shellEventId || '').trim()
+                const cid = String(this.properties.shellClubId || '').trim()
+                let scn = String(this.properties.shellScene || '').trim()
+                if (!scn) {
+                  if (ev) scn = 'eventDetail'
+                  else if (cid) scn = 'clubDetail'
+                }
+                gd.__fullscreenShellOpenPack = {
+                  scene: scn,
+                  eventId: ev,
+                  clubId: cid,
+                  depth: stack.length,
+                  limit: maxDepth,
+                  tapX: tapX != null ? tapX : 0,
+                  tapY: tapY != null ? tapY : 0,
+                  at: Date.now()
+                }
+              }
+            } catch (e) {}
+            this.triggerEvent('depthLimit', {
+              depth: stack.length,
+              limit: maxDepth,
+              shellPage: shell,
+              scene: String(this.properties.shellScene || '').trim(),
+              eventId: String(this.properties.shellEventId || '').trim(),
+              clubId: String(this.properties.shellClubId || '').trim()
+            })
+            const parts = [`depth=${stack.length}`, `limit=${encodeURIComponent(String(maxDepth))}`]
+            const sc = String(this.properties.shellScene || '').trim()
+            const evQ = String(this.properties.shellEventId || '').trim()
+            const cidQ = String(this.properties.shellClubId || '').trim()
+            if (sc) parts.push(`scene=${encodeURIComponent(sc)}`)
+            if (evQ) parts.push(`eventId=${encodeURIComponent(evQ)}`)
+            if (cidQ) parts.push(`clubId=${encodeURIComponent(cidQ)}`)
+            const qs = parts.join('&')
+            const joiner = shell.indexOf('?') >= 0 ? '&' : '?'
+            wx.navigateTo({
+              url: `${shell}${joiner}${qs}`,
+              fail(err) {
+                wx.showToast({ title: '无法打开承接页', icon: 'none' })
+                try { console.warn('[expandable] navigateTo shell failed', err) } catch (e2) {}
+              }
+            })
+            return
+          }
+        } catch (e) {}
+      }
+
       this.initFullscreenNav()
       
       const sys = wx.getSystemInfoSync()

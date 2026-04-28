@@ -1086,8 +1086,8 @@ Page({
       return;
     }
     
-    wx.navigateTo({
-      url: `/packageProfile/index?id=${this.data.userInfo.id}`
+    wx.switchTab({
+      url: '/pages/profile/index'
     });
   },
 

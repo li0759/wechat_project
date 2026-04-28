@@ -26,6 +26,26 @@
         "value": "packageShow"
       },
       {
+        "type": "folder",
+        "value": "minitest"
+      },
+      {
+        "type": "file",
+        "value": "components/search_suggest/demo.json"
+      },
+      {
+        "type": "file",
+        "value": "components/search_suggest/demo.js"
+      },
+      {
+        "type": "file",
+        "value": "components/search_suggest/demo.wxml"
+      },
+      {
+        "type": "file",
+        "value": "components/search_suggest/demo.wxss"
+      },
+      {
         "type": "file",
         "value": "requirements.txt"
       },

@@ -1,7 +1,7 @@
 {
   "pages": [
     "pages/home/index",
-    "pages/login/index",  
+    "pages/login/index",
     "pages/profile/index",
     "pages/share-redirect/index"
   ],
@@ -46,6 +46,13 @@
       "root": "packageHome",
       "pages": [
         "search/index"
+      ]
+    },
+    {
+      "root": "packageProfile",
+      "name": "packageProfile",
+      "pages": [
+        "club-applications/index"
       ]
     }
   ],
