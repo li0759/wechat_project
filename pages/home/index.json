@@ -23,7 +23,8 @@
     "club-manage-skeleton": "/components/panel-skeleton/club-manage-skeleton/index",
     "notice-list-skeleton": "/components/panel-skeleton/notice-list-skeleton/index",
     "club-overview-panel": "/packageHome/components/club-overview-panel/index",
-    "club-overview-skeleton": "/components/panel-skeleton/club-overview-skeleton/index"
+    "club-overview-skeleton": "/components/panel-skeleton/club-overview-skeleton/index",
+    "animated-map": "/components/animated-map/index"
   },
   "navigationStyle": "custom",
   "componentPlaceholder": {

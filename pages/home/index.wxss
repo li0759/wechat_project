@@ -762,13 +762,12 @@ t-grid,
   width: 100%;
   height: 100%;
   position: relative;
+  filter: brightness(0.9) contrast(0.9);
 }
 
-.hot-event-map image {
+.hot-event-map animated-map {
+  display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: brightness(0.9) contrast(0.9);
 }
 
 .hot-event-overlay {

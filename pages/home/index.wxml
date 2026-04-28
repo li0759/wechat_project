@@ -82,11 +82,22 @@
               >
                 <view class="hot-event-card">
                 <view class="hot-event-layout" style="height: 430rpx;">
-                  <view class="hot-event-map-background" wx:if="{{item.location_data}}">
+                  <view class="hot-event-map-background" wx:if="{{item.location_data && item.premap_url}}">
                     <view class="hot-event-map">
-                      <image 
-                        src="{{item.premap_url}}"
-                        mode="aspectFill" />
+                      <animated-map
+                        map-url="{{item.premap_url}}"
+                        zoom-min="{{14}}"
+                        zoom-max="{{16}}"
+                        height-rpx="{{480}}"
+                        clip-radius-rpx="{{16}}"
+                        anim-ms="{{800}}"
+                        pause-ms="{{5000}}"
+                        fade-ms="{{300}}"
+                        enlarge-to="{{2}}"
+                        shrink-from="{{2}}"
+                        shrink-to="{{1}}"
+                        base-scale="{{1}}"
+                      />
                       <text class="location-name">{{item.location_data.name}}</text>
                       <view class="hot-event-overlay"></view>
                     </view>
