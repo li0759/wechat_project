@@ -1,0 +1,132 @@
+<view class="mil-root">
+  <scroll-view
+    class="mil-scroll"
+    scroll-y="{{true}}"
+    scroll-with-animation="{{true}}"
+    scroll-into-view="{{scrollIntoView}}"
+    show-scrollbar="{{false}}"
+  >
+    <block wx:for="{{groups}}" wx:key="index">
+      <view class="mil-anchor" id="idx-{{item.index}}">
+        <text class="mil-anchor-text">{{item.index}}</text>
+      </view>
+
+      <block wx:for="{{item.children}}" wx:for-item="member" wx:key="member_id">
+        <view class="member-item-wrapper" id="member-{{member.member_id}}">
+          <view class="member-item">
+            <view class="member-trigger-header">
+              <view class="member-avatar-expandable">
+                <expandable-container
+                  id="member-expandable-{{member.member_id}}"
+                  expanded-width="700"
+                  expanded-height="840"
+                  trigger-width="160"
+                  bg-color="#e0e0e0"
+                >
+                  <view slot="trigger" class="member-avatar-trigger">
+                    <t-avatar image="{{member.avatar || defaultAvatar}}" size="large" />
+                  </view>
+
+                  <view slot="content" class="am-user-detail">
+                    <view class="am-detail-head">
+                      <image
+                        class="am-detail-avatar"
+                        src="{{member.avatar || defaultAvatar}}"
+                        mode="aspectFill"
+                        lazy-load="{{true}}"
+                      />
+                      <view class="am-detail-main">
+                        <view class="am-detail-name">{{member.user_name}}</view>
+                        <view class="am-detail-tags">
+                          <text class="am-tag am-tag-role {{member.role}}">{{roleNames[member.role]}}</text>
+                          <text wx:if="{{member.department}}" class="am-tag am-tag-dept">{{member.department}}</text>
+                          <text wx:if="{{member.position}}" class="am-tag am-tag-pos">{{member.position}}</text>
+                        </view>
+                      </view>
+                    </view>
+
+                    <view class="am-detail-kv">
+                      <view class="am-kv" wx:if="{{member.phone}}">
+                        <text class="am-k">电话</text>
+                        <text class="am-v">{{member.phone}}</text>
+                      </view>
+                      <view class="am-kv" wx:if="{{member.join_date}}">
+                        <text class="am-k">入会时间</text>
+                        <text class="am-v">{{member.join_date}}</text>
+                      </view>
+                      <view class="am-kv" wx:if="{{member.participation_count}}">
+                        <text class="am-k">活动参与</text>
+                        <text class="am-v">已参与 {{member.participation_count}} 次</text>
+                      </view>
+                    </view>
+
+                    <view class="am-detail-actions">
+                      <view wx:if="{{member.is_current_user}}" class="am-added">
+                        <t-icon name="check-circle-filled" size="18" color="#52c41a" />
+                        <text>这是您的账户</text>
+                      </view>
+
+                      <view wx:elif="{{!member.is_current_user && isPresident}}" class="am-admin-actions">
+                        <view
+                          class="am-btn am-btn-ghost"
+                          wx:for="{{roleOptions[member.role].availableRoles}}"
+                          wx:for-item="role"
+                          wx:key="role"
+                          hover-class="am-btn-hover"
+                          bindtap="onChangeRole"
+                          data-memberid="{{member.member_id}}"
+                          data-newrole="{{role}}"
+                          data-username="{{member.user_name}}"
+                        >
+                          改为{{roleDisplayMap[role]}}
+                        </view>
+                        <view
+                          class="am-btn am-btn-danger"
+                          hover-class="am-btn-danger-hover"
+                          bindtap="onRemoveMember"
+                          data-userid="{{member.user_id}}"
+                          data-username="{{member.user_name}}"
+                        >
+                          移除
+                        </view>
+                      </view>
+                    </view>
+                  </view>
+                </expandable-container>
+              </view>
+
+              <view class="member-trigger-info">
+                <view class="member-trigger-name-row">
+                  <text class="member-name">{{member.user_name}}</text>
+                  <view class="member-role-chip {{member.role}}">{{roleNames[member.role]}}</view>
+                  <view class="current-badge" wx:if="{{member.is_current_user}}">我</view>
+                </view>
+                <view class="member-meta-row">
+                  <text class="member-meta-chip" wx:if="{{member.department}}">{{member.department}}</text>
+                  <text class="member-meta-chip member-position-chip" wx:if="{{member.position}}">{{member.position}}</text>
+                </view>
+                <view class="member-meta-row member-phone-row" wx:if="{{member.phone}}">
+                  <t-icon name="call" size="16" color="#999999" />
+                  <text class="member-phone-compact">{{member.phone}}</text>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </block>
+    </block>
+  </scroll-view>
+
+  <view class="mil-indexbar" wx:if="{{indexList && indexList.length}}">
+    <view
+      class="mil-index-item"
+      wx:for="{{indexList}}"
+      wx:key="*this"
+      bindtap="onIndexTap"
+      data-index="{{item}}"
+    >
+      {{item}}
+    </view>
+  </view>
+</view>
+

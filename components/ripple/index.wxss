@@ -1,0 +1,53 @@
+.ripple-container {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+.ripple-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.1);
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+/* 扩散动画 - 使用动态时长 */
+.ripple-expanding {
+  animation: ripple-expand var(--duration, 0.6s) cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* 淡出动画 */
+.ripple-fading {
+  animation: ripple-fade 0.3s ease-out forwards;
+}
+
+@keyframes ripple-expand {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.3;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.15;
+  }
+}
+
+@keyframes ripple-fade {
+  to {
+    opacity: 0;
+  }
+}

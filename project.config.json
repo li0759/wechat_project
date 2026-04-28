@@ -1,0 +1,46 @@
+{
+  "simulatorPluginLibVersion": {
+    "qywx_simulator_plugin": "2.27.3"
+  },
+  "compileType": "miniprogram",
+  "packOptions": {
+    "ignore": [
+      {
+        "type": "folder",
+        "value": "app"
+      },
+      {
+        "type": "folder",
+        "value": ".kiro"
+      },
+      {
+        "type": "folder",
+        "value": ".vscode"
+      },
+      {
+        "type": "folder",
+        "value": "packageMoney"
+      },
+      {
+        "type": "folder",
+        "value": "packageShow"
+      },
+      {
+        "type": "file",
+        "value": "requirements.txt"
+      },
+      {
+        "type": "file",
+        "value": "package.json"
+      },
+      {
+        "type": "file",
+        "value": "miniprogram_npm/tdesign-miniprogram/.wechatide.ib.json"
+      }
+    ]
+  },
+  "setting": {
+    "enhance": true,
+    "es6": true
+  }
+}

@@ -1,0 +1,21 @@
+<view 
+  class="ripple-container" 
+  bindtouchstart="onTouchStart" 
+  bindtouchend="onTouchEnd" 
+  bindtouchmove="onTouchMove" 
+  bindtouchcancel="onTouchCancel"
+  bindtap="onTap"
+>
+  <!-- 涟漪效果层 -->
+  <view class="ripple-layer">
+    <view 
+      wx:for="{{ripples}}" 
+      wx:key="id" 
+      class="ripple {{item.expanding ? 'ripple-expanding' : ''}} {{item.fading ? 'ripple-fading' : ''}}"
+      style="left: {{item.x}}px; top: {{item.y}}px; width: {{item.size}}px; height: {{item.size}}px; opacity: {{item.opacity}}; background-color: {{rippleColor}}; animation-duration: {{duration}}ms;"
+    ></view>
+  </view>
+  
+  <!-- 内容插槽 -->
+  <slot></slot>
+</view>

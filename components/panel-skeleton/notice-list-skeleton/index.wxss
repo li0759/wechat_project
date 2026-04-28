@@ -1,0 +1,55 @@
+.notice-skeleton-list {
+  padding-top: 8rpx;
+}
+
+.notice-skeleton-tabs {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  padding: 10rpx 16rpx 18rpx;
+}
+
+.notice-skeleton-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.notice-skeleton-tab-line {
+  width: 60rpx;
+  height: 6rpx;
+  border-radius: 3rpx;
+  background: rgba(223, 118, 176, 0.25);
+}
+
+.notice-skeleton-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 30rpx;
+  border-radius: 16rpx;
+  background: #fff;
+  margin-bottom: 16rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+}
+
+.notice-skeleton-icon {
+  position: relative;
+  margin-right: 24rpx;
+  width: 80rpx;
+  height: 80rpx;
+  flex: 0 0 auto;
+}
+
+.notice-skeleton-icon-bg {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.notice-skeleton-content {
+  flex: 1;
+  min-width: 0;
+}
+

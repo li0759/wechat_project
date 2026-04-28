@@ -1,0 +1,14 @@
+/* tdesign tabbar 默认样式已足够，如需自定义可在此补充 */
+
+.t-tab-bar {
+  box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.06);
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+}
+
+.t-tab-bar-item {
+  font-size: 24rpx;
+}

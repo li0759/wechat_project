@@ -1,0 +1,12 @@
+/* pages/share-redirect/index.wxss */
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f3e3f3;
+}
+
+.loading {
+  text-align: center;
+}

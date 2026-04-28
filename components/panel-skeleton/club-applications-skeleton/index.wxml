@@ -1,0 +1,60 @@
+<!-- 入会审批骨架屏 -->
+<view class="skeleton-container">
+  <view class="skeleton-list">
+    <!-- 申请卡片 1 -->
+    <view class="skeleton-application-card">
+      <view class="skeleton-summary">
+        <view class="skeleton-left">
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '50rpx', height: '50rpx', borderRadius: '50%' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '150rpx', height: '28rpx', marginLeft: '16rpx' }]}}" />
+        </view>
+        <view class="skeleton-right">
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '48rpx', borderRadius: '24rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '48rpx', borderRadius: '24rpx', marginLeft: '12rpx' }]}}" />
+        </view>
+      </view>
+    </view>
+
+    <!-- 申请卡片 2 -->
+    <view class="skeleton-application-card">
+      <view class="skeleton-summary">
+        <view class="skeleton-left">
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '50rpx', height: '50rpx', borderRadius: '50%' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '180rpx', height: '28rpx', marginLeft: '16rpx' }]}}" />
+        </view>
+        <view class="skeleton-right">
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '48rpx', borderRadius: '24rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '48rpx', borderRadius: '24rpx', marginLeft: '12rpx' }]}}" />
+        </view>
+      </view>
+    </view>
+
+    <!-- 申请卡片 3 -->
+    <view class="skeleton-application-card">
+      <view class="skeleton-summary">
+        <view class="skeleton-left">
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '50rpx', height: '50rpx', borderRadius: '50%' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '160rpx', height: '28rpx', marginLeft: '16rpx' }]}}" />
+        </view>
+        <view class="skeleton-right">
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '48rpx', borderRadius: '24rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '48rpx', borderRadius: '24rpx', marginLeft: '12rpx' }]}}" />
+        </view>
+      </view>
+    </view>
+
+    <!-- 申请卡片 4 -->
+    <view class="skeleton-application-card">
+      <view class="skeleton-summary">
+        <view class="skeleton-left">
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '50rpx', height: '50rpx', borderRadius: '50%' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '170rpx', height: '28rpx', marginLeft: '16rpx' }]}}" />
+        </view>
+        <view class="skeleton-right">
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '48rpx', borderRadius: '24rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '48rpx', borderRadius: '24rpx', marginLeft: '12rpx' }]}}" />
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

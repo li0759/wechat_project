@@ -1,0 +1,78 @@
+.isotope-container {
+  position: relative;
+  overflow: visible;
+}
+
+.isotope-item {
+  position: absolute;
+  display: block;
+  box-sizing: border-box;
+  z-index: 1;
+}
+
+.isotope-item-wrapper {
+  position: absolute;
+  display: block;
+  box-sizing: border-box;
+}
+
+.isotope-item-image {
+  position: relative;
+  box-sizing: border-box;
+}
+
+.isotope-item-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  overflow: hidden;
+  font-size: 24rpx;
+  color: #333;
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* 待审批成员的时钟图标 */
+.isotope-pending-clock {
+  position: absolute;
+  right: -4rpx;
+  bottom: -4rpx;
+  width: 28rpx;
+  height: 28rpx;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 快速操作按钮基础样式 */
+.isotope-quick-btn {
+  position: absolute;
+  /* 放到容器内侧，避免被外层 overflow: hidden 裁切 */
+  top: 2rpx;
+  right: 2rpx;
+  width: 34rpx;
+  height: 34rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 10rpx rgba(0,0,0,.16);
+  border: 2rpx solid #ffffff;
+  z-index: 10;
+}
+
+/* 加号按钮（绿色） */
+.isotope-quick-btn.plus {
+  background: #52c41a;
+}
+
+/* 减号按钮（红色） */
+.isotope-quick-btn.minus {
+  background: #ff4d4f;
+}
+

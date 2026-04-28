@@ -1,0 +1,10 @@
+{
+  "component": true,
+  "usingComponents": {
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-date-time-picker": "tdesign-miniprogram/date-time-picker/date-time-picker",
+    "expandable-container": "/components/expandable-container/index",
+    "ripple": "/components/ripple/index"
+  }
+}

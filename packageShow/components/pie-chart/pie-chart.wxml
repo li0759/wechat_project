@@ -1,0 +1,17 @@
+<view class="pie-chart-container">
+  <view class="chart-title" wx:if="{{title}}">{{title}}</view>
+  <view class="chart-wrapper" bindtap="onTap">
+    <canvas 
+      id="{{canvasId}}" 
+      type="2d" 
+      class="pie-canvas"
+      style="height: {{height}}px;"
+    ></canvas>
+  </view>
+  <view class="legend" wx:if="{{data.length > 0}}">
+    <view class="legend-item" wx:for="{{data}}" wx:key="name">
+      <view class="legend-color" style="background-color: {{colors[index % colors.length]}}"></view>
+      <view class="legend-text">{{item.name}}: {{item.value}}</view>
+    </view>
+  </view>
+</view> 

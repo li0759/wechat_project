@@ -1,0 +1,148 @@
+<view class="addressbook">
+  <view wx:if="{{!visibleItems.length}}" class="empty">暂无部门</view>
+
+  <block wx:for="{{visibleItems}}" wx:key="key">
+    <view wx:if="{{item.kind === 'dept'}}" class="dept-card {{item._leaving ? 'ab-leave' : ((item.level || 0) > 0 ? 'ab-enter' : '')}}">
+      <view
+        class="dept-row"
+        style="padding-left: {{(item.level || 0) * indentStep}}rpx;"
+        bindtap="onDeptTap"
+        data-id="{{item.deptId}}"
+        data-path="{{item.path}}"
+        data-open="{{item._open}}"
+        data-loaded="{{item._loaded}}"
+      >
+        <view class="dept-title">{{item.department_name}} ({{item.user_count_total || 0}})</view>
+        <t-icon name="{{item._open ? 'chevron-down' : 'chevron-right'}}" color="#999" />
+      </view>
+    </view>
+
+    <view wx:elif="{{item.kind === 'debug'}}" class="empty-inner {{item._leaving ? 'ab-leave' : 'ab-enter'}}" style="text-align:left;color:#ee0a24;padding-left: {{(item.level || 0) * indentStep}}rpx;">
+      {{item.text}}
+    </view>
+
+    <view wx:elif="{{item.kind === 'loading'}}" class="loading {{item._leaving ? 'ab-leave' : 'ab-enter'}}" style="padding-left: {{(item.level || 0) * indentStep}}rpx;">
+      <t-loading theme="circular" size="32rpx" color="{{themeColor}}" />
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <view wx:elif="{{item.kind === 'hint' || item.kind === 'empty'}}" class="empty-inner {{item._leaving ? 'ab-leave' : 'ab-enter'}}" style="padding-left: {{(item.level || 0) * indentStep}}rpx;">
+      {{item.text}}
+    </view>
+
+    <view wx:elif="{{item.kind === 'user'}}" class="user-row {{item._leaving ? 'ab-leave' : ((item.level || 0) > 0 ? 'ab-enter' : '')}}" style="padding-left: {{(item.level || 0) * indentStep}}rpx;">
+      <view class="user-main">
+        <expandable-container
+          id="ab-user-{{item.user.user_id}}"
+          expanded-width="700"
+          expanded-height="820"
+          trigger-width="120"
+          bg-color="#f2f3f5"
+          z-index="30000"
+        >
+          <view slot="trigger" class="ab-avatar-trigger">
+            <image class="avatar" src="{{item.user.avatar || '/assets/images/default-avatar.png'}}" mode="aspectFill" />
+          </view>
+          <!-- 用户详情弹窗：对齐“搜索用户”列表的 expandable-container 弹窗结构 -->
+          <view slot="content" class="ab-expanded-content">
+            <!-- 上方：头像、姓名、部门/职位 -->
+            <view class="ab-user-header">
+              <view class="ab-user-avatar-section">
+                <image
+                  class="ab-user-avatar"
+                  src="{{item.user.avatar || '/assets/images/default-avatar.png'}}"
+                  mode="aspectFill"
+                  lazy-load="{{true}}"
+                />
+              </view>
+              <view class="ab-user-info-section">
+                <view class="ab-user-name">{{item.user.user_name}}</view>
+                <view class="ab-user-details">
+                  <text class="ab-user-department" wx:if="{{item.user.department}}">{{item.user.department}}</text>
+                  <text class="ab-user-position" wx:if="{{item.user.position}}">{{item.user.position}}</text>
+                </view>
+              </view>
+            </view>
+
+            <!-- 下方：详情字段 -->
+            <view class="ab-user-detail-content">
+              <view class="ab-user-info-item" wx:if="{{item.user.position}}">
+                <text class="ab-user-info-label">职位：</text>
+                <text class="ab-user-info-value">{{item.user.position}}</text>
+              </view>
+              <view class="ab-user-info-item" wx:if="{{item.user.phone}}">
+                <text class="ab-user-info-label">电话：</text>
+                <text class="ab-user-info-value">{{item.user.phone}}</text>
+              </view>
+              <view class="ab-user-info-item" wx:if="{{item.user.department}}">
+                <text class="ab-user-info-label">部门：</text>
+                <text class="ab-user-info-value">{{item.user.department}}</text>
+              </view>
+            </view>
+
+            <!-- 操作：仅 add/event 模式需要；会长选择模式仅展示信息 -->
+            <view class="ab-user-actions" wx:if="{{mode !== 'president'}}">
+              <button
+                wx:if="{{!item.user.isExistingMember}}"
+                class="ab-action-btn"
+                catchtap="onUserAction"
+                data-user="{{item.user}}"
+                data-action="add"
+              >
+                <t-icon name="add" size="16" />
+                添加
+              </button>
+              <button
+                wx:elif="{{mode === 'event'}}"
+                class="ab-action-btn ab-action-btn-secondary"
+                catchtap="onUserAction"
+                data-user="{{item.user}}"
+                data-action="remove"
+              >
+                <t-icon name="check-circle-filled" size="16" />
+                已选择
+              </button>
+              <view wx:else class="ab-added-tip">
+                <t-icon name="check-circle-filled" size="18" color="#52c41a" />
+                <text>已添加</text>
+              </view>
+            </view>
+          </view>
+        </expandable-container>
+        <view class="user-text">
+          <view class="user-name">{{item.user.user_name}}</view>
+          <view class="user-meta">{{item.user.department}}{{item.user.position ? (' · ' + item.user.position) : ''}}</view>
+        </view>
+      </view>
+
+      <view class="user-action">
+        <block wx:if="{{mode === 'president'}}">
+          <view class="btn" catchtap="onUserAction" data-user="{{item.user}}">
+            <t-icon name="{{item.user.isSelected ? 'check-circle-filled' : 'crown'}}" color="{{item.user.isSelected ? '#52c41a' : themeColor}}" />
+          </view>
+        </block>
+
+        <block wx:elif="{{mode === 'event'}}">
+          <view wx:if="{{item.user.isExistingMember}}" class="btn" catchtap="onUserAction" data-user="{{item.user}}" data-action="remove">
+            <t-icon name="check-circle-filled" color="#52c41a" />
+          </view>
+          <view wx:elif="{{item.user.eligible}}" class="btn" catchtap="onUserAction" data-user="{{item.user}}" data-action="add">
+            <t-icon name="add" color="{{themeColor}}" />
+          </view>
+          <view wx:else class="btn" style="background: transparent;"></view>
+        </block>
+
+        <block wx:else>
+          <view wx:if="{{!item.user.isExistingMember}}" class="btn" catchtap="onUserAction" data-user="{{item.user}}" data-action="add">
+            <t-icon name="add" color="{{themeColor}}" />
+          </view>
+          <view wx:else class="btn" catchtap="onUserAction" data-user="{{item.user}}" data-action="remove">
+            <t-icon name="check-circle-filled" color="#52c41a" />
+          </view>
+        </block>
+      </view>
+    </view>
+  </block>
+</view>
+
+

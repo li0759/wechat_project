@@ -1,0 +1,38 @@
+<view class="am-root" style="{{rootStyle}}">
+  <!-- 预加载 zoomMin..zoomMax 的地图帧 -->
+  <view class="am-preload" wx:if="{{frames && frames.length}}">
+    <image
+      wx:for="{{frames}}"
+      wx:key="zoom"
+      class="am-preload-img"
+      src="{{item.url}}"
+      mode="aspectFill"
+      bindload="onFrameLoad"
+      binderror="onFrameError"
+      data-zoom="{{item.zoom}}"
+    />
+  </view>
+
+  <!-- 双层叠图：上层做放大 + 淡出，下层提前就位并做缩小 -->
+  <view class="am-stack" style="height: {{heightRpx}}rpx;">
+    <image
+      class="am-layer"
+      src="{{bottomUrl}}"
+      mode="aspectFill"
+      style="transform: scale({{bottomScale}}); transition: transform {{bottomTransitionMs}}ms ease-in-out;"
+    />
+    <image
+      class="am-layer am-layer-top"
+      src="{{topUrl}}"
+      mode="aspectFill"
+      style="transform: scale({{topScale}}); opacity: {{topOpacity}}; transition: transform {{topTransitionMs}}ms ease-in-out, opacity {{fadeMs}}ms ease-in-out;"
+    />
+  </view>
+
+  <block wx:if="{{showEdgeFades}}">
+    <view class="am-fade-left"></view>
+    <view class="am-fade-bottom"></view>
+    <view class="am-fade-corner"></view>
+  </block>
+</view>
+

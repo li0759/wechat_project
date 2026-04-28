@@ -1,0 +1,108 @@
+<view class="container">
+  <view class="applications-list">
+    <block wx:if="{{allApplications.length > 0}}">
+      <view wx:for="{{allApplications}}" wx:key="index" class="application-item">
+        <!-- 折叠状态的基础信息 -->
+        <view class="application-summary" bind:tap="toggleExpand" data-index="{{index}}">
+          <view class="summary-left">
+            <image class="user-avatar-small" src="{{item.appliced_user_avartor || '/assets/images/default-avatar.png'}}" mode="aspectFill"></image>
+            <view class="user-name">{{item.appliced_user_name}}</view>
+          </view>
+          <view class="summary-right">
+            <!-- 待审批状态显示操作按钮 -->
+            <block wx:if="{{!item.processedDate}}">
+              <t-button
+                size="small"
+                theme="primary"
+                bindtap="showApproveDialog"
+                data-applicationid="{{item.applicationID}}"
+                class="summary-btn primary-btn"
+                catchtap="stopPropagation"
+              >批准</t-button>
+              <t-button
+                size="small"
+                theme="default"
+                variant="outline"
+                bindtap="showRejectDialog"
+                data-applicationid="{{item.applicationID}}"
+                class="summary-btn"
+                catchtap="stopPropagation"
+              >拒绝</t-button>
+            </block>
+            <!-- 已处理状态显示状态 -->
+            <view wx:else class="summary-status {{item.approved ? 'status-approved' : 'status-rejected'}}">
+              {{item.approved ? '已批准' : '已拒绝'}}
+            </view>
+            <!-- 展开箭头 -->
+            <t-icon name="{{item.expanded ? 'chevron-up' : 'chevron-down'}}" class="expand-arrow" />
+          </view>
+        </view>
+        
+        <!-- 展开状态的详细信息 -->
+        <view class="application-details" wx:if="{{item.expanded}}">
+          <view class="detail-row">
+            <view class="detail-title">申请时间</view>
+            <view class="detail-value">{{item.applicatedDate}}</view>
+          </view>
+          <view class="detail-row">
+            <view class="detail-title">协会名称</view>
+            <view class="detail-value">{{item.club_name}}</view>
+          </view>
+          <block wx:if="{{item.processedDate}}">
+            <view class="detail-row">
+              <view class="detail-title">处理人</view>
+              <view class="detail-value">{{item.processed_user_name}}</view>
+            </view>
+            <view class="detail-row">
+              <view class="detail-title">处理时间</view>
+              <view class="detail-value">{{item.processedDate}}</view>
+            </view>
+            <view class="detail-row" wx:if="{{item.opinion}}">
+              <view class="detail-title">处理意见</view>
+              <view class="detail-value">{{item.opinion}}</view>
+            </view>
+          </block>
+        </view>
+      </view>
+    </block>
+    <t-empty wx:else description="暂无申请记录" />
+  </view>
+
+<!-- 批准对话框 -->
+<t-dialog
+  visible="{{ showApproveDialog }}"
+  title="批准申请"
+  confirm-btn="确定"
+  cancel-btn="取消"
+  bind:confirm="handleApprove"
+  bind:close="closeDialog"
+>
+  <view class="dialog-body">
+    <t-textarea
+      value="{{ approveOpinion }}"
+      placeholder="请输入批准意见（选填）"
+      maxlength="200"
+      bindchange="onApproveOpinionChange"
+    />
+  </view>
+</t-dialog>
+
+<!-- 拒绝对话框 -->
+<t-dialog
+  visible="{{ showRejectDialog }}"
+  title="拒绝申请"
+  confirm-btn="确定"
+  cancel-btn="取消"
+  bind:confirm="handleReject"
+  bind:close="closeDialog"
+>
+  <view class="dialog-body">
+    <t-textarea
+      value="{{ rejectOpinion }}"
+      placeholder="请输入拒绝理由（必填）"
+      maxlength="200"
+      bindchange="onRejectOpinionChange"
+    />
+  </view>
+</t-dialog>
+</view> 

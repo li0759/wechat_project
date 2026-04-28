@@ -1,0 +1,37 @@
+<view class="popup-skeleton">
+  <!-- 1. 协会基本信息区域 - 白色背景 -->
+  <view class="skeleton-club-info">
+    <!-- 会员头像 - 单行居中 -->
+    <view class="skeleton-members-row">
+      <t-skeleton wx:for="{{[1,2,3,4,5,6,7,8]}}" wx:key="*this" animation="gradient" rowCol="{{[{ width: '72rpx', height: '72rpx', borderRadius: '50%' }]}}" />
+    </view>
+    
+    <!-- 协会人数框 -->
+    <view class="skeleton-member-count">
+      <t-skeleton animation="gradient" rowCol="{{[{ width: '120rpx', height: '48rpx', borderRadius: '24rpx' }]}}" />
+    </view>
+  </view>
+  
+  <!-- 2. 最近活动区域 - 白色背景 -->
+  <view class="skeleton-featured-section">
+    <!-- 最近活动卡片 -->
+    <view class="skeleton-featured-card">
+      <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '280rpx', borderRadius: '16rpx' }]}}" />
+    </view>
+  </view>
+  
+  <!-- 3. 活动列表区域 - 白色背景 -->
+  <view class="skeleton-events-section">
+    <!-- 活动列表项 -->
+    <view wx:for="{{[1,2,3]}}" wx:key="*this" class="skeleton-event-item">
+      <!-- 左边封面 -->
+      <t-skeleton animation="gradient" rowCol="{{[{ width: '150rpx', height: '150rpx', borderRadius: '8rpx' }]}}" />
+      <!-- 右边信息 -->
+      <view class="skeleton-event-info">
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '200rpx', height: '28rpx', marginBottom: '8rpx' }]}}" />
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '180rpx', height: '22rpx', marginBottom: '8rpx' }]}}" />
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '250rpx', height: '22rpx' }]}}" />
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,120 @@
+<!-- 活动列表页面 -->
+<view class="event-container">
+  <t-tabs value="{{ activeTab }}" bind:change="onTabChange">
+    <!-- 活动列表选项卡 -->
+    <t-tab-panel label="活动列表" value="{{0}}" class="list-tab">
+      <!-- 活动列表内容 -->
+      <scroll-view 
+        class="events-scroll" 
+        scroll-y="{{true}}"
+        show-scrollbar="{{false}}"
+        bindscrolltolower="onScrollToLower"
+        enhanced="{{true}}"
+      >
+        <!-- 活动列表容器（参考动态列表结构） -->
+        <view class="events-container">
+          <!-- 活动列表（包含骨架屏和真实内容） -->
+          <view wx:if="{{eventList.length > 0}}" class="events-list">
+              <view wx:for="{{eventList}}" wx:key="event_id" class="event-item">
+                <!-- 骨架屏 -->
+                <t-skeleton wx:if="{{item.loading}}" animation="gradient" rowCol="{{[{ width: '30%' }, [{ size: '150rpx', type: 'rect' },{ width: '70%'}]]}}" loading ></t-skeleton>
+                
+                <!-- 真实内容 -->
+              <view wx:else bind:tap="onEventTap" data-event_id="{{item.event_id}}" data-user_managed="{{item.cur_user_managed}}">
+                <!-- 上部分：协会名称 -->
+                <view class="event-club-header">
+                  <text class="club-name">{{item.club_info.club_name}}</text>
+                  <!-- 状态标签 -->
+                  <view class="event-status" wx:if="{{item.is_ended || item.is_canceled}}">
+                    <text wx:if="{{item.is_ended}}" class="status-tag ended">已结束</text>
+                    <text wx:if="{{item.is_canceled}}" class="status-tag canceled">已取消</text>
+                  </view>
+                </view>
+                
+                <!-- 下部分：左边封面，右边信息 -->
+                <view class="event-main-content">
+                  <!-- 左边：活动封面 -->
+                  <view class="event-cover-wrapper">
+                    <t-image 
+                      src="{{item.cover_url_thumb}}" 
+                      width="150rpx" 
+                      height="150rpx" 
+                      mode="aspectFill"
+                      error="default"
+                      style="border-radius: 8rpx;"
+                    />
+                  </view>
+                  
+                  <!-- 右边：活动信息 -->
+                  <view class="event-info-wrapper">
+                    <text class="event-title">{{item.title}}</text>
+                    <text class="event-time" wx:if="{{item.actual_startTime}}">
+                      <t-icon name="time" size="24rpx" color="#52c41a" />
+                      实际开始：{{item.actual_startTime}}
+                    </text>
+                    <text class="event-time" wx:else>
+                      <t-icon name="time" size="24rpx" color="#ff6b9d" />
+                      预计开始：{{item.pre_startTime}}
+                    </text>
+                    <text class="event-description">{{item.content}}</text>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+          
+          <!-- 空状态显示 -->
+          <view wx:elif="{{eventList.length === 0 && eventEmpty}}" class="empty-state">
+            <t-icon name="calendar" size="120rpx" color="#ddd" />
+            <text class="empty-text">暂无活动</text>
+            <text class="empty-desc">还没有参加任何活动哦</text>
+          </view>
+        </view>
+
+        <!-- 底部安全距离 -->
+        <view class="bottom-safe-area"></view>
+      </scroll-view>
+    </t-tab-panel>
+    
+    <!-- 活动日历选项卡 -->
+    <t-tab-panel label="活动日历" value="{{1}}">
+      <view class="calendar-container">
+        <!-- 日历组件 -->
+        <calendar
+          show="{{true}}"
+          events="{{ calendarEvents || [] }}"
+          bind:select="onCalendarSelect"
+          bind:monthChange="onCalendarMonthChange"
+        />
+        <!-- 如果没有活动数据，显示提示 -->
+        <view wx:if="{{ eventList.length === 0 }}" class="calendar-empty-tip">
+          暂无活动数据可显示
+        </view>
+      </view>
+    </t-tab-panel>
+  </t-tabs>
+  
+  <!-- 月份选择器弹出层 -->
+  <t-popup visible="{{ monthPickerVisible }}" placement="bottom" bind:close="closeMonthPicker">
+    <view class="picker-header">
+      <view class="picker-title">选择年月</view>
+      <view class="picker-actions">
+        <t-button size="small" variant="outline" theme="default" bindtap="closeMonthPicker">取消</t-button>
+        <t-button size="small" theme="primary" bindtap="confirmMonthPicker">确定</t-button>
+      </view>
+    </view>
+    <picker-view
+      value="{{monthPickerValue}}"
+      class="year-month-picker"
+      indicator-style="height: 50px;"
+      bindchange="onMonthPickerChange"
+    >
+      <picker-view-column>
+        <view wx:for="{{monthYearRange}}" wx:key="index" class="picker-item">{{item}}年</view>
+      </picker-view-column>
+      <picker-view-column>
+        <view wx:for="{{[1,2,3,4,5,6,7,8,9,10,11,12]}}" wx:key="index" class="picker-item">{{item}}月</view>
+      </picker-view-column>
+    </picker-view>
+  </t-popup>
+</view> 

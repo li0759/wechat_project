@@ -1,0 +1,12 @@
+<!-- components/panel-skeleton/user-info-skeleton/index.wxml -->
+<view class="user-info-skeleton">
+  <view class="skeleton-avatar-section">
+    <t-skeleton theme="avatar" animation="gradient" rowCol="{{[{ type: 'circle', width: '160rpx', height: '160rpx' }]}}" />
+    <t-skeleton theme="text" animation="gradient" rowCol="{{[{ width: '200rpx', height: '40rpx' }]}}" />
+    <t-skeleton theme="text" animation="gradient" rowCol="{{[{ width: '150rpx', height: '30rpx' }]}}" />
+  </view>
+  
+  <view class="skeleton-info">
+    <t-skeleton theme="paragraph" animation="gradient" rowCol="{{[1, 1, 1, 1, 1, 1]}}" />
+  </view>
+</view>

@@ -1,0 +1,22 @@
+{
+  "component": true,
+  "usingComponents": {
+    "t-image": "tdesign-miniprogram/image/image",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-loading": "tdesign-miniprogram/loading/loading",
+    "t-empty": "tdesign-miniprogram/empty/empty",
+    "t-grid": "tdesign-miniprogram/grid/grid",
+    "t-grid-item": "tdesign-miniprogram/grid-item/grid-item",
+    "t-image-viewer": "tdesign-miniprogram/image-viewer/image-viewer",
+    "ripple": "/components/ripple/index",
+    "animated-map": "/components/animated-map/index",
+    "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",
+    "club-detail-panel": "/packageClub/components/club-detail-panel/index",
+    "club-detail-skeleton": "/components/panel-skeleton/club-detail-skeleton/index"
+  }
+  ,
+  "componentPlaceholder": {
+    "club-detail-panel": "club-detail-skeleton"
+  }
+}

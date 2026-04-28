@@ -1,0 +1,739 @@
+.event-joind-panel {
+  position: relative;
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* 灰色蒙层 - 与 event-manage 和 event-detail 一致 */
+.disabled-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.disabled-overlay-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+  padding: 48rpx;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 24rpx;
+  backdrop-filter: blur(10px);
+}
+
+.disabled-overlay-text {
+  color: #fff;
+  font-size: 36rpx;
+  font-weight: 600;
+  text-align: center;
+}
+
+.disabled-overlay-desc {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 26rpx;
+  text-align: center;
+}
+
+/* 主内容容器：必须形成可滚高度 */
+.content-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #fff;
+}
+
+/*（已恢复 t-tabs，临时 simple/fake tabs 样式已移除）*/
+
+/* 主滚动区域 */
+.main-scroll {
+  flex: none;
+  padding: 0 20rpx;
+  padding-bottom: 140rpx; /* 为底部按钮留出空间 */
+  /* 明确可滚高度，避免在全屏弹窗 slot 内高度计算为 0 */
+  height: calc(100vh - 340rpx);
+  box-sizing: border-box;
+  background: #fff;
+  min-height: 0;
+}
+
+.timeline-scroll {
+  background: transparent;
+}
+
+/* 步骤内容区域 */
+.step-content {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 0 0 24rpx 24rpx;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.1);
+  min-height: calc(100vh - 260rpx);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 时间线 tab 左上角地图背景（与 club-detail-panel 最近活动地图一致：400×300 + 左/下/角渐变由 animated-map 绘制） */
+.timeline-map-bg {
+  position: absolute;
+  opacity:0.8;
+  top: -50rpx;
+  right: -200rpx;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 0;
+}
+
+/* 活动进度上方信息区（200rpx） */
+.timeline-hero {
+  height: 200rpx;
+  box-sizing: border-box;
+  padding: 24rpx 16rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10rpx;
+  position: relative;
+  z-index: 1;
+}
+
+.timeline-hero-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #1A1D1F;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.timeline-hero-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  min-width: 0;
+}
+
+.timeline-hero-text {
+  font-size: 26rpx;
+  color: #6F767E;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card {
+  margin-bottom: 12rpx;
+}
+
+.info-card {
+  background: white;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.steps-card {
+  padding: 16rpx;
+}
+
+.card-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 24rpx;
+  padding-left: 8rpx;
+  border-left: 6rpx solid #ff6b9d;
+}
+
+/* 步骤行样式 */
+.step-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12rpx 0;
+}
+
+.step-row.full {
+  justify-content: center;
+}
+
+.step-row.split {
+  justify-content: space-between;
+}
+
+.step-left {
+  flex: 1;
+}
+
+.step-right {
+  flex: 1;
+  text-align: right;
+  color: #666;
+  font-size: 28rpx;
+}
+
+.mini-avatar-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  overflow: hidden;
+  max-width: 260rpx;
+  height: 56rpx;
+  position: relative;
+}
+
+.mini-avatar-wrap {
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 50%;
+  border: 2rpx solid #fff;
+  margin-left: -16rpx;
+  background: #f2f2f2;
+  overflow: hidden;
+  position: relative;
+}
+
+.mini-avatar-img {
+  width: 100%;
+  height: 100%;
+}
+
+/* 仅在“刚好 6 个”时，最左边第一个头像做圆形渐隐：透明 -> 半透明 -> 不透明 */
+.mini-avatar-wrap.fade-left::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.55) 45%, rgba(255,255,255,1) 100%);
+  pointer-events: none;
+}
+
+.step-text {
+  color: #666;
+  font-size: 28rpx;
+}
+
+/* 底部填充 */
+.footer-space {
+  height: 160rpx;
+}
+
+/* 动态容器 */
+.moments-container {
+  width: 100%;
+  padding: 16rpx 0;
+}
+
+.moments-list {
+  width: 100%;
+}
+
+/* 动态项 */
+.moment-item {
+  background: white;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+/* 动态骨架屏 */
+.moment-skeleton {
+  padding: 24rpx;
+}
+
+.skeleton-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.skeleton-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+.skeleton-user-info {
+  flex: 1;
+  margin-left: 16rpx;
+}
+
+.skeleton-username,
+.skeleton-time {
+  height: 24rpx;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 4rpx;
+  margin-bottom: 8rpx;
+}
+
+.skeleton-username {
+  width: 200rpx;
+}
+
+.skeleton-time {
+  width: 120rpx;
+}
+
+.skeleton-top-text {
+  margin-bottom: 16rpx;
+}
+
+.skeleton-text-line {
+  height: 28rpx;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 4rpx;
+  margin-bottom: 8rpx;
+}
+
+.skeleton-text-line.short {
+  width: 60%;
+}
+
+/* 骨架屏图片网格（固定3张） */
+.skeleton-images-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 16rpx;
+}
+
+.skeleton-image-item {
+  width: 220rpx;
+  height: 220rpx;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 12rpx;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+/* 动态头部 */
+.moment-header {
+  margin-bottom: 16rpx;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.user-details {
+  flex: 1;
+  margin-left: 16rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.username {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4rpx;
+}
+
+.time {
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 动态操作菜单 */
+.moment-ops {
+  position: relative;
+  padding: 8rpx;
+}
+
+.moment-ops-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border-radius: 8rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  min-width: 120rpx;
+}
+
+.moment-ops-item {
+  padding: 16rpx 24rpx;
+  font-size: 28rpx;
+  color: #333;
+  text-align: center;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.moment-ops-item:last-child {
+  border-bottom: none;
+}
+
+.moment-ops-item:active {
+  background: #f5f5f5;
+}
+
+/* 动态内容 */
+.moment-content {
+  margin-bottom: 16rpx;
+}
+
+.moment-text {
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.6;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+/* 动态图片 */
+.moment-images {
+  margin-top: 16rpx;
+}
+
+.images-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+
+/* 动态底部 */
+.moment-footer {
+  border-top: 1rpx solid #f0f0f0;
+  padding-top: 16rpx;
+}
+
+.topic-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-bottom: 12rpx;
+}
+
+.topic-link {
+  font-size: 26rpx;
+  color: #ff6b9d;
+  padding: 4rpx 12rpx;
+  background: rgba(255, 107, 157, 0.1);
+  border-radius: 4rpx;
+}
+
+.moment-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 32rpx;
+}
+
+.like-button {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 8rpx;
+  transition: all 0.3s;
+}
+
+.like-button:active {
+  background: #f5f5f5;
+}
+
+.like-button.liked {
+  color: #ff6b9d;
+}
+
+.like-count {
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 0;
+  color: #999;
+}
+
+.empty-text {
+  margin-top: 16rpx;
+  font-size: 28rpx;
+}
+
+.empty-desc {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #ccc;
+}
+
+/* 加载状态 */
+.loading-moments {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60rpx 0;
+}
+
+.loading-text {
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 添加动态浮动按钮 */
+.add-moment-fab {
+  position: fixed;
+  right: 40rpx;
+  bottom: 120rpx;
+  width: 112rpx;
+  height: 112rpx;
+  background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(255, 107, 157, 0.4);
+  z-index: 100;
+  transition: all 0.3s;
+}
+
+.add-moment-fab:active {
+  transform: scale(0.95);
+  box-shadow: 0 4rpx 12rpx rgba(255, 107, 157, 0.3);
+}
+
+/* 弹窗样式 */
+.popup-block {
+  background: white;
+  border-radius: 24rpx 24rpx 0 0;
+  padding: 32rpx;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.popup-block .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.popup-block .title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.popup-block .btn {
+  font-size: 28rpx;
+  color: #ff6b9d;
+  padding: 8rpx 16rpx;
+}
+
+.popup-block .btn--cancel {
+  color: #999;
+}
+
+.popup-block .btn--confirm {
+  color: #ff6b9d;
+}
+
+.popup-block .btn--confirm.disabled {
+  color: #ccc;
+}
+
+.popup-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.form-item {
+  margin-bottom: 32rpx;
+}
+
+.form-label {
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 16rpx;
+  font-weight: 600;
+}
+
+.moment-textarea {
+  width: 100%;
+  min-height: 200rpx;
+  padding: 16rpx;
+  border: 1rpx solid #e0e0e0;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+.char-count {
+  display: block;
+  text-align: right;
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 8rpx;
+}
+
+/* 缴费弹窗 */
+.payment-dialog {
+  background: white;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  min-width: 560rpx;
+}
+
+.dialog-header {
+  text-align: center;
+  margin-bottom: 32rpx;
+}
+
+.dialog-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.payment-input-container {
+  margin-bottom: 32rpx;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 16rpx;
+}
+
+.dialog-button {
+  flex: 1;
+}
+
+/* 底部操作栏 */
+.bottom-action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  padding-top: 24rpx;
+  box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.08);
+  z-index: 100;
+}
+
+
+
+/* ===== 底部操作栏 ===== */
+.bottom-actions {
+  position: absolute;
+  bottom: 0rpx;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(0deg, rgba(255, 255, 255, 1) 0%, rgba(246, 246, 246, 0.9) 70%, transparent 100%);
+  backdrop-filter: blur(20rpx);
+}
+
+.action-left {
+  display: flex;
+  gap: 16rpx;
+}
+
+.action-right {
+  display: flex;
+  gap: 16rpx;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.action-btn {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  min-width: 120rpx;
+  height: 80rpx;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  gap: 8rpx;
+}
+
+.action-btn.secondary {
+  background: rgba(0,0,0,0.05);
+  color: #666;
+  padding: 0 24rpx;
+}
+
+.action-btn.secondary:active {
+  background: rgba(0,0,0,0.1);
+  transform: scale(0.98);
+}
+
+.action-btn.tertiary {
+  background: transparent;
+  color: #EF4444;
+  border: 1rpx solid #FEE2E2;
+  padding: 0 24rpx;
+  min-width: 100rpx;
+}
+
+.action-btn.tertiary:active {
+  background: #FEE2E2;
+  transform: scale(0.98);
+}
+
+/* 移除原生 button 的边框 */
+.action-btn.secondary::after,
+.action-btn.tertiary::after {
+  border: none;
+}
+
+
