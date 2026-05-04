@@ -62,11 +62,12 @@
   right: 0;
   bottom: 0;
   top: 0;
-  background: transparent;
+  /* 默认白底；入场/离场/展开态由下方规则改为透明，白底由内层 .fs-sheet-content-bg 提供 */
+  background: var(--fs-content-bg, #ffffff);
   overflow: visible;
   pointer-events: auto;
   transform: translateY(100%);
-  opacity: 0;
+  opacity: 1;
 }
 
 /* 全屏内容区背景：覆盖在涟漪之上 */
@@ -101,13 +102,17 @@
 .fs-sheet.fs-enter-active {
   animation: fsSheetIn var(--fs-content-dur, 360ms) cubic-bezier(0.22, 1, 0.36, 1) forwards;
   pointer-events: none;
-  will-change: transform, opacity;
+  will-change: transform;
+  /* 上滑入场全程：顶栏与 sheet 上方空隙露粉涟漪，与 fs-entered 一致 */
+  background: transparent !important;
 }
 
 .fs-sheet.fs-leave-active {
   animation: fsSheetOut var(--fs-content-dur, 360ms) cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
   pointer-events: none;
-  will-change: transform, opacity;
+  will-change: transform;
+  /* 下滑离场全程：与入场对称 */
+  background: transparent !important;
 }
 
 .fs-sheet.fs-entered {
@@ -116,22 +121,24 @@
   opacity: 1;
   pointer-events: auto;
   will-change: auto;
+  /* 展开稳态：顶栏/返回键露粉涟漪；白底仅由内层 .fs-sheet-content-bg（--fs-top 起） */
+  background: transparent !important;
 }
 
 .fs-sheet.fs-hidden {
   transform: translateY(100%);
-  opacity: 0;
+  opacity: 1;
   pointer-events: none;
 }
 
 @keyframes fsSheetIn {
-  from { transform: translateY(100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 
 @keyframes fsSheetOut {
-  from { transform: translateY(0); opacity: 1; }
-  to { transform: translateY(100%); opacity: 0; }
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
 }
 
 /* 返回按钮图标 */

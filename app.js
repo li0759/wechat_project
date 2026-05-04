@@ -440,6 +440,77 @@
     const t = d.getTime()
     return isNaN(t) ? NaN : t
   },
+
+  /**
+   * 通知当前页面：是否挂载「整页唯一」的 page-container 以拦截系统返回。
+   * 嵌套在 slot/分包面板内的 page-container 在真机上常无法拦截，故提升到各宿主 Page 根节点。
+   */
+  notifyFullscreenBackIntercept(visible) {
+    try {
+      const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : []
+      const page = pages && pages.length ? pages[pages.length - 1] : null
+      if (!page || typeof page.setData !== 'function') return
+      const v = !!visible
+      if (!v) {
+        if (this.globalData) this.globalData.__fsBackPcPulse = false
+        page.setData({ fsBackInterceptShow: false })
+        return
+      }
+      // 子层收起后父层仍为 true 时若不再 setData，真机上 page-container 往往不重新绑定拦截 → 下一次系统返回直接退出小程序
+      if (page.data && page.data.fsBackInterceptShow) {
+        if (!this.globalData) this.globalData = {}
+        this.globalData.__fsBackPcPulse = true
+        page.setData({ fsBackInterceptShow: false }, () => {
+          const reopen = () => {
+            if (this.globalData) this.globalData.__fsBackPcPulse = false
+            if (page && typeof page.setData === 'function') {
+              page.setData({ fsBackInterceptShow: true })
+            }
+          }
+          if (typeof wx !== 'undefined' && typeof wx.nextTick === 'function') {
+            wx.nextTick(reopen)
+          } else {
+            setTimeout(reopen, 0)
+          }
+        })
+        return
+      }
+      page.setData({ fsBackInterceptShow: true })
+    } catch (e) {}
+  },
+
+  /**
+   * 全局栈 __expandableStack：含 clip（expandable-container）与 fullscreen。
+   * 系统返回：栈顶「最后一个已展开/展开中」的 clip 或 fullscreen → globalData.__fullscreenBackTarget + 宿主页根级 page-container。
+   */
+  syncExpandablePcShowToTop() {
+    try {
+      if (!this.globalData) this.globalData = {}
+      const stack = this.globalData.__expandableStack
+      if (!Array.isArray(stack)) return
+
+      let topBack = null
+      for (let j = stack.length - 1; j >= 0; j--) {
+        const inst = stack[j]
+        const d = inst && inst.data
+        if (!inst || !d || !(d.isExpanded || d.isExpanding)) continue
+        const role = inst.__expandableStackRole
+        if (role === 'clip' || role === 'fullscreen' || role === undefined) {
+          topBack = inst
+          break
+        }
+      }
+
+      if (!topBack || typeof topBack.setData !== 'function') {
+        this.globalData.__fullscreenBackTarget = null
+        this.notifyFullscreenBackIntercept(false)
+        return
+      }
+
+      this.globalData.__fullscreenBackTarget = topBack
+      this.notifyFullscreenBackIntercept(true)
+    } catch (e) {}
+  },
   })
 
 

@@ -58,8 +58,9 @@
   margin-top: 8rpx;
 }
 
-/* 使用 calc 计算高度，200rpx 是弹窗顶部留白 */
-.page-scroll { height: calc(100vh - 200rpx); }
+.page-scroll {
+  height: calc(100vh - 200rpx);
+}
 
 .loading {
   margin-top: 120rpx;
@@ -2163,7 +2164,7 @@ event-create-panel .page-scroll {
 
 .bottom-actions {
   position: absolute;
-  bottom: 40rpx; /* 往上移，避免被 tabbar 遮挡 */
+  bottom: 40rpx;
   left: 0;
   right: 0;
   z-index: 100;

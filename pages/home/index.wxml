@@ -1,5 +1,7 @@
-<!-- 侧边抽屉容器 -->
-<view class="drawer-container {{drawerTouching ? 'drawer-touching' : ''}}" style="left: {{drawerLeft}}rpx;">
+<!-- home-outer：抽屉根与全屏宿主兄弟节点，避免 drawer 的 transition/will-change 与全屏栈同根重绘牵连（profile 无抽屉故不易复现） -->
+<view class="home-outer">
+<view class="home-page-root">
+<view class="drawer-container {{drawerTouching ? 'drawer-touching' : ''}} {{homeFullscreenLayerActive ? 'drawer-under-fullscreen' : ''}}" style="left: {{drawerLeft}}rpx;">
   <!-- 左侧隐藏区域：协会总览 (800rpx宽) -->
   <view class="drawer-sidebar"
     bindtouchstart="onDrawerTouchStart" 
@@ -464,8 +466,12 @@
       </scroll-view>
     </swiper-item>
   </swiper>
+  </view>
+</view>
+</view>
 
-  <!-- 全局全屏弹窗 - 放在 swiper 外部，避免被 swiper 限制 -->
+<view class="home-fullscreen-host">
+  <!-- 全局全屏弹窗：与 home-page-root 兄弟，独立一层便于叠在全页内容之上 -->
   <expandable-container_fullscreen 
     wx:if="{{globalPopup.visible}}"
     id="globalFullscreenPopup"
@@ -661,5 +667,17 @@
       </view>
     </view>
   </expandable-container_fullscreen>
-  </view>
+</view>
+
+<!-- 整页唯一 page-container：微信在 slot/深层组件内常无法拦截系统返回；栈顶为 clip 或 fullscreen 时统一收起 -->
+<page-container
+  wx:if="{{fsBackInterceptShow}}"
+  show="{{fsBackInterceptShow}}"
+  z-index="10000002"
+  overlay="{{false}}"
+  custom-style="background-color:transparent;"
+  duration="{{1}}"
+  bind:beforeleave="onFsBackInterceptBeforeLeave"
+  bind:afterleave="onFsBackInterceptAfterLeave"
+/>
 </view>

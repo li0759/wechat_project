@@ -33,6 +33,12 @@
   bottom: 0;
 }
 
+/* 嵌套 expandable：保留 catchtap 全屏热区；单层半透明灰（不再叠满屏 0.5 + fadeIn），兼顾底衬与闪屏 */
+.expandable-overlay-nested {
+  background-color: rgba(0, 0, 0, 0.45) !important;
+  animation: none !important;
+}
+
 .popup-container-fixed {
   position: fixed;
 }
@@ -42,10 +48,17 @@
   to { opacity: 1; }
 }
 
-/* 弹窗容器 - clip-path控制可见区域 */
+/* 弹窗容器 - clip-path 在内层 .popup-clip-inner，避免与涟漪层同节点 */
 .popup-container {
   overflow: hidden;
-  will-change: clip-path;
+}
+
+.popup-clip-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  border-radius: inherit;
+  overflow: hidden;
 }
 
 /* 弹窗实际内容 */
@@ -58,7 +71,7 @@
   border-radius: inherit;
 }
 
-/* 涟漪遮罩层 - 挡住弹窗内容 */
+/* 涟漪遮罩层：不用 opacity 过渡，避免与 keyframes 同时进行看起来像「两轮完整径向」 */
 .ripple-mask {
   position: absolute;
   top: 0;
@@ -70,6 +83,13 @@
   border-radius: inherit;
   pointer-events: none;
   will-change: background;
+  opacity: 0;
+  transition: none;
+}
+
+.ripple-mask.ripple-reveal,
+.ripple-mask.ripple-collapse {
+  opacity: 1;
 }
 
 /* 涟漪展开动画 - 从中心向四边挖空 */

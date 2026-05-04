@@ -393,7 +393,7 @@
 .fab-container {
   position: fixed;
   right: 32rpx;
-  bottom: 100rpx;
+  bottom: 200rpx;
   z-index: 100;
 }
 

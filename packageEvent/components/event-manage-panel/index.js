@@ -1202,12 +1202,17 @@ Component({
       };
       
       this.setData({ currentMember: memberData }, () => {
-        setTimeout(() => {
+        const run = () => {
           const popup = this.selectComponent('#em-shared-member-detail');
           if (popup && popup.expand) {
             popup.expand(tapX, tapY);
           }
-        }, 50);
+        };
+        if (typeof wx !== 'undefined' && typeof wx.nextTick === 'function') {
+          wx.nextTick(run);
+        } else {
+          setTimeout(run, 0);
+        }
       });
     },
 

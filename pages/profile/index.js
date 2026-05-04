@@ -50,7 +50,30 @@ Page({
     touchStartTime: 0,
     
     // Fallback 标志
-    useFallbackNavigation: false
+    useFallbackNavigation: false,
+
+    /** 与 app.notifyFullscreenBackIntercept 同步：根级唯一 page-container 拦截系统返回 */
+    fsBackInterceptShow: false
+  },
+
+  onFsBackInterceptBeforeLeave() {
+    try {
+      if (getApp().globalData && getApp().globalData.__fsBackPcPulse) return
+      const t = getApp().globalData.__fullscreenBackTarget
+      if (t && typeof t.receiveRootPageContainerBeforeLeave === 'function') {
+        t.receiveRootPageContainerBeforeLeave()
+      }
+    } catch (e) {}
+  },
+
+  onFsBackInterceptAfterLeave() {
+    try {
+      if (getApp().globalData && getApp().globalData.__fsBackPcPulse) return
+      const t = getApp().globalData.__fullscreenBackTarget
+      if (t && typeof t.receiveRootPageContainerAfterLeave === 'function') {
+        t.receiveRootPageContainerAfterLeave()
+      }
+    } catch (e) {}
   },
 
   /**

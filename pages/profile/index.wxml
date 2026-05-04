@@ -341,9 +341,9 @@
     bind:contentReady="onGlobalPopupContentReady"
   >
     <view slot="trigger"></view>
-    <view slot="content" class="popup-content-wrapper" style="border-radius: 30px 30px; overflow: hidden;">
+    <view slot="content" class="popup-content-wrapper">
       <!-- 骨架屏 - 覆盖在 panel 上面 -->
-      <view wx:if="{{globalPopup.loading}}" style="position: absolute; top: 30rpx; left: 0; right: 0; bottom: 0; z-index: 999; background: #ffffff;">
+      <view wx:if="{{globalPopup.loading}}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 999; background: #f7f8fa;">
         <club-create-skeleton wx:if="{{globalPopup.type === 'club-create'}}" />
         <event-create-skeleton wx:if="{{globalPopup.type === 'event-create'}}" />
         <event-manage-skeleton wx:if="{{globalPopup.type === 'event-manage'}}" />
@@ -526,4 +526,16 @@
       </block>
     </view>
   </expandable-container_fullscreen>
+
+  <!-- 整页唯一 page-container：与 home 一致，拦截 clip / fullscreen 栈顶系统返回 -->
+  <page-container
+    wx:if="{{fsBackInterceptShow}}"
+    show="{{fsBackInterceptShow}}"
+    z-index="10000002"
+    overlay="{{false}}"
+    custom-style="background-color:transparent;"
+    duration="{{1}}"
+    bind:beforeleave="onFsBackInterceptBeforeLeave"
+    bind:afterleave="onFsBackInterceptAfterLeave"
+  />
 </view>

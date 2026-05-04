@@ -106,7 +106,8 @@
 
 /* 主内容区域 - 使用 calc 计算高度 */
 .main-content {
-  height: calc(100vh - 200rpx - 140rpx);
+  height: calc(100vh - 200rpx - 88rpx - 140rpx);
+  padding-bottom: 140rpx;
   -webkit-overflow-scrolling: touch;
 }
 

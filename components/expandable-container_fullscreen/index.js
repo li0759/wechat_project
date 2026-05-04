@@ -38,10 +38,8 @@
     // 涟漪遮罩
     rippleVisible: false,
     rippleStyle: '',
-    // page-container：仅用于拦截系统返回
-    pcShow: false,
+    /** 宿主页根级 page-container beforeleave 期间防重入（组件内已无 page-container） */
     pcLeaving: false,
-    pcShowArbTimer: null,
     // sheet动画
     fsContentClass: 'fs-hidden',
     fsContentDur: 360,
@@ -53,17 +51,34 @@
     fsDragTransition: '',
     fsGestureDismissing: false,
     effectiveZIndex: 1000,
-    fsNav: { statusBarHeight: 0, titleBarHeight: 44, totalHeight: 44 },
-    fsGlobalMaskVisible: false
+    fsNav: { statusBarHeight: 0, titleBarHeight: 44, totalHeight: 44 }
   },
 
   lifetimes: {
+    created() {
+      this.__expandableStackRole = 'fullscreen'
+    },
     attached() { this.initFullscreenNav() },
-    detached() { this.unregisterGlobalFullscreenCloser() }
+    detached() {
+      this.__expandRunId = (this.__expandRunId || 0) + 1
+      if (this.__expandTo1) {
+        clearTimeout(this.__expandTo1)
+        this.__expandTo1 = null
+      }
+      if (this.__expandTo2) {
+        clearTimeout(this.__expandTo2)
+        this.__expandTo2 = null
+      }
+      if (this.__expandTo3) {
+        clearTimeout(this.__expandTo3)
+        this.__expandTo3 = null
+      }
+      this.unregisterGlobalFullscreenCloser()
+    }
   },
 
   methods: {
-    // ---------- page-container / 栈仲裁 ----------
+    // ---------- 可展开栈 / 系统返回与遮罩 ----------
     getGlobalData() {
       try {
         const app = getApp()
@@ -80,35 +95,56 @@
       return gd.__expandableStack
     },
 
-    // 只允许栈顶实例 pcShow=true
-    syncPcShowToTop() {
+    /** 始终解析栈中最后一个仍展开的全屏实例，避免与 clip 混栈时闭包指错 */
+    installGlobalCloseHandler(gd) {
+      if (!gd) return
+      gd.__fullscreenExpandableClose = () => {
+        try {
+          const st = gd.__expandableStack
+          if (!Array.isArray(st)) return false
+          for (let i = st.length - 1; i >= 0; i--) {
+            const host = st[i]
+            const hd = host && host.data
+            const role = host && host.__expandableStackRole
+            if (
+              host &&
+              typeof host.collapse === 'function' &&
+              hd &&
+              (hd.isExpanded || hd.isExpanding) &&
+              (role === 'clip' || role === 'fullscreen' || role === undefined)
+            ) {
+              host.collapse()
+              return true
+            }
+          }
+        } catch (e) {}
+        return false
+      }
+    },
+
+    lastFullscreenInStack(stack) {
+      if (!Array.isArray(stack)) return null
+      for (let i = stack.length - 1; i >= 0; i--) {
+        const inst = stack[i]
+        if (inst && inst.__expandableStackRole !== 'clip') return inst
+      }
+      return null
+    },
+
+    /** 与 app.syncExpandablePcShowToTop 写入的 __fullscreenBackTarget 一致（clip / fullscreen 栈顶） */
+    isCurrentFullscreenBackTarget() {
       try {
         const gd = this.getGlobalData()
-        const stack = this.ensureStack(gd)
-        const top = stack.length ? stack[stack.length - 1] : null
-        // 第1阶段：先把所有实例 pcShow 关掉，避免同时存在两个 page-container
-        for (let i = 0; i < stack.length; i++) {
-          const inst = stack[i]
-          if (!inst || typeof inst.setData !== 'function') continue
-          if (inst.data?.pcShow) inst.setData({ pcShow: false })
-          // 清理旧的仲裁定时器
-          try {
-            if (inst.data?.pcShowArbTimer) {
-              clearTimeout(inst.data.pcShowArbTimer)
-              inst.setData({ pcShowArbTimer: null })
-            }
-          } catch (e) {}
-        }
+        return !!(gd && gd.__fullscreenBackTarget === this)
+      } catch (e) {}
+      return false
+    },
 
-        // 第2阶段：下一拍再让“新的栈顶”打开 pcShow，确保渲染层不会短暂重叠
-        if (top && top.data?.isExpanded && typeof top.setData === 'function') {
-          const t = setTimeout(() => {
-            try {
-              if (top.data?.isExpanded) top.setData({ pcShow: true, pcShowArbTimer: null })
-            } catch (e) {}
-          }, 30)
-          top.setData({ pcShowArbTimer: t })
-        }
+    // 与 app.syncExpandablePcShowToTop 共用栈；系统返回由宿主页根级 page-container 转发
+    syncPcShowToTop() {
+      try {
+        const app = getApp()
+        if (app && typeof app.syncExpandablePcShowToTop === 'function') app.syncExpandablePcShowToTop()
       } catch (e) {}
     },
 
@@ -121,10 +157,7 @@
         if (existedIdx !== -1) stack.splice(existedIdx, 1)
         stack.push(this)
         gd.__fullscreenHost = this
-        gd.__fullscreenExpandableClose = () => {
-          if (this.data?.isExpanded) { this.collapse(); return true }
-          return false
-        }
+        this.installGlobalCloseHandler(gd)
         this.syncPcShowToTop()
       } catch (e) {}
     },
@@ -137,13 +170,10 @@
         const idx = stack.indexOf(this)
         if (idx !== -1) stack.splice(idx, 1)
 
-        const top = stack.length ? stack[stack.length - 1] : null
-        if (top) {
-          gd.__fullscreenHost = top
-          gd.__fullscreenExpandableClose = () => {
-            if (top.data?.isExpanded) { top.collapse(); return true }
-            return false
-          }
+        const lastFs = this.lastFullscreenInStack(stack)
+        if (lastFs) {
+          gd.__fullscreenHost = lastFs
+          this.installGlobalCloseHandler(gd)
         } else {
           if (gd.__fullscreenHost === this) delete gd.__fullscreenHost
           delete gd.__fullscreenExpandableClose
@@ -152,22 +182,19 @@
       } catch (e) {}
     },
 
-    // page-container：系统返回触发（顶层实例会收到）
-    onPcBeforeLeave() {
-      // 避免重复触发
+    /** 由宿主页根级 page-container 的 beforeleave 转发（真机嵌套内 page-container 不拦系统返回） */
+    receiveRootPageContainerBeforeLeave() {
       if (this.data.pcLeaving) return
-      this.setData({ pcLeaving: true, pcShow: false })
+      if (!this.isCurrentFullscreenBackTarget()) return
+      this.setData({ pcLeaving: true })
 
-      // 先把自己从栈里拿掉，让 afterleave 能把拦截权交给下一层
-      this.removeFromStack()
-
-      // 触发弹窗收回动画
-      try { this.collapse() } catch (e) {}
+      this.__pcDrivenClose = true
+      try {
+        this.collapse()
+      } catch (e) {}
     },
 
-    onPcAfterLeave() {
-      // 如果栈里还有上一层弹窗处于展开态，重新把 pcShow=true 交给新的栈顶
-      try { this.syncPcShowToTop() } catch (e) {}
+    receiveRootPageContainerAfterLeave() {
       this.setData({ pcLeaving: false })
     },
 
@@ -230,10 +257,7 @@
         }
         // 从栈中移除当前组件，并更新新的栈顶
         this.removeFromStack()
-        try {
-          if (this.data?.pcShowArbTimer) clearTimeout(this.data.pcShowArbTimer)
-        } catch (e) {}
-        this.setData({ fsGlobalMaskVisible: false, pcShow: false, pcLeaving: false, pcShowArbTimer: null })
+        this.setData({ pcLeaving: false })
         this.__fsToken = null
       } catch (e) {}
     },
@@ -250,6 +274,53 @@
         if (m) return `#${parseInt(m[1]).toString(16).padStart(2,'0')}${parseInt(m[2]).toString(16).padStart(2,'0')}${parseInt(m[3]).toString(16).padStart(2,'0')}`
       }
       return color
+    },
+
+    /**
+     * 收起阶段粉色涟漪：必须高于 fs-portal（effectiveZIndex+1）与 sheet（+2），否则整段画在 sheet 下方不可见。
+     * 先 transition:none + scale(max)，再 nextTick 过渡到 scale(1)，与展开时「小圆→大圆」对称。
+     */
+    playCollapseRippleShrink(durMs) {
+      const dur = Math.max(1, Number(durMs || 300))
+      let wxW = 375
+      let wxH = 667
+      try {
+        const sys = wx.getSystemInfoSync()
+        wxW = Number(sys.windowWidth || 375)
+        wxH = Number(sys.windowHeight || 667)
+      } catch (e) {}
+      const tapX = typeof this.__rippleTapX === 'number' && !isNaN(this.__rippleTapX) ? this.__rippleTapX : wxW / 2
+      const tapY = typeof this.__rippleTapY === 'number' && !isNaN(this.__rippleTapY) ? this.__rippleTapY : wxH / 2
+      const initialSize = this.__rippleInitialSize || 30
+      const convertedBgColor = this.convertColorFormat(this.properties.bgColor)
+      const ez = Number(this.data.effectiveZIndex || 0)
+      const zRip = ez + 40
+      const maxR = Number(this.__rippleMaxRadius || 0)
+      let maxScale
+      if (maxR > 0 && initialSize > 0) {
+        maxScale = (maxR * 2) / initialSize
+      } else {
+        const maxDistX = Math.max(tapX, wxW - tapX)
+        const maxDistY = Math.max(tapY, wxH - tapY)
+        const maxRadius = Math.sqrt(maxDistX * maxDistX + maxDistY * maxDistY)
+        maxScale = (maxRadius * 2) / initialSize
+      }
+      const base = `position:fixed;left:${tapX - initialSize / 2}px;top:${tapY - initialSize / 2}px;width:${initialSize}px;height:${initialSize}px;border-radius:50%;background-color:${convertedBgColor};z-index:${zRip};`
+      const styleStart = `${base}transform:scale(${maxScale});transition:none;`
+      const styleEnd = `${base}transform:scale(1);transition:transform ${dur}ms cubic-bezier(0.4,0,0.2,1);`
+
+      this.setData({ rippleVisible: true, rippleStyle: styleStart })
+      const tick = () => {
+        try {
+          this.setData({ rippleStyle: styleEnd })
+        } catch (e) {}
+      }
+      if (typeof wx !== 'undefined' && typeof wx.nextTick === 'function') {
+        wx.nextTick(tick)
+      } else {
+        setTimeout(tick, 16)
+      }
+      return dur
     },
 
     // 触发器触摸开始 - 记录起始位置和时间
@@ -317,71 +388,6 @@
     // 展开 - 从点击位置涟漪扩散
   expand(tapX, tapY) {
       if (this.data.isExpanded || this.data.isExpanding) return
-
-      const maxDepth = Number(this.properties.maxStackDepth)
-      if (!Number.isNaN(maxDepth) && maxDepth > 0) {
-        try {
-          const gd = this.getGlobalData()
-          const stack = this.ensureStack(gd)
-          if (stack.length >= maxDepth) {
-            const shell = String(this.properties.shellPagePath || '/packageFullscreen/fullscreen-shell/index').trim()
-            try {
-              if (gd) {
-                gd.__fullscreenShellPending = {
-                  depth: stack.length,
-                  limit: maxDepth,
-                  tapX: tapX != null ? tapX : 0,
-                  tapY: tapY != null ? tapY : 0,
-                  at: Date.now()
-                }
-                const ev = String(this.properties.shellEventId || '').trim()
-                const cid = String(this.properties.shellClubId || '').trim()
-                let scn = String(this.properties.shellScene || '').trim()
-                if (!scn) {
-                  if (ev) scn = 'eventDetail'
-                  else if (cid) scn = 'clubDetail'
-                }
-                gd.__fullscreenShellOpenPack = {
-                  scene: scn,
-                  eventId: ev,
-                  clubId: cid,
-                  depth: stack.length,
-                  limit: maxDepth,
-                  tapX: tapX != null ? tapX : 0,
-                  tapY: tapY != null ? tapY : 0,
-                  at: Date.now()
-                }
-              }
-            } catch (e) {}
-            this.triggerEvent('depthLimit', {
-              depth: stack.length,
-              limit: maxDepth,
-              shellPage: shell,
-              scene: String(this.properties.shellScene || '').trim(),
-              eventId: String(this.properties.shellEventId || '').trim(),
-              clubId: String(this.properties.shellClubId || '').trim()
-            })
-            const parts = [`depth=${stack.length}`, `limit=${encodeURIComponent(String(maxDepth))}`]
-            const sc = String(this.properties.shellScene || '').trim()
-            const evQ = String(this.properties.shellEventId || '').trim()
-            const cidQ = String(this.properties.shellClubId || '').trim()
-            if (sc) parts.push(`scene=${encodeURIComponent(sc)}`)
-            if (evQ) parts.push(`eventId=${encodeURIComponent(evQ)}`)
-            if (cidQ) parts.push(`clubId=${encodeURIComponent(cidQ)}`)
-            const qs = parts.join('&')
-            const joiner = shell.indexOf('?') >= 0 ? '&' : '?'
-            wx.navigateTo({
-              url: `${shell}${joiner}${qs}`,
-              fail(err) {
-                wx.showToast({ title: '无法打开承接页', icon: 'none' })
-                try { console.warn('[expandable] navigateTo shell failed', err) } catch (e2) {}
-              }
-            })
-            return
-          }
-        } catch (e) {}
-      }
-
       this.initFullscreenNav()
       
       const sys = wx.getSystemInfoSync()
@@ -405,35 +411,60 @@
       this.__rippleTapY = tapY
       this.__rippleMaxRadius = maxRadius
       this.__rippleInitialSize = initialSize
-      
+
+      this.__expandRunId = (this.__expandRunId || 0) + 1
+      const runId = this.__expandRunId
+
+      if (this.__expandTo1) {
+        clearTimeout(this.__expandTo1)
+        this.__expandTo1 = null
+      }
+      if (this.__expandTo2) {
+        clearTimeout(this.__expandTo2)
+        this.__expandTo2 = null
+      }
+      if (this.__expandTo3) {
+        clearTimeout(this.__expandTo3)
+        this.__expandTo3 = null
+      }
+
       this.setData({
         isExpanding: true,
         effectiveZIndex: effectiveZIndex,
         rippleStyle: rippleStyle,
         rippleVisible: true
+      }, () => {
+        try {
+          this.pushToStackTop()
+        } catch (e) {}
       })
 
       // 下一帧开始扩散
-      setTimeout(() => {
+      this.__expandTo1 = setTimeout(() => {
+        if (runId !== this.__expandRunId) return
         const scale = (maxRadius * 2) / initialSize
         const expandedStyle = `position:fixed;left:${tapX - initialSize/2}px;top:${tapY - initialSize/2}px;width:${initialSize}px;height:${initialSize}px;border-radius:50%;background-color:${convertedBgColor};z-index:${effectiveZIndex};transform:scale(${scale});transition:transform ${dur}ms cubic-bezier(0.4,0,0.2,1);`
         this.setData({ rippleStyle: expandedStyle })
-        
+
         // 涟漪扩散到70%时，开始sheet上滑
-    const slideDur = Math.max(360, Math.floor(dur * 1.2))
-        setTimeout(() => {
+        const slideDur = Math.max(360, Math.floor(dur * 1.2))
+        this.__expandTo2 = setTimeout(() => {
+          if (runId !== this.__expandRunId) return
           this.setData({
             isExpanded: true,
             isExpanding: false,
             fsContentClass: 'fs-enter-active',
             fsContentDur: slideDur
+          }, () => {
+            // 须在 isExpanded 落库后再入栈仲裁，否则 sync 仍把父层当栈顶
+            this.registerGlobalFullscreenCloser()
+            this.notifyContentPanelLoad()
           })
-          this.registerGlobalFullscreenCloser()
-          
-          // 通知内部 panel 组件加载数据（懒加载）
-    this.notifyContentPanelLoad()
-          
-          setTimeout(() => this.setData({ fsContentClass: 'fs-entered' }), slideDur + 30)
+
+          this.__expandTo3 = setTimeout(() => {
+            if (runId !== this.__expandRunId) return
+            this.setData({ fsContentClass: 'fs-entered' })
+          }, slideDur + 30)
         }, Math.floor(dur * 0.7))
       }, 20)
 
@@ -446,42 +477,87 @@
     this.triggerEvent('contentReady', {})
     },
 
+    /** 涟漪阶段即入栈时，系统返回需取消展开并释放栈，避免无 isExpanded 时 collapse 空操作 */
+    cancelExpandInProgress() {
+      this.__expandRunId = (this.__expandRunId || 0) + 1
+      if (this.__expandTo1) {
+        clearTimeout(this.__expandTo1)
+        this.__expandTo1 = null
+      }
+      if (this.__expandTo2) {
+        clearTimeout(this.__expandTo2)
+        this.__expandTo2 = null
+      }
+      if (this.__expandTo3) {
+        clearTimeout(this.__expandTo3)
+        this.__expandTo3 = null
+      }
+      try {
+        this.removeFromStack()
+      } catch (e) {}
+      this.setData({
+        isExpanding: false,
+        isExpanded: false,
+        rippleVisible: false,
+        rippleStyle: '',
+        fsContentClass: 'fs-hidden',
+        pcLeaving: false
+      })
+    },
+
     // 收起
   collapse() {
+      if (this.data.isExpanding && !this.data.isExpanded) {
+        this.cancelExpandInProgress()
+        this.triggerEvent('collapse', {})
+        return
+      }
       if (!this.data.isExpanded) return
       if (this.data.fsGestureDismissing) return
 
+      this.__expandRunId = (this.__expandRunId || 0) + 1
+      if (this.__expandTo1) {
+        clearTimeout(this.__expandTo1)
+        this.__expandTo1 = null
+      }
+      if (this.__expandTo2) {
+        clearTimeout(this.__expandTo2)
+        this.__expandTo2 = null
+      }
+      if (this.__expandTo3) {
+        clearTimeout(this.__expandTo3)
+        this.__expandTo3 = null
+      }
+
       const dur = Number(this.properties.animationDuration || 300)
       const slideDur = Math.max(360, Math.floor(dur * 1.2))
+      const deferStackRelease = Boolean(this.__pcDrivenClose)
 
       this.setData({ fsDragY: 0, fsDragTransform: 'none', fsDragTransition: '', fsGestureDismissing: false })
-      // 立即从栈里移除，把“系统返回拦截权”交给下一层（如有）
-      this.unregisterGlobalFullscreenCloser()
+      // 普通收起立即释放栈；系统返回收起则延后到收起后段，避免视觉闪烁
+      if (!deferStackRelease) this.unregisterGlobalFullscreenCloser()
 
       // 1) sheet下滑
     this.setData({ fsContentClass: 'fs-leave-active', fsContentDur: slideDur })
 
       // 2) 下滑到70%时，涟漪收缩
       setTimeout(() => {
-        this.setData({ fsContentClass: 'fs-hidden' })
-        
-        const tapX = this.__rippleTapX
-        const tapY = this.__rippleTapY
-        const initialSize = this.__rippleInitialSize || 30
-        const convertedBgColor = this.convertColorFormat(this.properties.bgColor)
-        
-        const collapseStyle = `position:fixed;left:${tapX - initialSize/2}px;top:${tapY - initialSize/2}px;width:${initialSize}px;height:${initialSize}px;border-radius:50%;background-color:${convertedBgColor};z-index:${this.data.effectiveZIndex};transform:scale(1);transition:transform ${dur}ms cubic-bezier(0.4,0,0.2,1);`
-        this.setData({ rippleStyle: collapseStyle })
+        if (deferStackRelease) {
+          this.unregisterGlobalFullscreenCloser()
+          this.__pcDrivenClose = false
+        }
+        // 先卸掉全屏白底 portal，再播收缩涟漪：与展开对称（展开时涟漪下仍是父级 panel，不能拖到涟漪结束才露底）
+        this.setData({ fsContentClass: 'fs-hidden', isExpanded: false })
 
-        // 3) 涟漪收缩完成后清理
-        setTimeout(() => this.setData({ isExpanded: false, rippleVisible: false, rippleStyle: '' }), dur + 20)
+        const animDur = this.playCollapseRippleShrink(dur)
+        setTimeout(() => this.setData({ rippleVisible: false, rippleStyle: '' }), animDur + 20)
       }, Math.floor(slideDur * 0.7))
 
       this.triggerEvent('collapse', {})
     },
 
     toggle() {
-      if (this.data.isExpanded) this.collapse()
+      if (this.data.isExpanded || this.data.isExpanding) this.collapse()
       else {
         const sys = wx.getSystemInfoSync()
         this.expand(sys.windowWidth / 2, sys.windowHeight / 2)
@@ -492,9 +568,21 @@
       try {
         const app = getApp()
         const stack = app?.globalData?.__expandableStack
-        if (Array.isArray(stack) && stack.length) {
-          const top = stack[stack.length - 1]
-          if (top && typeof top.collapse === 'function') { top.collapse(); return }
+        if (!Array.isArray(stack) || !stack.length) return
+        for (let i = stack.length - 1; i >= 0; i--) {
+          const top = stack[i]
+          const d = top && top.data
+          const role = top && top.__expandableStackRole
+          if (
+            top &&
+            typeof top.collapse === 'function' &&
+            d &&
+            (d.isExpanded || d.isExpanding) &&
+            (role === 'clip' || role === 'fullscreen' || role === undefined)
+          ) {
+            top.collapse()
+            return
+          }
         }
       } catch (e) {}
     },
@@ -505,16 +593,10 @@
       
       // 检查是否有子弹窗正在展开，如果有则不处理手势
       try {
-        const app = getApp()
-        const stack = app?.globalData?.__expandableStack
-        if (Array.isArray(stack) && stack.length > 0) {
-          // 检查栈顶是否是当前组件
-    const top = stack[stack.length - 1]
-          if (top !== this) {
-            // 有其他弹窗在上层，不处理手势
-    this.__fsGestureBlocked = true
-            return
-          }
+        const t = getApp()?.globalData?.__fullscreenBackTarget
+        if (t && t !== this) {
+          this.__fsGestureBlocked = true
+          return
         }
       } catch (err) {}
       
@@ -602,12 +684,9 @@
       this.setData({ fsGestureDismissing: true, fsDragTransition: `transform ${slideDur}ms linear`, fsDragY: windowHeight + 80, fsDragTransform: `translate3d(0,${windowHeight + 80}px,0)` })
 
       setTimeout(() => {
-        const tapX = this.__rippleTapX, tapY = this.__rippleTapY
-        const initialSize = this.__rippleInitialSize || 30
-        const convertedBgColor = this.convertColorFormat(this.properties.bgColor)
-        const collapseStyle = `position:fixed;left:${tapX - initialSize/2}px;top:${tapY - initialSize/2}px;width:${initialSize}px;height:${initialSize}px;border-radius:50%;background-color:${convertedBgColor};z-index:${this.data.effectiveZIndex};transform:scale(1);transition:transform ${dur}ms cubic-bezier(0.4,0,0.2,1);`
-        this.setData({ rippleStyle: collapseStyle })
-        setTimeout(() => this.setData({ isExpanded: false, fsGestureDismissing: false, fsDragY: 0, fsDragTransition: '', fsDragTransform: 'none', rippleVisible: false, rippleStyle: '' }), dur + 20)
+        this.setData({ isExpanded: false })
+        const animDur = this.playCollapseRippleShrink(dur)
+        setTimeout(() => this.setData({ fsGestureDismissing: false, fsDragY: 0, fsDragTransition: '', fsDragTransform: 'none', rippleVisible: false, rippleStyle: '' }), animDur + 20)
       }, Math.floor(slideDur * 0.7))
 
       this.triggerEvent('collapse', { by: 'gesture' })

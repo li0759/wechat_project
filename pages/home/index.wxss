@@ -1,3 +1,15 @@
+/* 与 drawer 分离的全屏宿主（仅结构层，子组件内仍用 fixed 超高 z-index） */
+.home-outer {
+  display: block;
+  min-height: 100vh;
+}
+
+.home-fullscreen-host {
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
 /* 侧边抽屉容器 */
 .drawer-container {
   position: fixed;
@@ -13,6 +25,12 @@
 /* 触摸时禁用过渡动画 */
 .drawer-container.drawer-touching {
   transition: none !important;
+}
+
+/* 全屏层打开时冻结 left 过渡与 will-change，避免与上层偶发合成闪一下 */
+.drawer-container.drawer-under-fullscreen {
+  transition: none !important;
+  will-change: auto;
 }
 
 /* 左侧隐藏区域：协会总览 */

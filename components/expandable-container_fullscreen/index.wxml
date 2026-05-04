@@ -19,18 +19,6 @@
   style="{{rippleStyle}}"
 ></view>
 
-<!-- 系统返回拦截：`show=true` 时进入「假页」栈，`beforeleave` 才能拦住返回。
-     overlay=false + 透明 custom-style：不显示自带的半透明遮罩/底板（弹层仍用下方 fs-sheet） -->
-<page-container
-  wx:if="{{pcShow}}"
-  show="{{pcShow}}"
-  overlay="{{false}}"
-  custom-style="background-color:transparent;"
-  duration="{{1}}"
-  bind:beforeleave="onPcBeforeLeave"
-  bind:afterleave="onPcAfterLeave"
-></page-container>
-
 <!-- 全屏内容 -->
 <view 
   wx:if="{{isExpanded || isExpanding}}"
@@ -78,3 +66,5 @@
     </view>
   </view>
 </view>
+
+<!-- 系统返回由宿主 Page 根级唯一 page-container 拦截（app.notifyFullscreenBackIntercept），避免嵌套 slot 内 page-container 真机无效 -->

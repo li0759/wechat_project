@@ -1362,18 +1362,17 @@
     </view>
   </block>
 
-  <!-- 共享成员详情弹窗（用于 isotope 点击） -->
+  <!-- 共享成员详情弹窗（用于 isotope 点击）；组件常驻 DOM，避免 wx:if 整段挂载导致底栏 reflow 下跳（对齐 event-manage-panel） -->
   <expandable-container
-    wx:if="{{currentMember}}"
     id="cm-shared-member-detail"
     expanded-width="700"
-    expanded-height="{{isPresident && currentMember.member_id && !currentMember.is_current_user ? 920 : 680}}"
+    expanded-height="{{currentMember ? (isPresident && currentMember.member_id && !currentMember.is_current_user ? 920 : 680) : 680}}"
     bg-color="#f2f3f5"
     z-index="30000"
     bind:collapse="onSharedMemberPopupCollapse"
   >
     <view slot="trigger" style="display: none;"></view>
-    <view slot="content" class="am-user-detail">
+    <view slot="content" class="am-user-detail" wx:if="{{currentMember}}">
       <view class="am-detail-head">
         <image
           class="am-detail-avatar"
@@ -1458,9 +1457,8 @@
     </view>
   </expandable-container>
 
-  <!-- 共享待审批成员弹窗（用于 isotope 点击） -->
+  <!-- 共享待审批成员弹窗；同上，组件常驻 DOM -->
   <expandable-container
-    wx:if="{{currentPendingApplication}}"
     id="cm-shared-pending-detail"
     expanded-width="700"
     expanded-height="820"
@@ -1469,7 +1467,7 @@
     bind:collapse="onSharedPendingPopupCollapse"
   >
     <view slot="trigger" style="display: none;"></view>
-    <view slot="content" class="am-user-detail">
+    <view slot="content" class="am-user-detail" wx:if="{{currentPendingApplication}}">
       <view class="am-detail-head">
         <image
           class="am-detail-avatar"

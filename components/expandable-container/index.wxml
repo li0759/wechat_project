@@ -17,21 +17,24 @@
   catchtap="handleOverlayTap"
 ></view>
 
-<!-- 2. 弹窗容器（通过clip-path控制可见区域） -->
+<!-- 系统返回：与 fullscreen 一致，由宿主页根级唯一 page-container + app.__fullscreenBackTarget 转发，勿在 slot 内再挂 page-container -->
+
+<!-- 2. 弹窗：外层仅 fixed/尺寸/圆角；clip-path 单独内层，避免改 clip 时 WebView 重算导致子节点 rippleReveal 动画被整段重启（看起来像播两次） -->
 <view 
   wx:if="{{clipVisible}}"
   class="popup-container popup-container-fixed"
-  style="{{popupStyle}}{{clipStyle}}"
+  style="{{popupFrameStyle}}"
   catchtap="handleContentTap"
 >
-  <!-- 3. 涟漪遮罩层（挡住弹窗内容，从中心向四边挖空） -->
-  <view 
-    class="ripple-mask {{rippleMaskClass}}"
-    style="--mask-color: {{maskColor}}; --ripple-dur: {{rippleDur}}ms;"
-  ></view>
-  
-  <!-- 4. 弹窗实际内容 -->
-  <view class="popup-content">
-    <slot name="content"></slot>
+  <view class="popup-clip-inner" style="{{popupClipStyle}}">
+    <!-- 3. 涟漪遮罩层（挡住弹窗内容，从中心向四边挖空） -->
+    <view 
+      class="ripple-mask {{rippleMaskClass}}"
+      style="--mask-color: {{maskColor}}; --ripple-dur: {{rippleDur}}ms;"
+    ></view>
+    <!-- 4. 弹窗实际内容 -->
+    <view class="popup-content">
+      <slot name="content"></slot>
+    </view>
   </view>
 </view>

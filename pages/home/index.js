@@ -91,7 +91,43 @@ Page({
       id: '',
       tapX: 0,
       tapY: 0
-    }
+    },
+
+    /** 任一侧全屏弹窗打开：冻结抽屉 transition、忽略抽屉/右滑进抽屉的 touch，减轻与全屏层偶发合成闪一下 */
+    homeFullscreenLayerActive: false,
+
+    /** 与 app.notifyFullscreenBackIntercept 同步：根级唯一 page-container 是否挂载（拦截系统返回） */
+    fsBackInterceptShow: false
+  },
+
+  onFsBackInterceptBeforeLeave() {
+    try {
+      if (getApp().globalData && getApp().globalData.__fsBackPcPulse) return
+      const t = getApp().globalData.__fullscreenBackTarget
+      if (t && typeof t.receiveRootPageContainerBeforeLeave === 'function') {
+        t.receiveRootPageContainerBeforeLeave()
+      }
+    } catch (e) {}
+  },
+
+  onFsBackInterceptAfterLeave() {
+    try {
+      if (getApp().globalData && getApp().globalData.__fsBackPcPulse) return
+      const t = getApp().globalData.__fullscreenBackTarget
+      if (t && typeof t.receiveRootPageContainerAfterLeave === 'function') {
+        t.receiveRootPageContainerAfterLeave()
+      }
+    } catch (e) {}
+  },
+
+  syncHomeFullscreenLayerState() {
+    try {
+      const gp = this.data.globalPopup || {}
+      const mf = this.data.messagesFs || {}
+      const active = Boolean(gp.visible) || Boolean(mf.visible)
+      if (this.data.homeFullscreenLayerActive === active) return
+      this.setData({ homeFullscreenLayerActive: active })
+    } catch (e) {}
   },
 
   // 点击头像打开通知中心（全屏弹窗）
@@ -110,7 +146,8 @@ Page({
     this.setData({
       'messagesFs.visible': true,
       'messagesFs.tapX': tapX,
-      'messagesFs.tapY': tapY
+      'messagesFs.tapY': tapY,
+      homeFullscreenLayerActive: true
     }, () => {
       // 展开弹窗
       setTimeout(() => {
@@ -128,7 +165,8 @@ Page({
   onMessagesFsCollapse() {
     // 等待收起动画结束后再隐藏
     setTimeout(() => {
-      this.setData({ 'messagesFs.visible': false });
+      this.setData({ 'messagesFs.visible': false })
+      this.syncHomeFullscreenLayerState()
     }, 800);
   },
 
@@ -217,6 +255,7 @@ Page({
       // 加载通知数据
     this.fetchMessagesForPanel();
     }
+    this.syncHomeFullscreenLayerState()
   },
 
   // 智能检查与更新（5分钟规则 + 局部更新）
@@ -484,7 +523,8 @@ Page({
    */
   onEventScrollTouchMove: function(e) {
     if (!this.data.eventItemTouching && !this.data.swiperToDrawerMode) return;
-    
+    if (this.data.homeFullscreenLayerActive) return;
+
     const touch = e.touches[0];
     const deltaX = touch.pageX - this.data.eventItemTouchStartX;
     const deltaY = touch.pageY - this.data.eventItemTouchStartY;
@@ -551,7 +591,18 @@ Page({
    */
   onEventScrollTouchEnd: function(e) {
     if (!this.data.eventItemTouching && !this.data.swiperToDrawerMode) return;
-    
+
+    if (this.data.homeFullscreenLayerActive) {
+      this.setData({
+        eventItemTouching: false,
+        eventItemCatchMove: false,
+        swiperToDrawerMode: false,
+        swiperDisableTouch: false,
+        drawerTouching: false
+      })
+      return
+    }
+
     this.setData({
       eventItemTouching: false,
       eventItemCatchMove: false
@@ -635,6 +686,7 @@ Page({
     if (this.data.swiperToDrawerMode) {
       return;
     }
+    if (this.data.homeFullscreenLayerActive) return;
 
     const touch = e.touches[0];
     this.drawerTouchStartX = touch.pageX;
@@ -654,6 +706,7 @@ Page({
     // swiper到drawer模式时，不在这里处理，由onEventSwiperTouchMove处理
     if (this.data.swiperToDrawerMode) return;
     if (!this.data.drawerTouching) return;
+    if (this.data.homeFullscreenLayerActive) return;
 
     const touch = e.touches[0];
     const deltaX = touch.pageX - this.drawerTouchStartX;
@@ -702,6 +755,7 @@ Page({
     // swiper到drawer模式时，不在这里处理，由onEventSwiperTouchEnd处理
     if (this.data.swiperToDrawerMode) return;
     if (!this.data.drawerTouching) return;
+    if (this.data.homeFullscreenLayerActive) return;
     if (!this.drawerTouchMoved) {
       // 如果没有移动，直接取消
     this.setData({ 
@@ -1325,7 +1379,8 @@ Page({
         sheetBgColor,
         tapX: safeX,
         tapY: safeY
-      }
+      },
+      homeFullscreenLayerActive: true
     }, () => {
       setTimeout(() => {
         const popup = this.selectComponent('#globalFullscreenPopup');
@@ -1801,7 +1856,8 @@ Page({
         sheetBgColor,
         tapX,
         tapY
-      }
+      },
+      homeFullscreenLayerActive: true
     }, () => {
       console.log('globalPopup 数据已设置:', this.data.globalPopup);
       setTimeout(() => {
@@ -1836,7 +1892,8 @@ Page({
         'globalPopup.renderPanel': false,  // 重置 renderPanel
         'globalPopup.type': '',
         'globalPopup.id': ''
-      });
+      })
+      this.syncHomeFullscreenLayerState()
     }, 800);
   },
 
