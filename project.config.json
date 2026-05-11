@@ -1,0 +1,90 @@
+{
+  "simulatorPluginLibVersion": {
+    "qywx_simulator_plugin": "2.27.3"
+  },
+  "compileType": "miniprogram",
+  "packOptions": {
+    "ignore": [
+      {
+        "value": "app",
+        "type": "folder"
+      },
+      {
+        "value": ".kiro",
+        "type": "folder"
+      },
+      {
+        "value": ".vscode",
+        "type": "folder"
+      },
+      {
+        "value": "packageMoney",
+        "type": "folder"
+      },
+      {
+        "value": "packageShow",
+        "type": "folder"
+      },
+      {
+        "value": "minitest",
+        "type": "folder"
+      },
+      {
+        "value": "components/search_suggest/demo.json",
+        "type": "file"
+      },
+      {
+        "value": "components/search_suggest/demo.js",
+        "type": "file"
+      },
+      {
+        "value": "components/search_suggest/demo.wxml",
+        "type": "file"
+      },
+      {
+        "value": "components/search_suggest/demo.wxss",
+        "type": "file"
+      },
+      {
+        "value": "requirements.txt",
+        "type": "file"
+      },
+      {
+        "value": "package.json",
+        "type": "file"
+      },
+      {
+        "value": "miniprogram_npm/tdesign-miniprogram/.wechatide.ib.json",
+        "type": "file"
+      }
+    ],
+    "include": []
+  },
+  "setting": {
+    "enhance": true,
+    "es6": true,
+    "postcss": false,
+    "compileWorklet": false,
+    "minified": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "appid": "wxdd0c019563891a72",
+  "libVersion": "3.14.0",
+  "editorSetting": {}
+}

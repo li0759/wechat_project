@@ -1,0 +1,356 @@
+<view class="club-joined-panel">
+  <!-- 灰色蒙层 - 当协会被删除时显示 -->
+  <view wx:if="{{club && club.isDelete}}" class="disabled-overlay">
+    <view class="disabled-overlay-content">
+      <t-icon name="info-circle" size="48" color="#fff" />
+      <text class="disabled-overlay-text">协会已删除</text>
+      <text class="disabled-overlay-desc">此页面仅供查看，无法进行操作</text>
+    </view>
+  </view>
+
+  <!-- 主内容：外层 view 承接 flex 高度，scroll-view 再 height:100%（微信里 scroll-view 直接 flex:1 常失效，底栏会被顶到屏外） -->
+  <view wx:if="{{!isLoading && club}}" class="club-joined-main">
+  <scroll-view 
+    class="page-scroll" 
+    scroll-y="{{true}}"
+    enhanced="{{true}}"
+  >
+    <!-- 1. 成员信息：当前用户（左 60% / 右最近活动 40%）+ 8 列网格（会长 3×2，副会长/理事 2×2，会员 1×1） -->
+    <view class="club-info-section">
+      <view wx:if="{{selfMemberCard}}" class="member-block member-block--self">
+        <view class="member-block-kicker">当前用户</view>
+        <view class="member-self-columns">
+          <view class="member-self-left {{selfMemberCard.last_participated_event ? '' : 'member-self-left--full'}}">
+            <view class="member-self-row">
+              <t-image
+                class="member-self-avatar"
+                src="{{selfMemberCard.avatar}}"
+                width="120rpx"
+                height="120rpx"
+                mode="aspectFill"
+                shape="circle"
+                error="default"
+              />
+              <view class="member-self-meta">
+                <text class="member-self-name">{{selfMemberCard.user_name}}</text>
+                <text class="member-line">加入协会：{{selfMemberCard.join_date_label}}</text>
+                <text class="member-line">参加活动：{{selfMemberCard.participation_count}} 次</text>
+              </view>
+            </view>
+          </view>
+          <view wx:if="{{selfMemberCard.last_participated_event}}" class="last-event-aside">
+            <text class="last-event-kicker">最近一次参加的活动</text>
+            <view class="last-event-body last-event-body--aside">
+              <t-image
+                wx:if="{{selfMemberCard.last_participated_event.cover_thumb}}"
+                src="{{selfMemberCard.last_participated_event.cover_thumb}}"
+                width="100rpx"
+                height="100rpx"
+                mode="aspectFill"
+                style="border-radius: 10rpx; flex-shrink: 0;"
+                error="default"
+              />
+              <view class="last-event-texts">
+                <text class="last-event-title">{{selfMemberCard.last_participated_event.title}}</text>
+                <text class="last-event-time">{{selfMemberCard.last_participated_event.time_line}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view
+        wx:if="{{presidentCard || viceCard || directorCard || memberAvatarOnlyList.length}}"
+        class="members-unified-grid"
+      >
+        <view wx:if="{{presidentCard}}" class="members-grid-cell members-grid-cell--president">
+          <view class="officer-tile officer-tile--president">
+            <text class="officer-tile-kicker">{{presidentCard.role_label}}</text>
+            <view class="officer-tile-head">
+              <t-image
+                src="{{presidentCard.avatar}}"
+                width="88rpx"
+                height="88rpx"
+                mode="aspectFill"
+                shape="circle"
+                error="default"
+              />
+              <text class="officer-tile-name">{{presidentCard.user_name}}</text>
+            </view>
+            <text class="officer-tile-line">加入：{{presidentCard.join_date_label}}</text>
+            <text class="officer-tile-line">发起活动 {{presidentCard.authored_event_count}} 场</text>
+          </view>
+        </view>
+        <view wx:if="{{viceCard}}" class="members-grid-cell members-grid-cell--2x2">
+          <view class="officer-tile">
+            <text class="officer-tile-kicker">{{viceCard.role_label}}</text>
+            <view class="officer-tile-head">
+              <t-image
+                src="{{viceCard.avatar}}"
+                width="72rpx"
+                height="72rpx"
+                mode="aspectFill"
+                shape="circle"
+                error="default"
+              />
+              <text class="officer-tile-name">{{viceCard.user_name}}</text>
+            </view>
+            <text class="officer-tile-line">加入：{{viceCard.join_date_label}}</text>
+            <text class="officer-tile-line">发起活动 {{viceCard.authored_event_count}} 场</text>
+          </view>
+        </view>
+        <view wx:if="{{directorCard}}" class="members-grid-cell members-grid-cell--2x2">
+          <view class="officer-tile">
+            <text class="officer-tile-kicker">{{directorCard.role_label}}</text>
+            <view class="officer-tile-head">
+              <t-image
+                src="{{directorCard.avatar}}"
+                width="72rpx"
+                height="72rpx"
+                mode="aspectFill"
+                shape="circle"
+                error="default"
+              />
+              <text class="officer-tile-name">{{directorCard.user_name}}</text>
+            </view>
+            <text class="officer-tile-line">加入：{{directorCard.join_date_label}}</text>
+            <text class="officer-tile-line">发起活动 {{directorCard.authored_event_count}} 场</text>
+          </view>
+        </view>
+        <view
+          wx:for="{{memberAvatarOnlyList}}"
+          wx:key="user_id"
+          class="members-grid-cell members-grid-cell--1x1"
+        >
+          <t-image
+            src="{{item.avatar}}"
+            width="56rpx"
+            height="56rpx"
+            mode="aspectFill"
+            shape="circle"
+            error="default"
+          />
+        </view>
+      </view>
+
+      <view class="member-count">
+        <t-icon name="usergroup" size="32rpx" color="#666" />
+        <text>{{club.member_count || 0}} 人</text>
+      </view>
+    </view>
+
+    <!-- 2. 最近一次活动或当前正在进行的活动（海报式：参考首页热门协会 isotope + 地图底图） -->
+    <view class="featured-event-section">
+      <!-- 有活动时显示 -->
+      <ripple wx:if="{{featuredEvent}}" rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+        <view
+          class="featured-event-poster-trigger"
+          bindtap="onEventTap"
+          data-event-id="{{featuredEvent.event_id}}"
+        >
+          <view class="featured-event-poster-card">
+            <!-- 单层海报：全幅 animated-map 垫底；isotope 仅占顶部窄条（瓦片不透明，否则会盖住整图） -->
+            <view class="featured-poster-hero">
+              <view class="featured-hero-map" wx:if="{{featuredEvent.premap_url || featuredEvent.mapImageUrl}}">
+                <animated-map
+                  map-url="{{featuredEvent.premap_url || featuredEvent.mapImageUrl}}"
+                  zoom-min="{{14}}"
+                  zoom-max="{{16}}"
+                  width-rpx="{{0}}"
+                  height-rpx="{{520}}"
+                  clip-radius-rpx="{{0}}"
+                  show-edge-fades="{{true}}"
+                  anim-ms="{{800}}"
+                  pause-ms="{{5000}}"
+                  fade-ms="{{300}}"
+                  enlarge-to="{{2}}"
+                  shrink-from="{{2}}"
+                  shrink-to="{{1}}"
+                  base-scale="{{1}}"
+                />
+              </view>
+              <view class="featured-hero-isotope" wx:if="{{featuredEvent.isotopeData && featuredEvent.isotopeData.length}}">
+                <isotope
+                  id="clubJoinedFeaturedIsotope"
+                  items="{{featuredEvent.isotopeData}}"
+                  layoutMode="masonryHorizontal"
+                  masonryHorizontal="{{masonryHorizontalConfig}}"
+                  width="100%"
+                  height="200rpx"
+                  gutter="{{10}}"
+                  transitionDuration="0.75s"
+                  groupInterval="6000"
+                  backgroundColor="rgba(0,0,0,0)"
+                />
+              </view>
+              <!-- 仅底部垫亮：方便左下角文案，不盖住标题区 -->
+              <view class="featured-hero-bottom-readability" aria-hidden="true"></view>
+              <view class="event-content event-content--hero">
+                <view class="event-title">{{featuredEvent.title}}</view>
+                <view class="event-desc" wx:if="{{featuredEvent.content}}">{{featuredEvent.content}}</view>
+                <view class="event-meta">
+                  <view class="meta-row" wx:if="{{featuredEvent.pre_startTime}}">
+                    <t-icon name="time" size="28rpx" color="#666" />
+                    <text class="meta-text">{{featuredEvent.pre_startTime}}</text>
+                  </view>
+                  <view class="meta-row">
+                    <t-icon name="usergroup" size="28rpx" color="#666" />
+                    <text class="meta-text">{{featuredEvent.join_count || 0}}人参与</text>
+                  </view>
+                </view>
+                <view class="event-action-row event-action-row--hero">
+                  <view class="event-status {{featuredEvent.statusClass}}">
+                    {{featuredEvent.statusText}}
+                  </view>
+                  <view wx:if="{{featuredEvent.showButton}}" class="hero-clockin-shift">
+                    <t-button
+                      size="small"
+                      theme="{{featuredEvent.buttonTheme}}"
+                      bindtap="onEventAction"
+                      catchtap="onEventAction"
+                      data-event-id="{{featuredEvent.event_id}}"
+                      data-action="{{featuredEvent.buttonAction}}"
+                    >
+                      {{featuredEvent.buttonText}}
+                    </t-button>
+                  </view>
+                  <view class="hero-action-address" wx:if="{{featuredEvent.location}}">
+                    <t-icon name="location" size="28rpx" color="#666" />
+                    <text class="hero-action-address-text">{{featuredEvent.location}}</text>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </ripple>
+      
+      <!-- 没有活动时显示占位 -->
+      <view wx:else class="featured-event-placeholder">
+        <t-icon name="calendar" size="80rpx" color="#ddd" />
+        <text class="placeholder-text">暂无最近活动</text>
+      </view>
+    </view>
+
+    <!-- 3. 活动分页：每页 8 条，一行 4 个共两行；左右翻页 -->
+    <view class="events-list-section">
+      <view wx:if="{{eventsCurrentPage.length > 0}}" class="events-page-wrap">
+        <view class="events-page-bar">
+          <view
+            class="events-page-btn {{eventsPage <= 1 ? 'is-disabled' : ''}}"
+            bindtap="onEventsPagePrev"
+          >上一页</view>
+          <text class="events-page-label">{{eventsPage}} / {{eventsTotalPages}}</text>
+          <view
+            class="events-page-btn {{eventsPage >= eventsTotalPages ? 'is-disabled' : ''}}"
+            bindtap="onEventsPageNext"
+          >下一页</view>
+        </view>
+        <view class="events-grid {{eventsPageLoading ? 'is-dim' : ''}}">
+          <view wx:for="{{eventsCurrentPage}}" wx:key="event_id" class="event-grid-slot">
+            <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
+              <view class="event-grid-cell" bindtap="onEventTap" data-event-id="{{item.event_id}}">
+                <view class="event-grid-cover-wrap {{item.is_ended_display ? 'is-ended' : ''}}">
+                  <image
+                    class="event-grid-cover"
+                    src="{{item.gridCoverSrc}}"
+                    mode="aspectFill"
+                  />
+                  <view class="join-mark join-mark--ok" wx:if="{{item.join_badge_ok}}">√</view>
+                  <view class="join-mark join-mark--no" wx:else>×</view>
+                </view>
+                <view class="event-grid-body">
+                  <text class="event-grid-count">{{item.join_count || 0}} 人参加</text>
+                  <text class="event-grid-time">开始 {{item.display_start}}</text>
+                  <text class="event-grid-time">结束 {{item.display_end}}</text>
+                </view>
+              </view>
+            </ripple>
+          </view>
+        </view>
+      </view>
+      <view wx:elif="{{eventsEmpty}}" class="empty-state">
+        <t-icon name="calendar" size="120rpx" color="#ddd" />
+        <text class="empty-text">暂无活动</text>
+        <text class="empty-desc">该协会还没有活动哦</text>
+      </view>
+    </view>
+
+    <view class="footer-space"></view>
+    <!-- 底部安全距离 -->
+    <view class="bottom-safe-area"></view>
+  </scroll-view>
+  </view>
+
+  <!-- 底部操作栏（统一样式 styles/panel-bottom-actions.wxss，与 club-manage 双按钮行一致） -->
+  <block wx:if="{{!isLoading && club && !club.isDelete}}">
+    <view class="bottom-actions bottom-actions--row">
+      <t-button class="bottom-action-btn" size="large" shape="round" theme="primary" bindtap="viewClubDetail">协会详情</t-button>
+      <t-button class="bottom-action-btn" size="large" shape="round" theme="danger" variant="outline" bindtap="quitClub">退出协会</t-button>
+    </view>
+  </block>
+
+  <!-- 嵌套的 event-detail 弹窗 -->
+  <expandable-container_fullscreen 
+    wx:if="{{nestedEventDetail.visible}}"
+    id="nestedEventDetailPopup" 
+    expanded-width="750" 
+    expanded-height="1800" 
+    bg-color="rgba(223, 118, 176, 0.8)"
+    fullscreen-sheet-bg-color="#f7f8fa"
+    fullscreen-top-padding="{{0}}"
+    bind:collapse="onNestedEventDetailCollapse"
+    bind:contentReady="onNestedEventDetailContentReady"
+  >
+    <view slot="trigger"></view>
+    <view slot="content" class="nested-popup-shell">
+      <!-- 骨架屏 -->
+      <view wx:if="{{nestedEventDetail.loading}}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 999; background: #f7f8fa;">
+        <event-detail-skeleton />
+      </view>
+      
+      <!-- 真实 panel 组件 -->
+      <block wx:if="{{nestedEventDetail.renderPanel}}">
+        <event-detail-panel
+          id="nestedEventDetailPanel"
+          event-id="{{nestedEventDetail.eventId}}"
+          bind:loaded="onNestedEventDetailLoaded"
+          bind:update="onNestedEventDetailUpdate"
+          bind:close="closeNestedEventDetail"
+        />
+      </block>
+    </view>
+  </expandable-container_fullscreen>
+
+  <!-- 嵌套的 event-joined 弹窗 -->
+  <expandable-container_fullscreen 
+    wx:if="{{nestedEventJoined.visible}}"
+    id="nestedEventJoinedPopup" 
+    expanded-width="750" 
+    expanded-height="1800" 
+    bg-color="rgba(223, 118, 176, 0.8)"
+    fullscreen-sheet-bg-color="#f7f8fa"
+    fullscreen-top-padding="{{0}}"
+    bind:collapse="onNestedEventJoinedCollapse"
+    bind:contentReady="onNestedEventJoinedContentReady"
+  >
+    <view slot="trigger"></view>
+    <view slot="content" class="nested-popup-shell">
+      <!-- 骨架屏 -->
+      <view wx:if="{{nestedEventJoined.loading}}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 999; background: #f7f8fa;">
+        <event-joined-skeleton />
+      </view>
+      
+      <!-- 真实 panel 组件 -->
+      <block wx:if="{{nestedEventJoined.renderPanel}}">
+        <event-joined-panel
+          id="nestedEventJoinedPanel"
+          event-id="{{nestedEventJoined.eventId}}"
+          bind:loaded="onNestedEventJoinedLoaded"
+          bind:update="onNestedEventJoinedUpdate"
+          bind:close="closeNestedEventJoined"
+        />
+      </block>
+    </view>
+  </expandable-container_fullscreen>
+</view>

@@ -1,0 +1,69 @@
+<view class="container">
+  <view class="applications-list">
+    <block wx:if="{{applications.length > 0}}">
+      <view wx:for="{{applications}}" wx:key="index" class="application-item">
+        <!-- 折叠状态的基础信息 -->
+        <view class="application-summary" bind:tap="toggleExpand" data-index="{{index}}">
+          <view class="summary-left">
+            <image class="user-avatar-small" src="{{userInfo.avatarUrl || '/assets/images/default-avatar.png'}}" mode="aspectFill"></image>
+            <view class="user-name">{{item.club_name}}</view>
+          </view>
+          <view class="summary-right">
+            <!-- 待审批状态显示撤回按钮 -->
+            <block wx:if="{{!item.processedDate}}">
+              <view class="summary-status">正在审批</view>
+              <t-button
+                size="small"
+                theme="danger"
+                bindtap="showWithdrawDialog"
+                data-applicationid="{{item.applicationID}}"
+                class="summary-btn withdraw-btn"
+                catchtap="stopPropagation"
+              >撤回</t-button>
+            </block>
+            <!-- 已处理状态显示状态 -->
+            <view wx:else class="summary-status {{item.approved ? 'status-approved' : 'status-rejected'}}">
+              {{item.approved ? '已通过' : '已拒绝'}}
+            </view>
+            <!-- 展开箭头 -->
+            <t-icon name="{{item.expanded ? 'chevron-up' : 'chevron-down'}}" class="expand-arrow" />
+          </view>
+        </view>
+        
+        <!-- 展开状态的详细信息 -->
+        <view class="application-details" wx:if="{{item.expanded}}">
+          <view class="detail-row">
+            <view class="detail-title">申请时间</view>
+            <view class="detail-value">{{item.applicatedDate}}</view>
+          </view>
+          <block wx:if="{{item.processedDate}}">
+            <view class="detail-row">
+              <view class="detail-title">处理人</view>
+              <view class="detail-value">{{item.processed_user}}</view>
+            </view>
+            <view class="detail-row">
+              <view class="detail-title">处理时间</view>
+              <view class="detail-value">{{item.processedDate}}</view>
+            </view>
+            <view class="detail-row" wx:if="{{item.opinion}}">
+              <view class="detail-title">处理意见</view>
+              <view class="detail-value">{{item.opinion}}</view>
+            </view>
+          </block>
+        </view>
+      </view>
+    </block>
+    <t-empty wx:else description="暂无申请记录" />
+  </view>
+
+<!-- 撤回确认对话框 -->
+<t-dialog
+  visible="{{ showWithdrawDialog }}"
+  title="确认撤回申请"
+  content="确定要撤回这个协会申请吗？撤回后无法恢复。"
+  confirm-btn="确定撤回"
+  cancel-btn="取消"
+  bind:confirm="handleWithdraw"
+  bind:close="closeDialog"
+/>
+</view> 

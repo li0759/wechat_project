@@ -1,0 +1,195 @@
+/* pages/profile/all-club-events/index.wxss */
+.container {
+  padding: 0;
+  background: linear-gradient(135deg, #ffeef8 0%, #f8f0ff 100%);
+  min-height: 100vh;
+}
+
+.panel-scroll {
+  height: 100vh;
+}
+
+.bottom-safe-area {
+  height: 220rpx;
+}
+
+.page-header {
+  padding: 30rpx 30rpx 20rpx;
+  background: linear-gradient(135deg, #df76b0 0%, #c157a0 100%);
+  box-shadow: 0 4rpx 20rpx rgba(223, 118, 176, 0.3);
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
+}
+
+.date-filter-card {
+  margin: 20rpx;
+  padding: 20rpx;
+  border-radius: 20rpx;
+  background: linear-gradient(135deg, #fff 0%, #fef8fc 100%);
+  box-shadow: 0 8rpx 32rpx rgba(223, 118, 176, 0.15);
+  border: 1rpx solid rgba(223, 118, 176, 0.1);
+}
+
+.date-filter-title {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 600;
+}
+
+.date-filter-row {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 20rpx;
+}
+
+.date-picker-item {
+  flex: 1;
+}
+
+.date-label {
+  font-size: 22rpx;
+  color: #666;
+  margin-bottom: 10rpx;
+}
+
+.date-picker-value {
+  height: 70rpx;
+  line-height: 70rpx;
+  padding: 0 20rpx;
+  border-radius: 12rpx;
+  border: 1rpx solid rgba(223, 118, 176, 0.25);
+  background: #fff;
+  color: #333;
+  font-size: 24rpx;
+}
+
+.download-btn {
+  margin-top: 20rpx;
+  width: 220rpx;
+}
+
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400rpx;
+}
+
+.loading-text {
+  margin-top: 20rpx;
+  font-size: 28rpx;
+  color: #df76b0;
+  font-weight: 500;
+}
+
+.content {
+  padding: 20rpx 0 30rpx;
+}
+
+/* 统计概览卡片 */
+.stats-overview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+  padding: 0 20rpx 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.stats-card {
+  background: linear-gradient(135deg, #fff 0%, #fef8fc 100%);
+  border-radius: 20rpx;
+  padding: 30rpx 20rpx;
+  text-align: center;
+  box-shadow: 0 8rpx 32rpx rgba(223, 118, 176, 0.15);
+  border: 1rpx solid rgba(223, 118, 176, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.stats-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6rpx;
+  background: linear-gradient(90deg, #df76b0, #9c88ff);
+}
+
+.stats-number {
+  font-size: 42rpx;
+  font-weight: 700;
+  color: #df76b0;
+  margin-bottom: 8rpx;
+  text-shadow: 0 2rpx 4rpx rgba(223, 118, 176, 0.1);
+}
+
+.stats-label {
+  font-size: 22rpx;
+  color: #666;
+  font-weight: 500;
+}
+
+/* 图表区域 */
+.charts-section {
+  padding: 0 20rpx;
+}
+
+.chart-container {
+  background: linear-gradient(135deg, #fff 0%, #fef8fc 100%);
+  border-radius: 20rpx;
+  margin-bottom: 20rpx;
+  padding: 30rpx 20rpx;
+  box-shadow: 0 8rpx 32rpx rgba(223, 118, 176, 0.15);
+  border: 1rpx solid rgba(223, 118, 176, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.chart-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4rpx;
+  background: linear-gradient(90deg, #df76b0, #9c88ff, #5fb3d4);
+}
+
+/* 响应式设计 */
+@media (max-width: 750rpx) {
+  .stats-overview {
+    grid-template-columns: 1fr;
+  }
+  
+  .date-filter-row {
+    flex-direction: column;
+  }
+}
+
+/* 动画效果 */
+.stats-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.chart-container {
+  animation: fadeInUp 0.8s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

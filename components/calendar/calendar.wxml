@@ -1,0 +1,111 @@
+<view class="custom-calendar" wx:if="{{show}}">
+  <view class="calendar-header">
+    <expandable-container
+      id="calYearMonthEc"
+      class="calendar-title-ec"
+      expanded-width="700"
+      expanded-height="720"
+      bg-color="#f2f3f5"
+      z-index="12000"
+      bind:expand="onYearMonthEcExpand"
+    >
+      <ripple slot="trigger" ripple-color="#f2f3f5" duration="{{800}}">
+        <view class="calendar-title">
+          <text>{{selectedYear}}年{{selectedMonth}}月</text>
+          <t-icon class="calendar-title-icon" name="chevron-down" size="18" />
+        </view>
+      </ripple>
+      <view slot="content" class="popup-shell">
+        <view class="popup-header">
+          <view class="popup-title">选择年月</view>
+        </view>
+        <view class="popup-body">
+          <t-date-time-picker
+            usePopup="{{false}}"
+            visible="{{true}}"
+            header="{{false}}"
+            mode="{{yearMonthMode}}"
+            format="YYYY-MM"
+            value="{{timeEditYearMonth}}"
+            start="{{ymPickerStart}}"
+            end="{{ymPickerEnd}}"
+            bind:pick="onYmPick"
+            bind:change="onYmChange"
+            bind:confirm="onYmConfirm"
+          />
+        </view>
+        <view class="popup-footer">
+          <ripple ripple-color="rgba(255, 255, 255, 0.3)" duration="{{800}}">
+            <t-button theme="primary" block bindtap="confirmCalYearMonth">完成</t-button>
+          </ripple>
+        </view>
+      </view>
+    </expandable-container>
+    <view class="calendar-nav">
+      <view class="nav-item" bindtap="onPrevMonth">
+        <t-icon name="chevron-left" size="18" />
+      </view>
+      <view class="nav-item" bindtap="onNextMonth">
+        <t-icon name="chevron-right" size="18" />
+      </view>
+    </view>
+  </view>
+
+  <view class="calendar-weeks">
+    <view class="week-item" wx:for="{{weeks}}" wx:key="index">{{item}}</view>
+  </view>
+
+  <view class="calendar-days">
+    <view class="day-item day-empty" wx:for="{{emptyGrids}}" wx:key="index"></view>
+    <view
+      class="day-item {{item.isToday ? 'day-today' : ''}} {{selectedDay === item.day ? 'day-selected' : ''}} {{item.hasEvents ? 'day-has-events' : ''}}"
+      wx:for="{{days}}"
+      wx:key="index"
+      data-index="{{index}}"
+      bindtouchend="onDayTouchEnd"
+    >
+      <view class="day-content">
+        <text class="day-text">{{item.day}}</text>
+        <view wx:if="{{item.hasEvents}}" class="event-badge">{{item.eventCount}}</view>
+      </view>
+    </view>
+    <view class="day-item day-empty" wx:for="{{lastEmptyGrids}}" wx:key="index"></view>
+  </view>
+</view>
+
+<expandable-container
+  id="calEventListEc"
+  expanded-width="700"
+  expanded-height="860"
+  bg-color="#f2f3f5"
+  z-index="12001"
+  bind:collapse="onEventListCollapse"
+>
+  <view slot="trigger" class="cal-event-ec-trigger-host"></view>
+  <view slot="content" class="popup-shell cal-event-list-shell">
+    <view class="popup-header cal-event-list-header">
+      <view class="popup-title">活动列表</view>
+      <t-icon name="close" size="18" class="cal-event-close" bindtap="closeEventListEc" />
+    </view>
+    <scroll-view scroll-y class="cal-event-list-scroll" enable-flex="{{true}}">
+      <view
+        class="event-item"
+        wx:for="{{currentEvents}}"
+        wx:key="index"
+        data-index="{{index}}"
+        bindtap="onEventItemClick"
+      >
+        <view class="event-item-container">
+          <view class="event-image" wx:if="{{item.active_url}}">
+            <image class="event-img" src="{{item.active_url}}" mode="aspectFill"></image>
+          </view>
+          <view class="event-info">
+            <view class="event-title">{{item.active_title}}</view>
+            <view class="event-time">{{item.formatted_time}}</view>
+          </view>
+        </view>
+      </view>
+      <view wx:if="{{currentEvents.length === 0}}" class="empty-events">当天没有活动</view>
+    </scroll-view>
+  </view>
+</expandable-container>

@@ -1,0 +1,349 @@
+/* 搜索页面整体容器 */
+.search-page {
+  height: 100vh;
+  background-color: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 搜索栏容器 */
+.search-bar {
+  background-color: #fff;
+  padding: 16rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+/* 搜索结果区域 */
+.search-results {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 搜索信息 */
+.search-info {
+  background-color: #fff;
+  padding: 24rpx 32rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.search-query {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.search-count {
+  font-size: 24rpx;
+  color: #666;
+}
+
+/* 结果列表容器 */
+.results-list {
+  flex: 1;
+  background-color: #f8f9fa;
+}
+
+/* 用户结果样式 */
+.user-results {
+  background-color: #fff;
+  margin-bottom: 16rpx;
+}
+
+.user-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 32rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  background-color: #fff;
+  transition: background-color 0.2s;
+}
+
+.user-item:active {
+  background-color: #f5f5f5;
+}
+
+.user-item:last-child {
+  border-bottom: none;
+}
+
+.user-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  margin-right: 24rpx;
+  flex-shrink: 0;
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  font-size: 32rpx;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 8rpx;
+  word-break: break-all;
+}
+
+.user-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.user-phone {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.user-tag {
+  font-size: 24rpx;
+  color: #1890ff;
+}
+
+.user-status {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+}
+
+/* 活动结果样式 */
+.event-results {
+  background-color: #fff;
+  margin-bottom: 16rpx;
+}
+
+.event-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 32rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  background-color: #fff;
+  transition: background-color 0.2s;
+}
+
+.event-item:active {
+  background-color: #f5f5f5;
+}
+
+.event-item:last-child {
+  border-bottom: none;
+}
+
+.event-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.event-title {
+  font-size: 32rpx;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 12rpx;
+  word-break: break-all;
+}
+
+.event-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  margin-bottom: 8rpx;
+}
+
+.event-location,
+.event-time,
+.event-club {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 24rpx;
+  color: #666;
+}
+
+.event-participants {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 24rpx;
+  color: #52c41a;
+}
+
+/* 协会结果样式 */
+.club-results {
+  background-color: #fff;
+  margin-bottom: 16rpx;
+}
+
+.club-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 32rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  background-color: #fff;
+  transition: background-color 0.2s;
+}
+
+.club-item:active {
+  background-color: #f5f5f5;
+}
+
+.club-item:last-child {
+  border-bottom: none;
+}
+
+.club-logo {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 16rpx;
+  margin-right: 24rpx;
+  flex-shrink: 0;
+}
+
+.club-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.club-name {
+  font-size: 32rpx;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 8rpx;
+  word-break: break-all;
+}
+
+.club-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  margin-bottom: 8rpx;
+}
+
+.club-president,
+.club-members {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 24rpx;
+  color: #666;
+}
+
+.club-description {
+  font-size: 24rpx;
+  color: #999;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 加载更多 */
+.load-more {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40rpx;
+  background-color: #fff;
+}
+
+/* 空状态 */
+.empty-state {
+  padding: 80rpx 32rpx;
+  text-align: center;
+  background-color: #fff;
+}
+
+/* 搜索建议区域 */
+.search-suggestions {
+  flex: 1;
+  padding: 32rpx;
+  background-color: #f8f9fa;
+  overflow-y: auto;
+}
+
+/* 搜索历史 */
+.search-history {
+  margin-bottom: 48rpx;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.clear-history {
+  font-size: 24rpx;
+  color: #1890ff;
+  padding: 8rpx 16rpx;
+}
+
+.history-tags,
+.hot-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.history-tag,
+.hot-tag {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 16rpx 24rpx;
+  background-color: #fff;
+  border-radius: 32rpx;
+  font-size: 26rpx;
+  color: #333;
+  border: 1rpx solid #e8e8e8;
+  transition: all 0.2s;
+}
+
+.history-tag:active,
+.hot-tag:active {
+  background-color: #f0f0f0;
+  transform: scale(0.98);
+}
+
+.hot-tag {
+  border-color: #ffe7ef;
+  background-color: #fff5f8;
+}
+
+/* 热门搜索 */
+.hot-search {
+  margin-bottom: 32rpx;
+}
+
+/* 响应式优化 */
+@media (max-width: 750rpx) {
+  .user-item,
+  .event-item,
+  .club-item {
+    padding: 20rpx 24rpx;
+  }
+  
+  .user-avatar,
+  .club-logo {
+    width: 64rpx;
+    height: 64rpx;
+  }
+  
+  .user-name,
+  .event-title,
+  .club-name {
+    font-size: 28rpx;
+  }
+} 

@@ -1,0 +1,57 @@
+.mil-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.mil-scroll {
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 54rpx; /* 预留右侧索引栏 */
+  padding-bottom: 220rpx; /* 预留悬浮按钮 + 底部安全区，避免最后一项被遮挡 */
+}
+
+.mil-anchor {
+  margin: 0 24rpx 10rpx;
+  padding: 10rpx 12rpx;
+  border-radius: 12rpx;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.mil-anchor-text {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #666;
+}
+
+.mil-indexbar {
+  position: absolute;
+  top: 16rpx;
+  right: 10rpx;
+  bottom: 16rpx;
+  width: 44rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4rpx;
+  border-radius: 22rpx;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(10rpx);
+}
+
+.mil-index-item {
+  width: 44rpx;
+  height: 32rpx;
+  line-height: 32rpx;
+  text-align: center;
+  font-size: 20rpx;
+  font-weight: 700;
+  color: #667eea;
+}
+
+.mil-index-item:active {
+  opacity: 0.65;
+}
+

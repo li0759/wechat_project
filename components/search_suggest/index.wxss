@@ -1,0 +1,227 @@
+/* 搜索建议组件样式 - TDesign版本 */
+.search-suggest-container {
+  position: relative;
+  width: 100%;
+  z-index: 1000;
+}
+
+/* 搜索输入框容器 */
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: #f8f9fa;
+  border: 2rpx solid transparent;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.search-input-wrapper.round {
+  border-radius: 50rpx;
+  padding: 0 24rpx;
+}
+
+.search-input-wrapper.square {
+  border-radius: 12rpx;
+  padding: 0 20rpx;
+}
+
+.search-input-wrapper.focused {
+  background: #ffffff;
+  border-color: #ff6b9d;
+  box-shadow: 0 0 0 4rpx rgba(255, 107, 157, 0.1);
+}
+
+/* 搜索图标 */
+.search-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16rpx;
+  flex-shrink: 0;
+}
+
+/* 输入框 */
+.search-input {
+  flex: 1;
+  height: 80rpx;
+  font-size: 28rpx;
+  color: #333;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+/* 清空按钮 */
+.clear-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32rpx;
+  height: 32rpx;
+  margin-left: 16rpx;
+  border-radius: 50%;
+  background: #e8e8e8;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.clear-button.show {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.clear-button.hide {
+  opacity: 0;
+  transform: scale(0);
+}
+
+.clear-button-active {
+  background: #d8d8d8;
+}
+
+/* 搜索按钮 */
+.search-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60rpx;
+  padding: 0 24rpx;
+  margin-left: 16rpx;
+  background: #ff6b9d;
+  border-radius: 30rpx;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.search-button-active {
+  opacity: 0.8;
+  transform: scale(0.95);
+}
+
+.search-button-text {
+  color: #ffffff;
+  font-size: 26rpx;
+  font-weight: 500;
+}
+
+/* 建议下拉框 */
+.suggestions-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-radius: 12rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.12);
+  border: 2rpx solid #f0f0f0;
+  max-height: 600rpx;
+  overflow: hidden;
+  z-index: 1001;
+  margin-top: 8rpx;
+  transition: all 0.3s ease;
+}
+
+.suggestions-dropdown.show {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+}
+
+.suggestions-dropdown.hide {
+  opacity: 0;
+  transform: translateY(-20rpx);
+  visibility: hidden;
+}
+
+/* 加载状态 */
+.loading-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx 20rpx;
+  gap: 16rpx;
+}
+
+.loading-text {
+  font-size: 26rpx;
+  color: #999;
+}
+
+/* 建议列表和历史列表 */
+.suggestions-list,
+.history-list {
+  max-height: 500rpx;
+  overflow-y: auto;
+}
+
+.suggestion-list-item,
+.history-list-item {
+  width: 100%;
+}
+
+.suggestions-header,
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 24rpx 12rpx;
+  border-bottom: 2rpx solid #f5f5f5;
+}
+
+.suggestions-title,
+.history-title {
+  font-size: 24rpx;
+  color: #999;
+  font-weight: 500;
+}
+
+/* TDesign Cell 样式优化 */
+.suggestion-cells,
+.history-cells {
+  background: transparent;
+}
+
+.suggestion-cell,
+.history-cell {
+  background: transparent;
+}
+
+.suggestion-cell.suggestion-item-active,
+.history-cell.history-item-active {
+  background: #f8f9fa !important;
+}
+
+/* 建议项标签 */
+.suggestion-tag {
+  margin-left: 16rpx;
+  flex-shrink: 0;
+}
+
+/* 清空历史按钮 */
+.clear-history-btn {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.clear-text {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.clear-history-btn-active {
+  background: #f0f0f0 !important;
+}
+
+/* 删除历史按钮 */
+.delete-history-btn-active {
+  background: #f0f0f0 !important;
+}
+
+/* 响应式适配 */
+@media screen and (max-width: 375px) {
+  .search-input {
+    font-size: 26rpx;
+  }
+} 

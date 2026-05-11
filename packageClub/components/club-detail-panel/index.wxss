@@ -1,0 +1,505 @@
+@import "../../../styles/panel-bottom-actions.wxss";
+
+/* 协会详情面板样式 - 复刻 club-detail 页面 */
+.club-detail-panel {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+  overflow: hidden;
+}
+
+/* 灰色蒙层样式 */
+.disabled-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: all;
+}
+
+.disabled-overlay-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 40rpx;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 20rpx;
+  margin: 40rpx;
+}
+
+.disabled-overlay-text {
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: 600;
+  margin-top: 16rpx;
+}
+
+.disabled-overlay-desc {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 26rpx;
+  margin-top: 8rpx;
+}
+
+/* 加载和空状态 */
+.loading-container,
+.empty-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: #fff;
+}
+
+.loading-text,
+.empty-text {
+  margin-top: 24rpx;
+  font-size: 28rpx;
+  color: #999;
+}
+
+/* 分段导航 */
+.section-nav {
+  flex-shrink: 0;
+  z-index: 100;
+  background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%);
+  backdrop-filter: blur(10rpx);
+}
+
+.nav-scroll {
+  height: 88rpx;
+}
+
+.nav-content {
+  display: flex;
+  align-items: center;
+  height: 88rpx;
+  padding: 0 32rpx;
+  white-space: nowrap;
+}
+
+.nav-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 60rpx;
+  padding: 0 24rpx;
+  margin-right: 24rpx;
+  font-size: 28rpx;
+  color: rgba(0,0,0,0.6);
+  border-radius: 30rpx;
+  transition: all 0.3s ease;
+}
+
+.nav-item.active {
+  background-color: #ff6b9d;
+  color: #fff;
+  font-weight: 500;
+}
+
+/* 主内容区域：在 flex 列内占满剩余高度（全屏弹层内勿用 100vh） */
+.main-content {
+  flex: 1;
+  min-height: 0;
+  padding-bottom: 140rpx;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 通用区域样式 */
+.section {
+  margin-bottom: 24rpx;
+}
+
+.section-header {
+  padding: 32rpx 32rpx 24rpx;
+}
+
+.section-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+/* 封面轮播 */
+.cover-section {
+  position: relative;
+  margin-bottom: 0;
+}
+
+.cover-swiper {
+  width: 100%;
+  height: 500rpx;
+}
+
+.cover-img {
+  width: 100%;
+  height: 100%;
+}
+
+.thumbnail-indicators {
+  position: absolute;
+  bottom: 24rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12rpx;
+  padding: 12rpx 16rpx;
+  background: rgba(0,0,0,0.5);
+  border-radius: 24rpx;
+  backdrop-filter: blur(10rpx);
+}
+
+.thumb-item {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 8rpx;
+  overflow: hidden;
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+.thumb-item.active {
+  opacity: 1;
+  box-shadow: 0 0 0 2rpx #ff6b9d;
+}
+
+.thumb-img {
+  width: 100%;
+  height: 100%;
+}
+
+/* 协会信息卡片 */
+.info-section {
+  background: #f5f5f5;
+}
+
+.info-card {
+  background: #f8f8f8;
+  margin: 0 32rpx 32rpx;
+  padding: 32rpx;
+  border-radius: 16rpx;
+}
+
+.club-title {
+  font-size: 40rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16rpx;
+  line-height: 1.4;
+}
+
+.club-desc {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 32rpx;
+}
+
+.info-row {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 24rpx;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #e0e0e0;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.info-content {
+  flex: 1;
+  margin-left: 16rpx;
+}
+
+.info-label {
+  display: block;
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 8rpx;
+}
+
+.info-value {
+  display: block;
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.4;
+}
+
+/* 会长信息 */
+.president-info {
+  display: flex;
+  align-items: center;
+}
+
+/* 协会人员区域 */
+.members-section {
+  background: #f5f5f5;
+  border-radius: 24rpx 24rpx 0 0;
+  margin-top: -24rpx;
+  position: relative;
+  z-index: 10;
+}
+
+.members-grid {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0 24rpx 24rpx;
+}
+
+.member-item {
+  width: 16.66%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16rpx 8rpx;
+}
+
+.member-avatar {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  background: #eee;
+}
+
+.member-name {
+  font-size: 22rpx;
+  color: #666;
+  margin-top: 8rpx;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.empty-members,
+.empty-activities {
+  text-align: center;
+  padding: 80rpx 32rpx;
+  color: #999;
+  font-size: 28rpx;
+}
+
+/* 最近活动区域 */
+.activities-section {
+  background: #f0f0f0;
+}
+
+.activities-list {
+  padding: 0 32rpx 32rpx;
+}
+
+/* 与 club-joined-panel 特色活动海报一致（嵌套在协会详情「最近活动」内） */
+.club-detail-activity-poster-item {
+  margin-bottom: 24rpx;
+}
+
+.club-detail-activity-poster-item .featured-event-poster-trigger {
+  width: 100%;
+  border-radius: 20rpx;
+  overflow: hidden;
+}
+
+.club-detail-activity-poster-item .featured-event-poster-card {
+  position: relative;
+  width: 100%;
+  min-height: 420rpx;
+  border-radius: 20rpx;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+}
+
+.club-detail-activity-poster-item .featured-poster-hero {
+  position: relative;
+  width: 100%;
+  min-height: 460rpx;
+  overflow: hidden;
+}
+
+.club-detail-activity-poster-item .featured-hero-map {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.club-detail-activity-poster-item .featured-hero-map animated-map {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.club-detail-activity-poster-item .featured-hero-isotope {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200rpx;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.club-detail-activity-poster-item .featured-hero-bottom-readability {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 260rpx;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.94) 0%,
+    rgba(255, 255, 255, 0.55) 38%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+.club-detail-activity-poster-item .event-content {
+  position: relative;
+  z-index: 3;
+  min-height: 200rpx;
+}
+
+.club-detail-activity-poster-item .event-content--hero {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 20rpx 24rpx 24rpx;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.club-detail-activity-poster-item .event-content--hero .event-status {
+  pointer-events: auto;
+}
+
+.club-detail-activity-poster-item .event-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12rpx;
+  line-height: 1.4;
+}
+
+.club-detail-activity-poster-item .event-desc {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 16rpx;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.club-detail-activity-poster-item .event-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  margin-bottom: 16rpx;
+}
+
+.club-detail-activity-poster-item .meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.club-detail-activity-poster-item .meta-text {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.club-detail-activity-poster-item .event-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.club-detail-activity-poster-item .event-action-row--hero {
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 12rpx;
+  border-top: none;
+  padding-top: 12rpx;
+}
+
+.club-detail-activity-poster-item .event-action-row--detailOnly .hero-action-address {
+  margin-left: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.club-detail-activity-poster-item .hero-action-address {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.club-detail-activity-poster-item .hero-action-address-text {
+  font-size: 24rpx;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.club-detail-activity-poster-item .event-status {
+  font-size: 26rpx;
+  font-weight: 500;
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  flex-shrink: 0;
+}
+
+.club-detail-activity-poster-item .status-upcoming {
+  background: rgba(24, 144, 255, 0.1);
+  color: #1890ff;
+}
+
+.club-detail-activity-poster-item .status-ongoing {
+  background: rgba(82, 196, 26, 0.1);
+  color: #52c41a;
+}
+
+.club-detail-activity-poster-item .status-ended {
+  background: rgba(0, 0, 0, 0.05);
+  color: #999;
+}
+
+/* 底部安全距离（为固定底栏留白） */
+.bottom-safe-area {
+  height: 200rpx;
+}
+
+.nested-popup-shell {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  border-radius: 30rpx 30rpx 0 0;
+  overflow: hidden;
+  background: #f7f8fa;
+}

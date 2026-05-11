@@ -1,0 +1,7 @@
+<!--pages/share-redirect/index.wxml-->
+<view class="container">
+  <view class="loading">
+    <t-loading size="24px" theme="circular" />
+    <view class="loading-text">加载中...</view>
+  </view>
+</view>

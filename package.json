@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "@babel/runtime": "^7.26.10",
+    "miniprogram-api-promise": "^1.0.4",
+    "tdesign-miniprogram": "^1.9.7"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.9",
+    "@babel/preset-env": "^7.23.9"
+  }
+}

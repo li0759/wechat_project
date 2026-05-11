@@ -1,0 +1,8 @@
+<view class="train-ring-root" style="{{rootStyle}}">
+  <view class="tunnel-mouth tunnel-mouth-start" style="{{tunnelStartStyle}}"></view>
+  <view class="tunnel-mouth tunnel-mouth-end" style="{{tunnelEndStyle}}"></view>
+
+  <block wx:for="{{chars}}" wx:key="id">
+    <view class="train-char" style="{{item.style}}">{{item.text}}</view>
+  </block>
+</view>

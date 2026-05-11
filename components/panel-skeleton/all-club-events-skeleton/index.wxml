@@ -1,0 +1,20 @@
+<!-- 所有协会活动数据骨架屏 -->
+<view class="skeleton-container">
+  <!-- 统计卡片骨架 (4个) -->
+  <view class="skeleton-stats">
+    <t-skeleton theme="paragraph" rowCol="{{[[{width: '160rpx', height: '120rpx'}], [{width: '160rpx', height: '120rpx'}], [{width: '160rpx', height: '120rpx'}], [{width: '160rpx', height: '120rpx'}]]}}" />
+  </view>
+  
+  <!-- 图表骨架 -->
+  <view class="skeleton-chart">
+    <t-skeleton theme="paragraph" rowCol="{{[[{width: '100%', height: '300rpx'}]]}}" />
+  </view>
+  
+  <view class="skeleton-chart">
+    <t-skeleton theme="paragraph" rowCol="{{[[{width: '100%', height: '280rpx'}]]}}" />
+  </view>
+  
+  <view class="skeleton-chart">
+    <t-skeleton theme="paragraph" rowCol="{{[[{width: '100%', height: '280rpx'}]]}}" />
+  </view>
+</view>

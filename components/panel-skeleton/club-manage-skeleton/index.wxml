@@ -1,0 +1,32 @@
+<view class="popup-skeleton">
+  <!-- 基本信息行 -->
+  <view style="padding: 20rpx 30rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '120rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  <!-- 协会封面+活动管理 双卡片 -->
+  <view style="padding: 0 30rpx 20rpx; display: flex; gap: 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '335rpx', height: '300rpx', borderRadius: '16rpx' }]}}" />
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '335rpx', height: '300rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  <!-- 人员管理大卡片 -->
+  <view style="padding: 0 30rpx 20rpx;">
+    <!-- 标题行 -->
+    <view style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20rpx;">
+      <t-skeleton animation="gradient" rowCol="{{[{ width: '140rpx', height: '40rpx' }]}}" />
+      <t-skeleton animation="gradient" rowCol="{{[{ width: '60rpx', height: '32rpx' }]}}" />
+    </view>
+    <!-- 排序按钮行 -->
+    <view style="display: flex; gap: 16rpx; margin-bottom: 20rpx;">
+      <t-skeleton animation="gradient" rowCol="{{[{ width: '195rpx', height: '62rpx', borderRadius: '31rpx' }]}}" />
+      <t-skeleton animation="gradient" rowCol="{{[{ width: '195rpx', height: '62rpx', borderRadius: '31rpx' }]}}" />
+      <t-skeleton animation="gradient" rowCol="{{[{ width: '195rpx', height: '62rpx', borderRadius: '31rpx' }]}}" />
+    </view>
+    <!-- 头像网格 - 7列 -->
+    <view style="display: flex; flex-wrap: wrap; gap: 12rpx;">
+      <view wx:for="{{21}}" wx:key="index" style="display: flex; flex-direction: column; align-items: center; width: 90rpx;">
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '90rpx', height: '90rpx', borderRadius: '50%' }]}}" />
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '70rpx', height: '24rpx', marginTop: '6rpx' }]}}" style="margin-top: 6rpx;" />
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,38 @@
+<view class="popup-skeleton">
+  <!-- 标题行 -->
+  <view style="padding: 20rpx 30rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '100rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  <!-- 简介行 -->
+  <view style="padding: 0 30rpx 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '120rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  <!-- 预计开始/结束行 -->
+  <view style="padding: 0 30rpx 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '100rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  <view style="padding: 0 30rpx 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '100rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  <!-- 实际开始/结束文本行 -->
+  <view style="padding: 0 30rpx 16rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '200rpx', height: '40rpx' }]}}" />
+  </view>
+  <view style="padding: 0 30rpx 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '200rpx', height: '40rpx' }]}}" />
+  </view>
+  <!-- 封面+地址 双卡片 -->
+  <view style="padding: 0 30rpx 20rpx; display: flex; gap: 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '335rpx', height: '300rpx', borderRadius: '16rpx' }]}}" />
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '335rpx', height: '300rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  <!-- 日程管理卡片 -->
+  <view style="padding: 0 30rpx 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '300rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+  <!-- 活动人员+动态 双卡片 -->
+  <view style="padding: 0 30rpx 20rpx; display: flex; gap: 20rpx;">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '335rpx', height: '300rpx', borderRadius: '16rpx' }]}}" />
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '335rpx', height: '300rpx', borderRadius: '16rpx' }]}}" />
+  </view>
+</view>

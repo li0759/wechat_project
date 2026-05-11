@@ -1,0 +1,75 @@
+<!-- 活动列表骨架屏 -->
+<view class="skeleton-container">
+  <!-- Tab骨架 -->
+  <view class="skeleton-tabs">
+    <view class="skeleton-tab active">
+      <t-skeleton animation="gradient" rowCol="{{[{ width: '120rpx', height: '32rpx' }]}}" />
+    </view>
+    <view class="skeleton-tab">
+      <t-skeleton animation="gradient" rowCol="{{[{ width: '120rpx', height: '32rpx' }]}}" />
+    </view>
+  </view>
+
+  <!-- 活动列表骨架 -->
+  <view class="skeleton-list">
+    <!-- 活动卡片 1 -->
+    <view class="skeleton-event-card">
+      <view class="skeleton-club-header">
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '150rpx', height: '24rpx' }]}}" />
+      </view>
+      <view class="skeleton-event-content">
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '150rpx', height: '150rpx', borderRadius: '8rpx' }]}}" />
+        <view class="skeleton-event-info">
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '200rpx', height: '28rpx', marginBottom: '8rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '180rpx', height: '22rpx', marginBottom: '8rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '250rpx', height: '22rpx' }]}}" />
+        </view>
+      </view>
+    </view>
+
+    <!-- 活动卡片 2 -->
+    <view class="skeleton-event-card">
+      <view class="skeleton-club-header">
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '150rpx', height: '24rpx' }]}}" />
+      </view>
+      <view class="skeleton-event-content">
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '150rpx', height: '150rpx', borderRadius: '8rpx' }]}}" />
+        <view class="skeleton-event-info">
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '220rpx', height: '28rpx', marginBottom: '8rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '190rpx', height: '22rpx', marginBottom: '8rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '230rpx', height: '22rpx' }]}}" />
+        </view>
+      </view>
+    </view>
+
+    <!-- 活动卡片 3 -->
+    <view class="skeleton-event-card">
+      <view class="skeleton-club-header">
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '150rpx', height: '24rpx' }]}}" />
+      </view>
+      <view class="skeleton-event-content">
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '150rpx', height: '150rpx', borderRadius: '8rpx' }]}}" />
+        <view class="skeleton-event-info">
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '210rpx', height: '28rpx', marginBottom: '8rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '170rpx', height: '22rpx', marginBottom: '8rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '240rpx', height: '22rpx' }]}}" />
+        </view>
+      </view>
+    </view>
+
+    <!-- 活动卡片 4 -->
+    <view class="skeleton-event-card">
+      <view class="skeleton-club-header">
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '150rpx', height: '24rpx' }]}}" />
+      </view>
+      <view class="skeleton-event-content">
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '150rpx', height: '150rpx', borderRadius: '8rpx' }]}}" />
+        <view class="skeleton-event-info">
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '190rpx', height: '28rpx', marginBottom: '8rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '200rpx', height: '22rpx', marginBottom: '8rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '220rpx', height: '22rpx' }]}}" />
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

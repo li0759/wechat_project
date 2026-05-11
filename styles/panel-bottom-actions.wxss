@@ -1,0 +1,71 @@
+/**
+ * 详情 / 管理 / 创建 面板统一底栏（对齐 event-detail-panel 结构）
+ * - 与主 scroll-view 兄弟节点，position:absolute 锚定组件根（需 position:relative + 定高/overflow）
+ * - 距屏幕底边：50rpx，并叠加安全区
+ * - transform / backface-visibility：减轻页面转场、子树更新时底栏闪动
+ */
+
+.footer-space {
+  height: 280rpx;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.bottom-actions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /**
+   * 与屏底间距：50rpx + 可选上抬量（宿主设 --tab-bar-visual-gap，如带自定义 tabBar 的全屏弹层）
+   * 自定义 tabBar 为 fixed 且 z-index 较高，底栏需整体上移否则会只剩一条露在 tab 上方
+   */
+  bottom: calc(50rpx + var(--tab-bar-visual-gap, 0rpx));
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-top: 12rpx;
+  /* 高于 custom-tab-bar 的 .t-tab-bar(z-index:1000)，避免仍被条栏压住 */
+  z-index: 12000;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  padding-left: 24rpx;
+  padding-right: 24rpx;
+  box-sizing: border-box;
+  pointer-events: auto;
+  /* 与 event-manage 原渐变条一致，避免仅按钮区域一块白、与详情/管理视觉不统一 */
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(247, 248, 250, 0.88) 45%, rgba(247, 248, 250, 0.98) 100%);
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.bottom-actions--row {
+  justify-content: space-between;
+}
+
+.bottom-action-btn {
+  width: 420rpx;
+  max-width: 100%;
+  flex: 0 1 auto;
+}
+
+.bottom-actions--row .bottom-action-btn {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+  max-width: 48%;
+}
+
+/* 三按钮横排（活动管理：开始/分享/取消） */
+.bottom-actions--compact {
+  justify-content: center;
+  gap: 10rpx;
+}
+
+.bottom-actions--compact .bottom-action-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: none;
+}

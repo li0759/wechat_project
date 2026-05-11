@@ -1,0 +1,6 @@
+page {
+  /* 统一 t-tabs 激活文字与下划线颜色 */
+  --td-tab-item-active-color: rgb(223, 118, 176);
+  --td-tab-track-color: rgb(223, 118, 176);
+}
+

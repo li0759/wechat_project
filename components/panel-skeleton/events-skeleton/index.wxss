@@ -1,0 +1,60 @@
+/* 活动列表骨架屏样式 */
+.skeleton-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #f7f8fa;
+  z-index: 999;
+  overflow: hidden;
+  padding-top: 100rpx;
+}
+
+.skeleton-tabs {
+  display: flex;
+  background-color: #ffffff;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.skeleton-tab {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12rpx 0;
+}
+
+.skeleton-tab.active {
+  border-bottom: 3rpx solid #e0e0e0;
+}
+
+.skeleton-list {
+  padding: 24rpx;
+}
+
+.skeleton-event-card {
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 16rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+}
+
+.skeleton-club-header {
+  margin-bottom: 12rpx;
+  padding-bottom: 8rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.skeleton-event-content {
+  display: flex;
+  gap: 12rpx;
+}
+
+.skeleton-event-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}

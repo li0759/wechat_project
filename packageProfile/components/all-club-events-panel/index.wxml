@@ -1,0 +1,112 @@
+<!--packageProfile/components/all-club-events-panel/index.wxml-->
+<view class="container">
+  <scroll-view class="panel-scroll" scroll-y="{{true}}" show-scrollbar="{{false}}">
+    <view class="page-header">
+      <view class="title">活动数据</view>
+    </view>
+
+    <view class="date-filter-card">
+      <view class="date-filter-title">按日期范围查看图表</view>
+      <view class="date-filter-row">
+        <view class="date-picker-item">
+          <view class="date-label">开始日期</view>
+          <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
+            <view class="date-picker-value">{{startDate || '请选择开始日期'}}</view>
+          </picker>
+        </view>
+        <view class="date-picker-item">
+          <view class="date-label">结束日期</view>
+          <picker mode="date" value="{{endDate}}" bindchange="onEndDateChange">
+            <view class="date-picker-value">{{endDate || '请选择结束日期'}}</view>
+          </picker>
+        </view>
+      </view>
+      <t-button
+        wx:if="{{startDate && endDate}}"
+        theme="primary"
+        size="small"
+        loading="{{downloading}}"
+        class="download-btn"
+        bindtap="downloadCharts"
+      >
+        下载图表
+      </t-button>
+    </view>
+    
+    <view wx:if="{{loading}}" class="loading-container">
+      <t-loading size="24px" theme="circular" />
+      <view class="loading-text">正在加载数据...</view>
+    </view>
+    
+    <view wx:else class="content">
+    <!-- 总体统计卡片 -->
+    <view class="stats-overview">
+      <view class="stats-card">
+        <view class="stats-number">{{totalEvents}}</view>
+        <view class="stats-label">活动总数</view>
+      </view>
+      <view class="stats-card">
+        <view class="stats-number">{{totalParticipants}}</view>
+        <view class="stats-label">总参与人次</view>
+      </view>
+      <view class="stats-card">
+        <view class="stats-number">{{totalCheckedIn}}</view>
+        <view class="stats-label">总签到人次</view>
+      </view>
+      <view class="stats-card">
+        <view class="stats-number">{{checkinRate}}%</view>
+        <view class="stats-label">平均签到率</view>
+      </view>
+    </view>
+    
+    <!-- 图表展示区域 -->
+    <view class="charts-section" wx:if="{{!hideCharts}}">
+      <!-- 协会活动数量柱状图 -->
+      <view class="chart-container">
+        <bar-chart 
+          data="{{clubEventChart}}" 
+          title="各协会活动数量分布"
+          height="{{300}}"
+          bar-color="#df76b0"
+          show-value="{{true}}"
+        />
+      </view>
+      
+      <!-- 月度活动趋势图 -->
+      <view class="chart-container" wx:if="{{monthlyChart.length > 0}}">
+        <bar-chart 
+          data="{{monthlyChart}}" 
+          title="月度活动趋势"
+          height="{{280}}"
+          bar-color="#9c88ff"
+          show-value="{{true}}"
+        />
+      </view>
+      
+      <!-- 活动费用分布饼图 -->
+      <view class="chart-container" wx:if="{{budgetChart.length > 0}}">
+        <pie-chart 
+          data="{{budgetChart}}" 
+          title="活动预算分布"
+          height="{{280}}"
+          colors="{{['#df76b0', '#9c88ff', '#5fb3d4', '#f4b844', '#67c23a']}}"
+        />
+      </view>
+      
+      <!-- 签到率对比图 -->
+      <view class="chart-container" wx:if="{{checkinChart.length > 0}}">
+        <bar-chart 
+          data="{{checkinChart}}" 
+          title="各协会签到率对比"
+          height="{{300}}"
+          bar-color="#5fb3d4"
+          show-value="{{true}}"
+        />
+      </view>
+    </view>
+    
+    </view>
+
+    <view class="bottom-safe-area"></view>
+  </scroll-view>
+</view> 

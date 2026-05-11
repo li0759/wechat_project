@@ -1,0 +1,24 @@
+.club-overview-skeleton {
+  padding: 20rpx;
+  /* 设置 TDesign skeleton 的 CSS 变量 */
+  --td-skeleton-bg-color: rgba(223, 118, 176, 0.15);
+  --td-skeleton-animation-gradient: rgba(223, 118, 176, 0.3);
+}
+
+.club-skeleton-item {
+  display: flex;
+  gap: 20rpx;
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+  background: #ffffff;
+  border-radius: 16rpx;
+}
+
+.skeleton-left {
+  width: 200rpx;
+  flex-shrink: 0;
+}
+
+.skeleton-right {
+  flex: 1;
+}

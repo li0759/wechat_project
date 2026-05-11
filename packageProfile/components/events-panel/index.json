@@ -1,0 +1,27 @@
+{
+  "component": true,
+  "usingComponents": {
+    "t-tabs": "tdesign-miniprogram/tabs/tabs",
+    "t-tab-panel": "tdesign-miniprogram/tab-panel/tab-panel",
+    "t-popup": "tdesign-miniprogram/popup/popup",
+    "t-button": "tdesign-miniprogram/button/button",
+    "calendar": "/components/calendar/calendar",
+    "t-image": "tdesign-miniprogram/image/image",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-loading": "tdesign-miniprogram/loading/loading",
+    "t-skeleton": "tdesign-miniprogram/skeleton/skeleton",
+    "ripple": "/components/ripple/index",
+    "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",
+    "event-manage-panel": "/packageEvent/components/event-manage-panel/index",
+    "event-manage-skeleton": "/components/panel-skeleton/event-manage-skeleton/index",
+    "event-detail-panel": "/packageEvent/components/event-detail-panel/index",
+    "event-detail-skeleton": "/components/panel-skeleton/event-detail-skeleton/index",
+    "event-joined-panel": "/packageEvent/components/event-joined-panel/index",
+    "event-joined-skeleton": "/components/panel-skeleton/event-joined-skeleton/index"
+  },
+  "componentPlaceholder": {
+    "event-manage-panel": "event-manage-skeleton",
+    "event-detail-panel": "event-detail-skeleton",
+    "event-joined-panel": "event-joined-skeleton"
+  }
+}
