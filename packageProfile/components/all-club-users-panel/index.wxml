@@ -9,6 +9,15 @@
         </t-button>
       </view>
     </view>
+
+    <view class="export-options">
+      <checkbox-group bindchange="onSplitByClubChange">
+        <label class="checkbox-label">
+          <checkbox value="split" checked="{{splitByClub}}" color="#df76b0" />
+          <text>按协会区分</text>
+        </label>
+      </checkbox-group>
+    </view>
     
     <view wx:if="{{loading}}" class="loading-container">
       <t-loading size="24px" theme="circular" />

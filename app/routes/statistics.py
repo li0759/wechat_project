@@ -75,9 +75,14 @@ def export_all_club_users():
     if not EXCEL_AVAILABLE:
         return jsonify({'code': 5000, 'message': '服务器未安装Excel支持库'}), 200
     
+    split_by_club_raw = request.args.get('split_by_club', '1')
+    split_by_club = str(split_by_club_raw).lower() in {'1', 'true', 'yes', 'on'}
+
     try:
         clubs = Club.query.filter_by(isDelete=False).all()
-        return create_all_club_users_archive(clubs, 'all_club_users')
+        if split_by_club:
+            return create_all_club_users_archive(clubs, 'all_club_users')
+        return create_all_users_single_archive(clubs, 'all_club_users')
     except Exception as e:
         return jsonify({'code': 5000, 'message': f'导出失败: {str(e)}'}), 200
 
@@ -1586,7 +1591,8 @@ def create_all_club_users_archive(clubs, filename_prefix):
             'data': {
                 **minio_response,
                 **summary,
-                'archive_format': archive_info['archive_format']
+                'archive_format': archive_info['archive_format'],
+                'split_by_club': True
             }
         })
     finally:
@@ -1594,6 +1600,220 @@ def create_all_club_users_archive(clubs, filename_prefix):
             shutil.rmtree(temp_root, ignore_errors=True)
         except Exception:
             pass
+
+def create_all_users_single_archive(clubs, filename_prefix):
+    """导出所有协会用户到单一Excel与单一文件夹。"""
+    if not EXCEL_AVAILABLE:
+        raise Exception("Excel支持库未安装")
+    if not PILLOW_AVAILABLE:
+        raise Exception("图片处理库未安装")
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    package_name = f"{filename_prefix}_single_{timestamp}"
+    temp_root = tempfile.mkdtemp(prefix='all_users_single_archive_')
+    package_root = os.path.join(temp_root, package_name)
+    os.makedirs(package_root, exist_ok=True)
+
+    summary = {
+        'club_count': len(clubs),
+        'member_count': 0,
+        'moment_image_count': 0
+    }
+
+    try:
+        user_map = {}
+        for club in clubs:
+            members = ClubMember.query.filter_by(clubID=club.clubID, isDelete=False).all()
+            for member in members:
+                if not member.user:
+                    continue
+                uid = member.user.userID
+                if uid not in user_map:
+                    user_map[uid] = {
+                        'user': member.user,
+                        'memberships': []
+                    }
+                user_map[uid]['memberships'].append({
+                    'club': club,
+                    'member': member
+                })
+
+        excel_path = os.path.join(package_root, "所有协会用户.xlsx")
+        asset_folder = os.path.join(package_root, "所有协会用户文件夹")
+        os.makedirs(asset_folder, exist_ok=True)
+
+        export_result = create_all_users_single_excel(
+            excel_path=excel_path,
+            asset_folder=asset_folder,
+            user_rows=list(user_map.values()),
+            temp_root=temp_root
+        )
+        summary['member_count'] = export_result['member_count']
+        summary['moment_image_count'] = export_result['moment_image_count']
+
+        archive_info = create_export_archive(source_dir=package_root, output_dir=temp_root, package_name=package_name)
+        minio_response = upload_local_file_to_minio(
+            local_file_path=archive_info['archive_path'],
+            object_path=f"statistics/{archive_info['archive_filename']}",
+            content_type=archive_info['content_type']
+        )
+
+        return jsonify({
+            'code': 200,
+            'message': archive_info['message'],
+            'data': {
+                **minio_response,
+                **summary,
+                'archive_format': archive_info['archive_format'],
+                'split_by_club': False
+            }
+        })
+    finally:
+        try:
+            shutil.rmtree(temp_root, ignore_errors=True)
+        except Exception:
+            pass
+
+def create_all_users_single_excel(excel_path, asset_folder, user_rows, temp_root):
+    """生成单表用户导出（新增协会列）。"""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "全部用户"
+
+    headers = ['用户名', '用户头像略缩图', '加入协会时间', '协会', '参加活动', '发布过的动态']
+    header_font = Font(bold=True, size=12)
+    header_fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    text_alignment = Alignment(horizontal="left", vertical="top", wrap_text=True)
+    center_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    ws.append(headers)
+    for col_idx in range(1, len(headers) + 1):
+        cell = ws.cell(row=1, column=col_idx)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+
+    ws.column_dimensions['A'].width = 22
+    ws.column_dimensions['B'].width = 18
+    ws.column_dimensions['C'].width = 24
+    ws.column_dimensions['D'].width = 36
+    ws.column_dimensions['E'].width = 56
+    ws.column_dimensions['F'].width = 62
+    ws.freeze_panes = 'A2'
+
+    sorted_users = sorted(user_rows, key=lambda item: (item['user'].userName or ''))
+    temp_thumb_files = []
+    moment_image_count = 0
+
+    try:
+        for row_idx, row in enumerate(sorted_users, 2):
+            user = row['user']
+            memberships = row['memberships']
+            club_names = [m['club'].clubName for m in memberships if m['club'] and m['club'].clubName]
+            club_ids = [m['club'].clubID for m in memberships if m['club']]
+
+            ws.row_dimensions[row_idx].height = 120
+            safe_user_name = sanitize_filename(user.userName or f"user_{user.userID}")
+            folder_prefix = sanitize_filename(club_names[0]) if len(club_names) == 1 else f"{sanitize_filename(club_names[0])}等{len(club_names)}协会"
+            user_folder_name = f"{folder_prefix}-{safe_user_name}文件夹" if club_names else f"未知协会-{safe_user_name}文件夹"
+            user_asset_folder = os.path.join(asset_folder, user_folder_name)
+            moment_asset_folder = os.path.join(user_asset_folder, '动态原图')
+            os.makedirs(moment_asset_folder, exist_ok=True)
+
+            ws.cell(row=row_idx, column=1, value=user.userName or '').alignment = text_alignment
+
+            join_dates = [m['member'].joinDate for m in memberships if m['member'] and m['member'].joinDate]
+            earliest_join = min(join_dates).strftime('%Y-%m-%d %H:%M:%S') if join_dates else ''
+            ws.cell(row=row_idx, column=3, value=earliest_join).alignment = center_alignment
+
+            clubs_text = ''.join([f"【{name}】" for name in sorted(set(club_names))]) if club_names else '无'
+            ws.cell(row=row_idx, column=4, value=clubs_text).alignment = text_alignment
+
+            event_names = get_user_joined_event_names_with_club(user.userID, club_ids)
+            events_text = ''.join([f"【{name}】" for name in event_names]) if event_names else '无'
+            ws.cell(row=row_idx, column=5, value=events_text).alignment = text_alignment
+
+            avatar_cell = ws.cell(row=row_idx, column=2, value='无头像')
+            avatar_cell.alignment = center_alignment
+            if user.avatar and user.avatar.fileUrl:
+                avatar_bytes = download_image_from_minio(user.avatar.fileUrl)
+                if avatar_bytes:
+                    avatar_origin_path = extract_file_path_from_download_url(user.avatar.fileUrl)
+                    avatar_ext = os.path.splitext(avatar_origin_path)[1] if avatar_origin_path else '.jpg'
+                    avatar_name = f"avatar{avatar_ext or '.jpg'}"
+                    avatar_abs_path = os.path.join(user_asset_folder, avatar_name)
+                    with open(avatar_abs_path, 'wb') as f:
+                        f.write(avatar_bytes)
+
+                    avatar_thumb = generate_thumbnail_bytes(avatar_bytes, minlength=30)
+                    if avatar_thumb:
+                        fd, thumb_path = tempfile.mkstemp(prefix='avatar_single_thumb_', suffix='.jpg', dir=temp_root)
+                        os.close(fd)
+                        with open(thumb_path, 'wb') as f:
+                            f.write(avatar_thumb)
+                        temp_thumb_files.append(thumb_path)
+                        avatar_img = ExcelImage(thumb_path)
+                        avatar_img.anchor = f'B{row_idx}'
+                        ws.add_image(avatar_img)
+
+                    avatar_cell.value = '头像原图'
+                    avatar_cell.hyperlink = os.path.relpath(avatar_abs_path, os.path.dirname(excel_path)).replace("\\", "/")
+                    avatar_cell.style = "Hyperlink"
+
+            moments_cell = ws.cell(row=row_idx, column=6, value='无动态')
+            moments_cell.alignment = center_alignment
+            moment_files = collect_user_moment_files_in_clubs(user.userID, club_ids)
+            if moment_files:
+                saved_paths = []
+                for idx, file_obj in enumerate(moment_files, 1):
+                    if not file_obj.fileUrl:
+                        continue
+                    image_bytes = download_image_from_minio(file_obj.fileUrl)
+                    if not image_bytes:
+                        continue
+                    moment_image_count += 1
+                    origin_path = extract_file_path_from_download_url(file_obj.fileUrl)
+                    ext = os.path.splitext(origin_path)[1] if origin_path else '.jpg'
+                    image_name = f"moment_{idx}{ext or '.jpg'}"
+                    image_abs = os.path.join(moment_asset_folder, image_name)
+                    with open(image_abs, 'wb') as f:
+                        f.write(image_bytes)
+                    saved_paths.append(image_abs)
+
+                collage_bytes = build_moment_collage_thumbnail(moment_files, minlength=50, max_images=20)
+                if collage_bytes:
+                    fd, collage_path = tempfile.mkstemp(prefix='all_user_moment_thumb_', suffix='.jpg', dir=temp_root)
+                    os.close(fd)
+                    with open(collage_path, 'wb') as f:
+                        f.write(collage_bytes)
+                    temp_thumb_files.append(collage_path)
+                    collage_img = ExcelImage(collage_path)
+                    collage_img.anchor = f'F{row_idx}'
+                    ws.add_image(collage_img)
+
+                if saved_paths:
+                    moments_cell.value = '动态原图'
+                    moments_cell.hyperlink = os.path.relpath(saved_paths[0], os.path.dirname(excel_path)).replace("\\", "/")
+                    moments_cell.style = "Hyperlink"
+
+        wb.save(excel_path)
+    finally:
+        try:
+            wb.close()
+        except Exception:
+            pass
+        for temp_file in temp_thumb_files:
+            if temp_file and os.path.exists(temp_file):
+                try:
+                    os.unlink(temp_file)
+                except Exception:
+                    pass
+
+    return {
+        'member_count': len(sorted_users),
+        'moment_image_count': moment_image_count
+    }
 
 def create_single_club_user_excel(club, excel_path, club_asset_folder, temp_root):
     """生成单个协会用户导出Excel与原图目录。"""
@@ -1746,12 +1966,65 @@ def get_user_joined_event_names_in_club(user_id, club_id):
                 names.append(join.event.title)
     return names
 
+def get_user_joined_event_names_with_club(user_id, club_ids):
+    """获取用户在多个协会中的活动名，格式：协会-活动。"""
+    if not club_ids:
+        return []
+
+    joins = EventJoin.query.join(Event, Event.eventID == EventJoin.eventID).join(
+        Club, Club.clubID == Event.clubID
+    ).filter(
+        EventJoin.userID == user_id,
+        Event.clubID.in_(club_ids)
+    ).all()
+
+    names = []
+    for join in joins:
+        if hasattr(join, 'isDelete') and join.isDelete:
+            continue
+        if join.event and join.event.title and join.event.club and join.event.club.clubName:
+            full_name = f"{join.event.club.clubName}-{join.event.title}"
+            if full_name not in names:
+                names.append(full_name)
+    return names
+
 def collect_user_moment_files_in_club(user_id, club_id):
     """获取用户在指定协会发布过的动态图片文件。"""
     from app.models.file import File
 
     club_event_ids = [event.eventID for event in Event.query.filter_by(clubID=club_id).all()]
     moment_conditions = [Moment.ref_club_ID == club_id]
+    if club_event_ids:
+        moment_conditions.append(Moment.ref_event_ID.in_(club_event_ids))
+
+    moments = Moment.query.filter(
+        Moment.creatorID == user_id,
+        db.or_(*moment_conditions)
+    ).order_by(Moment.createDate.asc()).all()
+
+    image_ids = []
+    for moment in moments:
+        if moment.imageIDs and isinstance(moment.imageIDs, list):
+            for image_id in moment.imageIDs:
+                if image_id not in image_ids:
+                    image_ids.append(image_id)
+
+    if not image_ids:
+        return []
+
+    files = File.query.filter(File.fileID.in_(image_ids)).all()
+    file_map = {f.fileID: f for f in files}
+    return [file_map[file_id] for file_id in image_ids if file_id in file_map]
+
+def collect_user_moment_files_in_clubs(user_id, club_ids):
+    """获取用户在多个协会发布过的动态图片文件。"""
+    from app.models.file import File
+
+    if not club_ids:
+        return []
+
+    club_event_ids = [event.eventID for event in Event.query.filter(Event.clubID.in_(club_ids)).all()]
+    moment_conditions = [Moment.ref_club_ID.in_(club_ids)]
     if club_event_ids:
         moment_conditions.append(Moment.ref_event_ID.in_(club_event_ids))
 

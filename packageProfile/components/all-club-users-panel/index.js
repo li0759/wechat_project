@@ -17,7 +17,8 @@ Component({
     clubMemberChart: [],
     genderChart: [],
     unitChart: [],
-    hideCharts: false  // 用于在动画时隐藏图表
+    hideCharts: false,  // 用于在动画时隐藏图表
+    splitByClub: true
   },
 
   lifetimes: {
@@ -145,6 +146,13 @@ Component({
     }
   },
 
+  onSplitByClubChange(e) {
+    const values = (e.detail && e.detail.value) || []
+    this.setData({
+      splitByClub: values.includes('split')
+    })
+  },
+
    // 下载导出文件（xlsx/zip/rar）
    async downloadExcel() {
     this.setData({ downloading: true })
@@ -153,7 +161,9 @@ Component({
     })
     
     const token = wx.getStorageSync('token')
-    const response = await this.request('/statistics/export/all_club/users', 'GET')
+    const response = await this.request('/statistics/export/all_club/users', 'GET', {
+      split_by_club: this.data.splitByClub ? 1 : 0
+    })
     
     if (response.code === 200) {
       const downloadUrl = response.data.download_url
