@@ -47,6 +47,8 @@ class EventJoin(db.Model):
     clockinDate = db.Column(db.DateTime)
     evaluate = db.Column(db.Text)
     rate = db.Column(db.Integer)
+    # 用户主动退出活动 / 退出协会时对该协会未结束活动的参与记录软删除
+    isDelete = db.Column(db.Boolean, default=False, nullable=False)
     user = db.relationship('User', backref='eventjoins', lazy=True)
         # 添加唯一约束确保用户在同一活动中只能有一条记录
     __table_args__ = (

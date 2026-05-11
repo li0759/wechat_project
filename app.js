@@ -13,8 +13,8 @@
   globalData: {
     sky_system:{},
     sky_menu:{},
-    //request_url:"https://www.vhhg.top/api/v1",
-    request_url:"https://ghwtxh.msatmb.com:10443/api/v1",
+    request_url:"https://www.vhhg.top/api/v1",
+    //request_url:"https://ghwtxh.msatmb.com:10443/api/v1",
     static_url:"https://ghwtxh.msatmb.com:10443",
     userInfo: null,
     defaultImages: {
@@ -182,9 +182,19 @@
     // 如果提供了 context，自动触发 triggerEvent（用于 events-panel/clubs-panel 即时更新）
     if (context && typeof context.triggerEvent === 'function') {
       if (data.type === 'event') {
-        // 对于活动，传递完整的 event 对象
-        const eventData = context.data?.event || {};
-        context.triggerEvent('update', { event: { ...eventData, ...data } });
+        // 活动：合并 event-detail 的 data.event 与 event-joined 的 data.featuredEvent，便于父级刷新列表
+        const baseEvent = context.data?.event || context.data?.featuredEvent || {};
+        const eventPayload = {
+          ...baseEvent,
+          ...data,
+          event_id:
+            data.event_id ||
+            baseEvent.event_id ||
+            baseEvent.eventID ||
+            context.data?.eventId ||
+            id,
+        };
+        context.triggerEvent('update', { event: eventPayload });
       } else if (data.type === 'club') {
         // 对于协会，传递完整的 club 对象
         const clubData = context.data?.clubDetail || context.data?.club || {};

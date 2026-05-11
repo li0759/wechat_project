@@ -50,8 +50,9 @@ Page({
       rowHeight: 10,  // 设置为 10rpx，让图片高度更灵活
   },
 
-    // 未读通知数量
-    unread_messages_count: 0,
+    // 通知角标（与 GET /badge 同源）：count 为未读条数；seen 为已打开过通知面板
+    notice_badge_count: 0,
+    notice_badge_seen: false,
     // 地图密钥
     mapKey: app.globalData.key, 
     // 地图URL
@@ -120,13 +121,28 @@ Page({
     } catch (e) {}
   },
 
+  /** custom tabBar 下勿调 wx.showTabBar，真机会叠出 app.json 里仅两 tab 的系统栏 */
+  _setCustomTabBarHidden(hidden) {
+    try {
+      if (typeof this.getTabBar === 'function') {
+        const tb = this.getTabBar();
+        if (tb && typeof tb.setTabBarHidden === 'function') {
+          tb.setTabBarHidden(!!hidden);
+        }
+      }
+    } catch (e) {}
+  },
+
   syncHomeFullscreenLayerState() {
     try {
       const gp = this.data.globalPopup || {}
       const mf = this.data.messagesFs || {}
       const active = Boolean(gp.visible) || Boolean(mf.visible)
-      if (this.data.homeFullscreenLayerActive === active) return
+      const prev = this.data.homeFullscreenLayerActive
+      if (prev === active) return
       this.setData({ homeFullscreenLayerActive: active })
+      // 全屏弹层：只隐藏自定义 tabBar（getTabBar），不用 wx.hideTabBar/showTabBar
+      this._setCustomTabBarHidden(active)
     } catch (e) {}
   },
 
@@ -146,9 +162,9 @@ Page({
     this.setData({
       'messagesFs.visible': true,
       'messagesFs.tapX': tapX,
-      'messagesFs.tapY': tapY,
-      homeFullscreenLayerActive: true
+      'messagesFs.tapY': tapY
     }, () => {
+      this.syncHomeFullscreenLayerState()
       // 展开弹窗
       setTimeout(() => {
         const popup = this.selectComponent('#homeMessagesFullscreenPopup');
@@ -165,14 +181,15 @@ Page({
   onMessagesFsCollapse() {
     // 等待收起动画结束后再隐藏
     setTimeout(() => {
-      this.setData({ 'messagesFs.visible': false })
-      this.syncHomeFullscreenLayerState()
+      this.setData({ 'messagesFs.visible': false }, () => {
+        this.syncHomeFullscreenLayerState()
+      })
     }, 800);
   },
 
   onMessagesFsContentReady() {
-    // 确保进入弹窗时通知数据是最新的
-    this.fetchMessagesForPanel();
+    // 确保进入弹窗时通知数据是最新的；展开后再标记已看列表
+    this.fetchMessagesForPanel(() => this.markNoticeBadgeSeen());
   },
 
   /**
@@ -211,6 +228,9 @@ Page({
    * 生命周期函数--监听页面卸载
    */
   onUnload: function () {
+    try {
+      this._setCustomTabBarHidden(false)
+    } catch (e) {}
     // 注销变更监听器
     const app = getApp();
     if (this._changeListener) {
@@ -310,13 +330,24 @@ Page({
       const { eventList = [], hotActivities = [] } = this.data;
       let updated = false;
 
+      // recordChange 的 data 含 type:'event'；空字符串 cover_url 会冲掉原封面，这里先剥掉再合并
+      const eventPatchFromChange = (incoming) => {
+        const patch = { ...incoming };
+        delete patch.type;
+        if (!patch.cover_url && !patch.cover) {
+          delete patch.cover_url;
+          delete patch.cover;
+        }
+        return patch;
+      };
+
       if (eventList.some(e => e && e.event_id == id)) {
         const next = eventList.map(e => {
           if (e && e.event_id == id) {
-            const updatedEvent = { ...e, ...data };
-            // 如果封面更新了，需要更新缩略图
-    if (data.cover_url || data.cover) {
-              const coverUrl = data.cover_url || data.cover;
+            const patch = eventPatchFromChange(data);
+            const updatedEvent = { ...e, ...patch };
+            if (patch.cover_url || patch.cover) {
+              const coverUrl = patch.cover_url || patch.cover;
               updatedEvent.cover_url = coverUrl;
               updatedEvent.cover_url_thumb = app.convertToThumbnailUrl(coverUrl, 400);
               console.log('[home] 更新活动封面缩略图:', id, updatedEvent.cover_url_thumb);
@@ -331,10 +362,10 @@ Page({
       if (hotActivities.some(e => e && e.event_id == id)) {
         const nextHot = hotActivities.map(e => {
           if (e && e.event_id == id) {
-            const updatedEvent = { ...e, ...data };
-            // 如果封面更新了，需要更新缩略图
-    if (data.cover_url || data.cover) {
-              const coverUrl = data.cover_url || data.cover;
+            const patch = eventPatchFromChange(data);
+            const updatedEvent = { ...e, ...patch };
+            if (patch.cover_url || patch.cover) {
+              const coverUrl = patch.cover_url || patch.cover;
               updatedEvent.cover_url = coverUrl;
               updatedEvent.cover_url_thumb = app.convertToThumbnailUrl(coverUrl, 200);
             }
@@ -430,9 +461,19 @@ Page({
       const { eventList = [], hotActivities = [] } = this.data;
       // 若已存在则不重复添加
     if (eventList.some(e => e && e.event_id == data.event_id)) return false;
+      if (data.type) delete data.type;
+      if (data.location_data && data.location_data.latitude && data.location_data.longitude && !data.markerData) {
+        data.markerData = [{
+          id: 1,
+          latitude: data.location_data.latitude,
+          longitude: data.location_data.longitude,
+          width: 20,
+          height: 20,
+        }];
+      }
       data.imgLoaded = true;
       data.cur_user_managed = true
-      data.cover_url_thumb = app.convertToThumbnailUrl(data.cover_url, 200);
+      data.cover_url_thumb = data.cover_url ? app.convertToThumbnailUrl(data.cover_url, 200) : '';
       this.setData({ eventList: [data, ...eventList] });
       // 热门位简单策略：若不足3个则追加
     if (hotActivities.length < 3 && !hotActivities.some(e => e && e.event_id == data.event_id)) {
@@ -1100,30 +1141,73 @@ Page({
     });
   },
 
-  /**
-   * 获取未读通知数量
-   */
-  getUnreadNoticeCount: function() {
+  _badgeFlagOk: function(res) {
+    const f = res && res.data && res.data.Flag;
+    return f === 4000 || f === '4000' || String(f) === '4000';
+  },
+
+  _applyNoticeBadgeFromPayload: function(data) {
+    const badges = (data && data.badges) || {};
+    const n = badges.notice || {};
+    const count = Number(n.count) || 0;
+    const seen = !!n.seen;
+    this.setData({ notice_badge_count: count, notice_badge_seen: seen });
+  },
+
+  /** GET /badge，同步头像角标 */
+  fetchNoticeBadge: function(done) {
     const token = wx.getStorageSync('token');
-    if (!token) return;
+    if (!token) {
+      this.setData({ notice_badge_count: 0, notice_badge_seen: false });
+      if (typeof done === 'function') done();
+      return;
+    }
     wx.request({
-      url: app.globalData.request_url + `/message/user_get/list`,
+      url: app.globalData.request_url + `/badge`,
       method: 'GET',
       header: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
+      complete: () => {
+        if (typeof done === 'function') done();
+      },
       success: (res) => {
-        if (res.data && res.data.Flag == 4000) {
-          this.setData({
-            unread_messages_count: res.data.data.filter(msg => !msg.readDate).length || 0
-          });
+        if (this._badgeFlagOk(res) && res.data.data) {
+          this._applyNoticeBadgeFromPayload(res.data.data);
         }
       },
       fail: (err) => {
-        console.error('获取未读通知数量失败:', err);
+        console.error('获取角标失败:', err);
       }
     });
+  },
+
+  /** 打开过通知列表后：数字角标改为红点 */
+  markNoticeBadgeSeen: function() {
+    const token = wx.getStorageSync('token');
+    if (!token) return;
+    wx.request({
+      url: app.globalData.request_url + `/badge/seen`,
+      method: 'POST',
+      header: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      data: { keys: ['notice'] },
+      success: (res) => {
+        if (this._badgeFlagOk(res) && res.data.data) {
+          this._applyNoticeBadgeFromPayload(res.data.data);
+        }
+      }
+    });
+  },
+
+  /**
+   * 获取未读通知角标（供 loadData 等调用，与旧名兼容）
+   */
+  getUnreadNoticeCount: function() {
+    this.fetchNoticeBadge();
   },
 
 
@@ -1186,12 +1270,13 @@ Page({
   /**
    * 加载通知数据
    */
-  fetchMessagesForPanel: function() {
+  fetchMessagesForPanel: function(done) {
     const token = wx.getStorageSync('token');
     if (!token) {
       this.setData({
         messagesLoading: false
       });
+      if (typeof done === 'function') done();
       return;
     }
 
@@ -1214,11 +1299,6 @@ Page({
             eventMessages,
             systemMessages
           } = this.classifyMessages(messages);
-          const totalUnread = this.calculateTotalUnread(
-            clubMessages,
-            eventMessages,
-            systemMessages
-          );
 
           this.setData({
             messagesClubNotices: clubMessages,
@@ -1227,8 +1307,9 @@ Page({
             messagesEmptyClub: clubMessages.length === 0,
             messagesEmptyEvent: eventMessages.length === 0,
             messagesEmptySystem: systemMessages.length === 0,
-            messagesLoading: false,
-            unread_messages_count: totalUnread
+            messagesLoading: false
+          }, () => {
+            this.fetchNoticeBadge(done);
           });
         } else {
           this.setData({
@@ -1238,8 +1319,9 @@ Page({
             messagesEmptyClub: true,
             messagesEmptyEvent: true,
             messagesEmptySystem: true,
-            messagesLoading: false,
-            unread_messages_count: 0
+            messagesLoading: false
+          }, () => {
+            this.fetchNoticeBadge(done);
           });
         }
       },
@@ -1252,6 +1334,7 @@ Page({
           title: '通知加载失败',
           icon: 'none'
         });
+        if (typeof done === 'function') done();
       }
     });
   },
@@ -1379,9 +1462,9 @@ Page({
         sheetBgColor,
         tapX: safeX,
         tapY: safeY
-      },
-      homeFullscreenLayerActive: true
+      }
     }, () => {
+      this.syncHomeFullscreenLayerState()
       setTimeout(() => {
         const popup = this.selectComponent('#globalFullscreenPopup');
         if (popup && popup.expand) popup.expand(safeX, safeY);
@@ -1424,17 +1507,6 @@ Page({
       'event_pre_starttime_update'
     ];
     return eventOperations.includes(operation);
-  },
-
-  /**
-   * 计算未读数量
-   */
-  calculateTotalUnread: function(clubMessages, eventMessages, systemMessages) {
-    const unreadClub = (clubMessages || []).filter(msg => !msg.readDate).length;
-    const unreadEvent = (eventMessages || []).filter(msg => !msg.readDate).length;
-    const unreadSystem = (systemMessages || []).filter(msg => !msg.readDate).length;
-
-    return unreadClub + unreadEvent + unreadSystem;
   },
 
   /**
@@ -1503,6 +1575,20 @@ Page({
     
     // 直接调用 updateInCache，recordChange 会在 applyLocalChanges 时统一处理
     this.updateInCache('event', event.event_id, event);
+  },
+
+  /** 已参加活动面板内退出等：同步首页热门/列表缓存（recordChange 已广播时可再兜底） */
+  onEventJoinedPanelUpdate: function(e) {
+    const { event } = e.detail || {};
+    if (event && event.event_id) {
+      this.updateInCache('event', event.event_id, event);
+    }
+    this.applyLocalChanges();
+  },
+
+  /** 协会详情内嵌活动变更等 */
+  onClubDetailPanelUpdate: function() {
+    this.applyLocalChanges();
   },
 
   // 从面板跳转到协会
@@ -1856,9 +1942,9 @@ Page({
         sheetBgColor,
         tapX,
         tapY
-      },
-      homeFullscreenLayerActive: true
+      }
     }, () => {
+      this.syncHomeFullscreenLayerState()
       console.log('globalPopup 数据已设置:', this.data.globalPopup);
       setTimeout(() => {
         const popup = this.selectComponent('#globalFullscreenPopup');
@@ -1892,8 +1978,9 @@ Page({
         'globalPopup.renderPanel': false,  // 重置 renderPanel
         'globalPopup.type': '',
         'globalPopup.id': ''
+      }, () => {
+        this.syncHomeFullscreenLayerState()
       })
-      this.syncHomeFullscreenLayerState()
     }, 800);
   },
 

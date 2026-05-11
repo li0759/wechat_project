@@ -182,14 +182,13 @@ Page({
     });
   },
 
-  // 加载开发者工具模式用户列表
+  // 加载开发者工具模式用户列表（按姓名排序：中文按拼音、英文按字母）
   loadDevUsers() {
     wx.request({
       url: app.globalData.request_url + '/user/list_weak',
       method: 'GET',
       success: (res) => {
-        const list = (res.data && res.data.data) || [];
-        this.setData({ devUsers: list });
+        this.setData({ devUsers: res.data.data });
       }
     });
   },

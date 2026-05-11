@@ -1,7 +1,9 @@
 from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from ..models import User, ClubMember, Club, Event, EventJoin,  Message
+
+from ..models import User, Club, Event, Message
 from .. import db, TEST_MODE
+from .badge import _badge_payload
 from datetime import datetime
 from app.permission import check_permission, message
 import bleach  # 新增安全过滤库
@@ -144,6 +146,10 @@ def create_message(booker_id):
     
     db.session.add(message_created)
     db.session.commit()
+    try:
+        _badge_payload(booker_id)
+    except Exception:
+        pass
 
     # 发送企业微信通知
 
@@ -247,5 +253,9 @@ def read_message(message_id):
     
     message_obj.readDate = datetime.utcnow()
     db.session.commit()
+    try:
+        _badge_payload(message_obj.booker_id)
+    except Exception:
+        pass
     return jsonify({'Flag':'4000','message': '消息已阅！'}), 200
 

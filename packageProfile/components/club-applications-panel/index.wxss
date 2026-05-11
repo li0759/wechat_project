@@ -65,6 +65,12 @@
   gap: 12rpx;
 }
 
+.summary-actions {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
 /* 摘要状态样式 */
 .summary-status {
   font-size: 26rpx;

@@ -768,16 +768,13 @@ Component({
         wx.hideLoading();
         if (res.Flag == 4000) {
           wx.showToast({ title: '封面已更', icon: 'success' });
-          // 本地更新封面，使用临时文件路径先显示，后续会被真实URL替换
-    const event = { ...(this.data.event || {}) };
-          event.cover_url = filePath; // 先用本地路径显示
-    if (res.data && res.data.cover_url) {
-            event.cover_url = res.data.cover_url; // 如果返回了真实URL则使数
-      }
+          const event = { ...(this.data.event || {}) };
+          const serverUrl = res.data && (res.data.new_cover_url || res.data.cover_url);
+          // 后端 update_cover 返回的是 new_cover_url；误读 cover_url 会一直是 wxfile 临时路径，首页缩略图会失效
+          event.cover_url = serverUrl || filePath;
           this.setData({ event });
-          
-          // 记录变更到本地缓存（自动触发 triggerEvent数
-      app.recordChange(this.data.eventId, 'update', {
+
+          app.recordChange(this.data.eventId, 'update', {
             type: 'event',
             event_id: this.data.eventId,
             cover_url: event.cover_url
@@ -913,30 +910,51 @@ Component({
         });
         if (res.Flag == 4000) {
           wx.showToast({ title: '已保', icon: 'success' });
-          // 本地更新，不刷新整个面板
-    const event = { ...(this.data.event || {}) };
-          event.location = location;
-          event.location_data = location_data;
-          // 更新地图标记
-    const locationMarkers = [];
-          if (location_data && location_data.latitude && location_data.longitude) {
+          const d = res.data || {};
+          const event = { ...(this.data.event || {}) };
+          event.location = d.location != null ? d.location : location;
+          event.location_data =
+            d.location_data != null ? d.location_data : location_data;
+          event.premap_url = d.premap_url != null ? d.premap_url : event.premap_url || '';
+          const locationMapUrl = event.premap_url || '';
+          const locationMarkers = [];
+          if (
+            event.location_data &&
+            event.location_data.latitude &&
+            event.location_data.longitude
+          ) {
             locationMarkers.push({
               id: 1,
-              latitude: location_data.latitude,
-              longitude: location_data.longitude,
+              latitude: event.location_data.latitude,
+              longitude: event.location_data.longitude,
               iconPath: '/assets/images/location-marker.png',
               width: 30,
               height: 30,
             });
           }
-          this.setData({ event, locationMarkers });
-          
-          // 记录变更到本地缓存（自动触发 triggerEvent数
-      app.recordChange(this.data.eventId, 'update', {
-            type: 'event',
-            event_id: this.data.eventId,
-            location: location
-          }, this);
+          this.setData({
+            event,
+            locationMarkers,
+            locationMapUrl,
+            editLocation: {
+              location: event.location || '',
+              location_data: event.location_data || null,
+              premap_url: event.premap_url || '',
+            },
+          });
+
+          app.recordChange(
+            this.data.eventId,
+            'update',
+            {
+              type: 'event',
+              event_id: this.data.eventId,
+              location: event.location,
+              location_data: event.location_data,
+              premap_url: event.premap_url,
+            },
+            this
+          );
           return;
         }
         throw new Error(res.message || '保存失败');

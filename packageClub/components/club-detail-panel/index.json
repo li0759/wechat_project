@@ -10,6 +10,7 @@
     "t-grid-item": "tdesign-miniprogram/grid-item/grid-item",
     "t-image-viewer": "tdesign-miniprogram/image-viewer/image-viewer",
     "isotope": "/components/isotope/index",
+    "animated-map": "/components/animated-map/index",
     "ripple": "/components/ripple/index",
     "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",
     "event-detail-panel": "/packageEvent/components/event-detail-panel/index",

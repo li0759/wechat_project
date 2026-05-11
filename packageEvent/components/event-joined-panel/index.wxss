@@ -1,15 +1,25 @@
+@import "../../../styles/panel-bottom-actions.wxss";
+
 .event-joind-panel {
   position: relative;
-  height: 100vh;
+  height: 100%;
   width: 100%;
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  background-color: #f8f9fb;
+  /*
+   * 本 panel 带 t-tabs + 绝对底栏，Profile/Home 弹层里 --tab-bar-visual-gap:64rpx 常不够，
+   * 自定义 tabBar 会压住按钮下半截；略加大仅作用于本组件内的 .bottom-actions。
+   */
+  --tab-bar-visual-gap: 120rpx;
 }
 
 /* 灰色蒙层 - 与 event-manage 和 event-detail 一致 */
 .disabled-overlay {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
@@ -46,7 +56,7 @@
   text-align: center;
 }
 
-/* 主内容容器：必须形成可滚高度 */
+/* 主内容容器：占满剩余高度，tabs 内再滚动 */
 .content-container {
   flex: 1;
   display: flex;
@@ -55,18 +65,26 @@
   background: #fff;
 }
 
-/*（已恢复 t-tabs，临时 simple/fake tabs 样式已移除）*/
+/* 与 TDesign .t-tabs 同节点：其默认含 flex-wrap:wrap；再设 column + 限高时子项会折到「下一列」导致内容整块跑到右侧 */
+.joined-tabs-host {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  width: 100%;
+}
 
 /* 主滚动区域 */
 .main-scroll {
-  flex: none;
+  flex: 1;
+  min-height: 0;
   padding: 0 20rpx;
-  padding-bottom: 140rpx; /* 为底部按钮留出空间 */
-  /* 明确可滚高度，避免在全屏弹窗 slot 内高度计算为 0 */
-  height: calc(100vh - 340rpx);
+  padding-bottom: 24rpx;
+  height: 100%;
   box-sizing: border-box;
   background: #fff;
-  min-height: 0;
 }
 
 .timeline-scroll {
@@ -650,90 +668,6 @@
 
 .dialog-button {
   flex: 1;
-}
-
-/* 底部操作栏 */
-.bottom-action-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: #fff;
-  padding-top: 24rpx;
-  box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.08);
-  z-index: 100;
-}
-
-
-
-/* ===== 底部操作栏 ===== */
-.bottom-actions {
-  position: absolute;
-  bottom: 0rpx;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(0deg, rgba(255, 255, 255, 1) 0%, rgba(246, 246, 246, 0.9) 70%, transparent 100%);
-  backdrop-filter: blur(20rpx);
-}
-
-.action-left {
-  display: flex;
-  gap: 16rpx;
-}
-
-.action-right {
-  display: flex;
-  gap: 16rpx;
-  flex: 1;
-  justify-content: flex-end;
-}
-
-.action-btn {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  min-width: 120rpx;
-  height: 80rpx;
-  border-radius: 40rpx;
-  font-size: 28rpx;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  gap: 8rpx;
-}
-
-.action-btn.secondary {
-  background: rgba(0,0,0,0.05);
-  color: #666;
-  padding: 0 24rpx;
-}
-
-.action-btn.secondary:active {
-  background: rgba(0,0,0,0.1);
-  transform: scale(0.98);
-}
-
-.action-btn.tertiary {
-  background: transparent;
-  color: #EF4444;
-  border: 1rpx solid #FEE2E2;
-  padding: 0 24rpx;
-  min-width: 100rpx;
-}
-
-.action-btn.tertiary:active {
-  background: #FEE2E2;
-  transform: scale(0.98);
-}
-
-/* 移除原生 button 的边框 */
-.action-btn.secondary::after,
-.action-btn.tertiary::after {
-  border: none;
 }
 
 

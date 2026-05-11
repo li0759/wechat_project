@@ -1,3 +1,5 @@
+@import "../../../styles/panel-bottom-actions.wxss";
+
 /* event-manage-panel 组件样式 - 视觉优化版 */
 .event-manage-panel {
   /* 优化后的设计 token */
@@ -69,11 +71,17 @@
   margin-top: 8rpx;
 }
 
-/* 主内容区域 - 参考 event-detail-panel */
+/* 主内容区域：在父级 flex 列内占满剩余高度，勿用 100vh（全屏弹层内会超高裁切底栏） */
 .main-content {
-  height: calc(100vh - 200rpx);
-
+  flex: 1;
+  min-height: 0;
 }
+
+/* 底部留白：在 styles/panel-bottom-actions 的 280rpx 上再加 200rpx，便于滚到列表最底 */
+.event-manage-panel .footer-space {
+  height: 480rpx;
+}
+
 .rows { padding: 16rpx 16rpx 24rpx; box-sizing: border-box; }
 
 .row {
@@ -257,8 +265,36 @@
 .panel-image { flex: 1; width: 100%; border-radius: 16rpx; margin: 0 16rpx 16rpx; }
 .panel-body { padding: 0 16rpx 16rpx; }
 
-.panel-map-wrap { flex: 1; margin: 0 16rpx 16rpx; border-radius: 16rpx; overflow: hidden; }
+.panel-map-wrap {
+  position: relative;
+  flex: 1;
+  margin: 0 16rpx 16rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
+}
 .panel-map-img { width: 100%; height: 100%; }
+.panel-map-address-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  padding: 24rpx 14rpx 12rpx;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0.72) 100%);
+  pointer-events: none;
+}
+.panel-map-address-text {
+  font-size: 24rpx;
+  line-height: 1.4;
+  color: #fff;
+  font-weight: 500;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  word-break: break-all;
+}
 .panel-map-empty { flex: 1; margin: 0 16rpx 16rpx; border-radius: 16rpx; background: var(--md-sys-color-surface-variant); border: 1rpx dashed #D1D5DB; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10rpx; }
 .panel-map-empty-text { font-size: 24rpx; color: var(--md-sys-color-on-surface-variant); font-weight: 400; }
 
@@ -382,107 +418,6 @@
 .pill-ghost { background: var(--md-sys-color-surface-variant); color: var(--md-sys-color-on-surface); font-weight: 500; font-size: 26rpx; padding: 14rpx 20rpx; border-radius: 999rpx; transition: all 0.2s; }
 .pill-ghost:active { background: #E5E7EB; }
 .loading { margin-top: 120rpx; }
-.footer-space { height: 300rpx; } /* 为底部操作栏留出空间 */
-
-/* ===== 底部操作栏（完全参考 event-detail-panel）===== */
-.bottom-actions {
-  position: absolute;
-  bottom: 80rpx; /* 往上移，避免被 tabbar 遮挡 */
-  left: 0;
-  right: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(0deg, rgba(255, 255, 255, 1) 0%, rgba(246, 246, 246, 0.9) 70%, transparent 100%);
-  backdrop-filter: blur(20rpx);
-}
-
-.action-left {
-  display: flex;
-  gap: 16rpx;
-}
-
-.action-right {
-  display: flex;
-  gap: 16rpx;
-  flex: 1;
-  justify-content: flex-end;
-}
-
-.action-btn {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  min-width: 120rpx;
-  height: 80rpx;
-  border-radius: 40rpx;
-  font-size: 28rpx;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  gap: 8rpx;
-}
-
-.action-btn.secondary {
-  background: rgba(0,0,0,0.05);
-  color: #666;
-  padding: 0 24rpx;
-}
-
-.action-btn.secondary:active {
-  background: rgba(0,0,0,0.1);
-  transform: scale(0.98);
-}
-
-.action-btn.primary {
-  background: linear-gradient(135deg, var(--md-sys-color-primary) 0%, var(--md-sys-color-primary-dark) 100%);
-  color: #fff;
-  padding: 0 32rpx;
-  min-width: 160rpx;
-  box-shadow: 0 4rpx 12rpx rgba(223, 118, 176, 0.25);
-}
-
-.action-btn.primary:active {
-  transform: scale(0.98);
-  box-shadow: 0 8rpx 20rpx rgba(223, 118, 176, 0.3);
-}
-
-.action-btn.danger {
-  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
-  color: #fff;
-  padding: 0 32rpx;
-  min-width: 160rpx;
-  box-shadow: 0 4rpx 12rpx rgba(239, 68, 68, 0.25);
-}
-
-.action-btn.danger:active {
-  transform: scale(0.98);
-  box-shadow: 0 8rpx 20rpx rgba(239, 68, 68, 0.3);
-}
-
-.action-btn.tertiary {
-  background: transparent;
-  color: #EF4444;
-  border: 1rpx solid #FEE2E2;
-  padding: 0 24rpx;
-  min-width: 100rpx;
-}
-
-.action-btn.tertiary:active {
-  background: #FEE2E2;
-  transform: scale(0.98);
-}
-
-/* 移除原生 button 的边框 */
-.action-btn.secondary::after,
-.action-btn.primary::after,
-.action-btn.danger::after,
-.action-btn.tertiary::after {
-  border: none;
-}
-
-
 .members-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; margin-bottom: 32rpx; }
 .members-toolbar .hint { font-size: 31rpx; color: var(--md-sys-color-on-surface-variant); }
 

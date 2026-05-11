@@ -17,8 +17,12 @@ from app.models import Event, User, ClubMember, EventJoin, Club, Schedule, File
 
 bp = Blueprint('file', __name__, url_prefix='/api/v1/file')
 
-# 允许的文件扩展名（添加Excel文件支持）
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'xlsx', 'xls', 'csv'}
+# 允许的文件扩展名（图片 / 表格 / 压缩包）
+ALLOWED_EXTENSIONS = {
+    'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp',
+    'xlsx', 'xls', 'csv',
+    'zip', 'rar', '7z'
+}
 
 def allowed_file(filename):
     """检查文件类型是否允许"""

@@ -1,3 +1,5 @@
+@import "../../../styles/panel-bottom-actions.wxss";
+
 /* club-create-panel：组件样式（移除页面级导航栏占位） */
 
 page {
@@ -20,7 +22,18 @@ page {
 }
 
 .page {
-  min-height: 100vh;
+  height: 100%;
+  min-height: 0;
+}
+
+.page-with-bottom-bar {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 /* 自定义导航栏 */
@@ -63,7 +76,9 @@ page {
 }
 
 .page-scroll {
-  height: calc(100vh - var(--nav-h, 0px));
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
 }
 
 .rows {
@@ -324,50 +339,6 @@ page {
 }
 .clamp-1 { -webkit-line-clamp: 1; }
 .clamp-2 { -webkit-line-clamp: 2; }
-
-/* 固定底部操作栏（对齐设计系统规范）*/
-.step-navigation {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 16rpx 20rpx;
-  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
-  background: #FFFFFF;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
-  z-index: 1000;
-}
-
-.nav-buttons {
-  display: flex;
-  gap: 12rpx;
-}
-
-.nav-btn {
-  flex: 1;
-  height: 88rpx;
-  background: var(--md-sys-color-primary);
-  color: #FFFFFF;
-  border-radius: 12rpx;
-  font-size: 30rpx;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s;
-  box-shadow: 0 2rpx 8rpx rgba(223, 118, 176, 0.25);
-  border: none;
-}
-
-.nav-btn::after {
-  border: none;
-}
-
-.nav-btn:active {
-  background: var(--md-sys-color-primary-dark);
-  transform: scale(0.98);
-  box-shadow: 0 4rpx 12rpx rgba(223, 118, 176, 0.3);
-}
 
 /* ===== create 专用：隐藏 trigger（仅用于通过 JS expand/collapse 打开弹窗） ===== */
 .cc-hidden-trigger { width: 0; height: 0; overflow: hidden; }

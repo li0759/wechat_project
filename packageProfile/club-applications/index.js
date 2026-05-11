@@ -55,7 +55,23 @@ Page({
     if (wx.getStorageSync('token')) {
       this.fetchClubInfo(this.data.clubId);
       this.fetchApplications(this.data.clubId);
+      this._markClubPendingBadgeSeen();
     }
+  },
+
+  _markClubPendingBadgeSeen() {
+    const clubId = this.data.clubId;
+    const token = wx.getStorageSync('token');
+    if (!clubId || !token) return;
+    wx.request({
+      url: app.globalData.request_url + '/badge/seen',
+      method: 'POST',
+      header: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      data: { keys: ['club_pending_applications'], club_ids: [Number(clubId)] }
+    });
   },
 
   /**

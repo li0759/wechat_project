@@ -88,12 +88,13 @@ def create_app(config_name=None):
     
 
     # 注册蓝图
-    from .routes import auth, club, event, user, message, money, schedule, statistics, search, file, moment
+    from .routes import auth, club, event, user, message, badge, money, schedule, statistics, search, file, moment
     app.register_blueprint(auth.bp)
     app.register_blueprint(club.bp)
     app.register_blueprint(event.bp)
     app.register_blueprint(user.bp)
     app.register_blueprint(message.bp)
+    app.register_blueprint(badge.bp)
     app.register_blueprint(money.bp)
     app.register_blueprint(schedule.bp)
     app.register_blueprint(statistics.bp)

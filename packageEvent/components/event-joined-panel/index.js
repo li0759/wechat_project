@@ -533,12 +533,24 @@ Component({
           title: '退出成功', icon: 'success'
         });
         
-        // 记录变更
-        app.recordChange(this.data.eventId, 'update', { 
+        // 记录变更 + 通知父级（club-joined / home 等）刷新列表
+        const base = this.data.featuredEvent || {};
+        const payload = {
+          event: {
+            ...base,
+            event_id: this.data.eventId,
+            cur_user_is_joined: false,
+            join_is_delete: true,
+          },
+        };
+        this.triggerEvent('update', payload);
+        app.recordChange(this.data.eventId, 'update', {
           type: 'event',
-          cur_user_is_joined: false 
+          cur_user_is_joined: false,
+          join_is_delete: true,
+          event_id: this.data.eventId,
         }, this);
-        
+
         // 触发 close 事件，关闭弹窗
         setTimeout(() => {
           this.triggerEvent('close');

@@ -1,3 +1,5 @@
+@import "../../../styles/panel-bottom-actions.wxss";
+
 /* event-create-panel：组件样式（移除页面级导航栏占位） */
 page {
   --md-sys-color-primary: #DF76B0;
@@ -28,7 +30,20 @@ page {
 }
 
 /* ========= 基础布局（本页自包含，不再依赖 event-manage） ========= */
-.page { min-height: 100vh; }
+.page {
+  height: 100%;
+  min-height: 0;
+}
+
+.page-with-bottom-bar {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
 
 .custom-nav {
   position: fixed;
@@ -63,7 +78,11 @@ page {
 .custom-nav-right { width: 88rpx; height: 100%; }
 .custom-nav-spacer { width: 100%; }
 
-.page-scroll { height: calc(80vh - var(--nav-h, 0px)); }
+.page-scroll {
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
+}
 .rows { padding: 16rpx 16rpx 24rpx; box-sizing: border-box; }
 
 .row {
@@ -190,6 +209,7 @@ page {
 }
 
 .panel-map-wrap {
+  position: relative;
   flex: 1;
   margin: 0 16rpx 16rpx;
   border-radius: 16rpx;
@@ -199,6 +219,30 @@ page {
 .panel-map-img {
   width: 100%;
   height: 100%;
+}
+
+.panel-map-address-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  padding: 24rpx 14rpx 12rpx;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0.72) 100%);
+  pointer-events: none;
+}
+
+.panel-map-address-text {
+  font-size: 24rpx;
+  line-height: 1.4;
+  color: #fff;
+  font-weight: 500;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  word-break: break-all;
 }
 
 .panel-map-empty {
@@ -479,39 +523,6 @@ page {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-/* 固定底部操作栏（对齐设计系统规范）*/
-.step-navigation {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 16rpx 20rpx;
-  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
-  background: #FFFFFF;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
-  z-index: 1000;
-}
-
-.nav-buttons {
-  display: flex;
-  justify-content: center;
-}
-
-.nav-btn {
-  flex: 1;
-  background: rgba(223, 118, 176, 0.8) !important;
-  color: #FFFFFF !important;
-}
-
-.container {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  padding-bottom: 180rpx; /* Space for bottom bar */
-  box-sizing: border-box;
-  position: relative; /* Ensure absolute children are relative to container */
 }
 
 /* Header / Progress Area */

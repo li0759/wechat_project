@@ -1,4 +1,4 @@
-﻿const app = getApp();
+const app = getApp();
 
 Component({
   properties: {
@@ -12,6 +12,11 @@ Component({
     loading: true,
     club: null,
     clubMembers: [],
+    /** 与 club-joined-panel：GET club_public 列表 + 逐条 GET /event/:id 合并后的活动卡片 */
+    detailEventsList: [],
+    detailEventsEmpty: true,
+    detailEventsPage: 1,
+    detailEventsTotalPages: 1,
     swiperImages: [],
     swiperImagesThumbs: [],
     currentSwiperIndex: 0,
@@ -24,6 +29,9 @@ Component({
       { label: '活动', value: 'activities' }
     ],
     scrollIntoView: '',
+
+    /** 与 club-joined-panel 特色活动 isotope 一致 */
+    masonryHorizontalConfig: { rowHeight: 10 },
     
     // 图片预览
     showImageViewer: false,
@@ -47,7 +55,7 @@ Component({
       if (isPlaceholder) {
         this._lastClubId = null;
         this._loaded = false;
-        this.setData({ loading: false, club: null });
+        this.setData({ loading: false, club: null, detailEventsList: [], detailEventsEmpty: true });
         return;
       }
       // 只记?clubId，不自动加载数据（懒加载数
@@ -70,6 +78,40 @@ Component({
   },
 
   methods: {
+    _apiOk(r) {
+      return r && (r.Flag == '4000' || r.Flag == 4000);
+    },
+
+    /** 与 club-joined-panel normClubPublicEvent 一致 */
+    normClubPublicEvent(event) {
+      const ld = event.location_data || {};
+      const n = String(ld.name || '').trim();
+      const a = String(ld.address || '').trim();
+      let location = String(event.location || '').trim();
+      if (!location) location = n && a ? `${n} · ${a}` : n || a;
+      let mapImageUrl = event.premap_url || '';
+      if (!mapImageUrl && ld.longitude && ld.latitude) {
+        const { longitude, latitude } = ld;
+        mapImageUrl = `https://maps.geoapify.com/v1/staticmap?style=osm-bright-grey&width=600&height=400&center=lonlat:${longitude},${latitude}&zoom=15&marker=lonlat:${longitude},${latitude};type:awesome;color:%23ff6b9d;size:28&scaleFactor=2`;
+      }
+      const coverRaw = event.cover_url || event.cover;
+      let cover_url_thumb = '';
+      if (coverRaw) cover_url_thumb = app.convertToThumbnailUrl(coverRaw, 150);
+      else if (event.event_imgs?.length) {
+        const first = event.event_imgs[0];
+        const u = typeof first === 'string' ? first : first?.fileUrl || first?.url || '';
+        if (u) cover_url_thumb = app.convertToThumbnailUrl(u, 150);
+      }
+      return {
+        ...event,
+        cover_url: coverRaw,
+        location: location || event.location,
+        mapImageUrl,
+        cover_url_thumb,
+        loading: false
+      };
+    },
+
     // 懒加载入口：供外部调用，只有弹窗展开时才加载数据
   loadData() {
       this._hasExpanded = true;
@@ -105,19 +147,31 @@ Component({
     },
 
     async loadClubData() {
-      this.setData({ loading: true });
+      this.setData({
+        loading: true,
+        detailEventsList: [],
+        detailEventsEmpty: true
+      });
       try {
-        const [clubRes, membersRes] = await Promise.all([
+        const [clubRes, membersRes, eventsRes] = await Promise.all([
           this.request({ url: `/club/${this.data.clubId}` }),
-          this.request({ url: `/club/${this.data.clubId}/members` })
+          this.request({ url: `/club/${this.data.clubId}/members` }),
+          this.request({
+            url: `/event/club_public/${this.data.clubId}/list/all?mode=page&page=1&include_featured_isotope=1`
+          })
         ]);
 
-        if (clubRes.Flag == '4000' || clubRes.Flag == 4000) {
+        if (this._apiOk(clubRes)) {
           const club = clubRes.data || {};
           await this.processClubData(club);
           
-          if (membersRes.Flag == '4000' || membersRes.Flag == 4000) {
-            this.setData({ clubMembers: membersRes.data?.members || [] });
+          const membersRaw = this._apiOk(membersRes) ? membersRes.data?.members || [] : [];
+          this.setData({ clubMembers: membersRaw });
+
+          if (this._apiOk(eventsRes)) {
+            await this.processDetailEventsData(club, eventsRes.data);
+          } else {
+            await this.processDetailEventsData(club, { records: [], pagination: {} });
           }
           
           this.setData({ loading: false });
@@ -125,17 +179,21 @@ Component({
         } else {
           throw new Error(clubRes.message || '加载失败');
         }
-      } catch (e) {        this.setData({ loading: false, club: null });
+      } catch (e) {
+        this.setData({
+          loading: false,
+          club: null,
+          detailEventsList: [],
+          detailEventsEmpty: true
+        });
         this.triggerEvent('loaded');
         wx.showToast({ title: '加载失败', icon: 'none' });
       }
     },
 
     async processClubData(club) {
-      // 映射删除状态字?- 后端返回is_deleted，组件期望isDelete
       club.isDelete = club.is_deleted || false;
-      
-      // 处理会长信息
+      console.log(club);
     if (club.president) {
         club.president_id = club.president?.user?.userID || null;
         club.president_username = club.president?.user?.userName || null;
@@ -143,7 +201,6 @@ Component({
       }
       club.content = club.message || club.content || club.description || '';
 
-      // 处理轮播数
       const swiperImages = [];
       const swiperImagesThumbs = [];
       if (club.cover_url) {
@@ -151,41 +208,252 @@ Component({
         swiperImagesThumbs.push({ url: app.convertToThumbnailUrl(club.cover_url, 100), type: 'cover' });
       }
       
-      // 添加最近活动的动态图数
-      if (club.recent_events && club.recent_events.length > 0 && 
-          club.recent_events[0].recent_moments && 
-          club.recent_events[0].recent_moments[0]?.image_files?.length > 0) {
-        const firstMoment = club.recent_events[0].recent_moments[0];
-        const maxImages = Math.min(firstMoment.image_files.length, 5);
-        for (let i = 0; i < maxImages; i++) {
-          const imageFile = firstMoment.image_files[i];
-          if (imageFile && imageFile.file_url) {
-            swiperImages.push({ url: imageFile.file_url, type: 'moment' });
-            swiperImagesThumbs.push({ url: app.convertToThumbnailUrl(imageFile.file_url, 100), type: 'moment' });
-          }
+      this.setData({ club, swiperImages, swiperImagesThumbs });
+    },
+
+    _fileUrlFromMomentFile(f) {
+      if (!f) return '';
+      return f.fileUrl || f.file_url || '';
+    },
+
+    /** 与 club-joined-panel fetchEventMomentsForIsotope 一致 */
+    async fetchEventMomentsForIsotope(eventId, maxPages = 3) {
+      const out = [];
+      for (let p = 1, total = 1; p <= maxPages && p <= total; p++) {
+        try {
+          const r = await this.request({ url: `/moment/event/${eventId}?mode=page&page=${p}` });
+          if (!this._apiOk(r)) break;
+          const d = r.data || {};
+          out.push(...(d.moments || []));
+          total = d.pagination?.total_pages || 1;
+        } catch {
+          break;
         }
       }
+      return out;
+    },
 
-      // 处理最近活动的地图数据
-    if (club.recent_events && Array.isArray(club.recent_events)) {
-        club.recent_events = club.recent_events.map(event => {
-          let mapImageUrl = '';
-          if (event.premap_url) {
-            // 优先使用后端返回的完整地图URL
-            mapImageUrl = event.premap_url;
-          } else if (event.location_data && event.location_data.longitude && event.location_data.latitude) {
-            // 兼容旧数据：如果没有premap_url，使用location_data构建（但不包含API key数
-      const { longitude, latitude } = event.location_data;
-            mapImageUrl = `https://maps.geoapify.com/v1/staticmap?style=osm-bright-grey&width=600&height=400&center=lonlat:${longitude},${latitude}&zoom=15&marker=lonlat:${longitude},${latitude};type:awesome;color:%23ff6b9d;size:28&scaleFactor=2`;
-  }
-          return { ...event, mapImageUrl };
+    /** 与 club-joined-panel buildFeaturedEventIsotopeData 一致 */
+    buildPanelEventIsotopeData(event, eventMoments, eventParticipants) {
+      const eid = event.event_id || 'detail';
+      const toThumb = (url, size) => (url ? app.convertToThumbnailUrl(url, size) : '');
+      const seen = new Set();
+      const pushUrl = (arr, url, meta) => {
+        if (!url || seen.has(url)) return;
+        seen.add(url);
+        arr.push(meta);
+      };
+      const coverGroup = [];
+      const coverThumb = event.cover_url_thumb;
+      const coverRaw = event.cover_url;
+      const imgs = event.event_imgs || [];
+      const firstImgUrl = imgs.length
+        ? typeof imgs[0] === 'string'
+          ? imgs[0]
+          : imgs[0].fileUrl || imgs[0].url || imgs[0].file_url || ''
+        : '';
+      const coverCanonical = coverRaw || firstImgUrl || '';
+
+      if (coverThumb || coverRaw) {
+        const u = coverThumb || toThumb(coverRaw, 200);
+        pushUrl(coverGroup, coverRaw || u, {
+          id: `${eid}-cover`,
+          image: u,
+          type: 'cover',
+          ini_width: 200,
+          ini_height: 200
+        });
+      } else if (firstImgUrl) {
+        const u = toThumb(firstImgUrl, 200);
+        pushUrl(coverGroup, firstImgUrl, {
+          id: `${eid}-cover`,
+          image: u,
+          type: 'cover',
+          ini_width: 200,
+          ini_height: 200
         });
       }
 
+      imgs.slice(0, 8).forEach((raw, i) => {
+        const url = typeof raw === 'string' ? raw : raw && (raw.fileUrl || raw.url || raw.file_url);
+        if (!url) return;
+        if (coverCanonical && url === coverCanonical) return;
+        pushUrl(coverGroup, url, {
+          id: `${eid}-list-${i}`,
+          image: toThumb(url, 150),
+          type: 'event_img',
+          ini_width: 150,
+          ini_height: 150
+        });
+      });
+
+      if (Array.isArray(eventMoments) && eventMoments.length) {
+        let tile = 0;
+        eventMoments.forEach((mom, mi) => {
+          (mom.image_files || []).forEach((f, fi) => {
+            if (coverGroup.length >= 14) return;
+            const url = this._fileUrlFromMomentFile(f);
+            if (!url) return;
+            pushUrl(coverGroup, url, {
+              id: `${eid}-mom-${mi}-${fi}-${tile++}`,
+              image: toThumb(url, 150),
+              type: 'moment',
+              ini_width: 150,
+              ini_height: 150
+            });
+          });
+        });
+      }
+
+      const memberGroup = (eventParticipants || []).slice(0, 12).map((m, i) => {
+        const uid = m.user_id || m.userID;
+        const av = m.avatar;
+        if (!av) return null;
+        return {
+          id: `${eid}-mem-${uid != null ? uid : i}`,
+          image: toThumb(av, 100),
+          type: 'member',
+          ini_width: 100,
+          ini_height: 100
+        };
+      }).filter(Boolean);
+
+      const groups = [coverGroup, memberGroup].filter((g) => Array.isArray(g) && g.length > 0);
+      return groups.length ? groups : [];
+    },
+
+    /** GET /event/:id 合并到 club_public 行（含 event_imgs、时间、打卡等） */
+    mergeEventDetailRow(row, d) {
+      const out = { ...row };
+      if (!d || typeof d !== 'object') return this.normClubPublicEvent(out);
+      if (d.title) out.title = d.title;
+      if (d.content != null) out.content = d.content;
+      out.pre_startTime = d.pre_startTime ?? out.pre_startTime;
+      out.pre_endTime = d.pre_endTime ?? out.pre_endTime;
+      out.actual_startTime = d.actual_startTime ?? out.actual_startTime;
+      out.actual_endTime = d.actual_endTime ?? out.actual_endTime;
+      out.join_count = d.join_count != null ? d.join_count : out.join_count;
+      out.cur_user_is_joined = d.cur_user_is_joined;
+      out.cur_user_clockin_date = d.cur_user_clockin_date;
+      out.is_ended = d.is_ended;
+      if (d.cover_url) out.cover_url = d.cover_url;
+      if (d.premap_url) out.premap_url = d.premap_url;
+      if (d.location_data) out.location_data = d.location_data;
+      if (d.location != null) out.location = d.location;
+      const urls = [];
+      const seen = new Set();
+      const pushU = (u) => {
+        if (!u || typeof u !== 'string' || seen.has(u)) return;
+        seen.add(u);
+        urls.push(u);
+      };
+      (row.event_imgs || []).forEach((x) =>
+        pushU(typeof x === 'string' ? x : x?.fileUrl || x?.file_url || x?.url)
+      );
+      (d.event_imgs || []).forEach((x) => pushU(x?.fileUrl || x?.file_url));
+      (d.first_moment_imgs || []).forEach((x) => pushU(x?.fileUrl || x?.file_url));
+      out.event_imgs = urls;
+      return this.normClubPublicEvent(out);
+    },
+
+    /** 与 club-joined-panel setEventStatus 一致；详情卡片不展示操作按钮 */
+    setPanelEventStatus(event) {
+      const hasStarted = !!event.actual_startTime;
+      const hasEnded = !!event.actual_endTime || event.is_ended;
+      if (hasEnded) {
+        event.statusText = '已结';
+        event.statusClass = 'status-ended';
+      } else if (hasStarted) {
+        event.statusText = '正在进行';
+        event.statusClass = 'status-ongoing';
+      } else {
+        event.statusText = '预计开';
+        event.statusClass = 'status-upcoming';
+      }
+      event.showButton = false;
+    },
+
+    /**
+     * 单条：GET /event/:id 详情 + 成员/动态 isotope（与 club-joined 一致优先 featured_isotope）
+     */
+    async enrichOneEvent(row, featuredIso) {
+      const eid = row.event_id;
+      const isoHit =
+        featuredIso &&
+        String(featuredIso.event_id ?? featuredIso.eventID) === String(eid)
+          ? featuredIso
+          : null;
+
+      const detailP = this.request({ url: `/event/${eid}` });
+      const membersP = isoHit
+        ? Promise.resolve({ Flag: 4000, data: { members: isoHit.members || [] } })
+        : this.request({ url: `/event/${eid}/members` });
+
+      const [detRes, memRes] = await Promise.all([detailP, membersP]);
+      const d = this._apiOk(detRes) ? detRes.data || {} : {};
+      const participants = this._apiOk(memRes) ? memRes.data?.members || [] : [];
+
+      let moments = [];
+      if (isoHit && Array.isArray(isoHit.moments)) {
+        moments = isoHit.moments;
+      } else {
+        moments = await this.fetchEventMomentsForIsotope(eid);
+      }
+
+      const merged = this.mergeEventDetailRow(row, d);
+      merged.isotopeData = this.buildPanelEventIsotopeData(merged, moments, participants);
+      this.setPanelEventStatus(merged);
+      return merged;
+    },
+
+    buildSwiperFromClubAndEvents(club, events) {
+      const swiperImages = [];
+      const swiperImagesThumbs = [];
+      if (club && club.cover_url) {
+        swiperImages.push({ url: club.cover_url, type: 'cover' });
+        swiperImagesThumbs.push({ url: app.convertToThumbnailUrl(club.cover_url, 100), type: 'cover' });
+      }
+      const first = events && events[0];
+      const imgs = first && first.event_imgs;
+      if (imgs && imgs.length) {
+        const max = Math.min(imgs.length, 5);
+        for (let i = 0; i < max; i++) {
+          const u = typeof imgs[i] === 'string' ? imgs[i] : imgs[i]?.fileUrl || imgs[i]?.file_url;
+          if (!u) continue;
+          swiperImages.push({ url: u, type: 'moment' });
+          swiperImagesThumbs.push({ url: app.convertToThumbnailUrl(u, 100), type: 'moment' });
+        }
+      }
+      return { swiperImages, swiperImagesThumbs };
+    },
+
+    /** club_public 首屏 + 每条 GET /event/:id（与 club-joined-panel 数据流对齐） */
+    async processDetailEventsData(club, data) {
+      const raw = data.events || data.records || [];
+      if (!raw.length) {
+        const sw = this.buildSwiperFromClubAndEvents(club, []);
+        this.setData({
+          detailEventsList: [],
+          detailEventsEmpty: true,
+          detailEventsPage: 1,
+          detailEventsTotalPages: 1,
+          swiperImages: sw.swiperImages,
+          swiperImagesThumbs: sw.swiperImagesThumbs
+        });
+        return;
+      }
+
+      const list = raw.map((e) => this.normClubPublicEvent(e));
+      const iso = data.featured_isotope || null;
+      const enriched = await Promise.all(list.map((row) => this.enrichOneEvent(row, iso)));
+      const sw = this.buildSwiperFromClubAndEvents(club, enriched);
       this.setData({
-        club,
-        swiperImages,
-        swiperImagesThumbs
+        detailEventsList: enriched,
+        detailEventsEmpty: false,
+        detailEventsPage: data.pagination?.current_page || 1,
+        detailEventsTotalPages: data.pagination?.total_pages || 1,
+        swiperImages: sw.swiperImages,
+        swiperImagesThumbs: sw.swiperImagesThumbs
       });
     },
 
@@ -319,6 +587,14 @@ Component({
       });
     },
 
+    /** 加入活动后刷新协会详情中的活动列表 */
+    async onNestedEventDetailUpdate() {
+      try {
+        await this.loadClubData();
+      } catch (e) {}
+      this.triggerEvent('update');
+    },
+
     closeNestedEventDetail() {
       const popup = this.selectComponent('#nestedEventDetailPopup');
       if (popup && popup.collapse) popup.collapse();
@@ -341,6 +617,46 @@ Component({
           }
         });
       }, 300);
+    },
+
+    /** 退出协会：后端 GET /club/:id/quit（与 club-joined-panel 一致） */
+    quitClub() {
+      wx.showModal({
+        title: '确认退出',
+        content: '确定要退出该协会吗？退出后需重新申请才能加入。',
+        confirmText: '退出',
+        confirmColor: '#ff4d4f',
+        success: async (res) => {
+          if (!res.confirm) return;
+          try {
+            wx.showLoading({ title: '处理中...' });
+            const result = await this.request({
+              url: `/club/${this.data.clubId}/quit`,
+              method: 'GET',
+            });
+            wx.hideLoading();
+            if (result.Flag == '4000' || result.Flag == 4000) {
+              wx.showToast({ title: '已退出协会', icon: 'success' });
+              const club = { ...this.data.club };
+              club.cur_user_is_member = false;
+              this.setData({ club });
+              app.recordChange(
+                this.data.clubId,
+                'update',
+                { type: 'club', cur_user_is_member: false },
+                this
+              );
+              this.triggerEvent('update', { clubId: this.data.clubId, quit: true });
+              await this.loadClubData();
+            } else {
+              wx.showToast({ title: result.message || '退出失败', icon: 'none' });
+            }
+          } catch (e) {
+            wx.hideLoading();
+            wx.showToast({ title: '网络错误', icon: 'none' });
+          }
+        },
+      });
     },
 
     // 申请加入协会

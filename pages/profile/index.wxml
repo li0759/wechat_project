@@ -54,7 +54,8 @@
             <view class="grid-item" bind:tap="navigateToJoinedClubs">
               <view class="grid-icon">
                 <t-icon name="usergroup" size="24px" color="rgb(223, 118, 176)" />
-                <view class="badge" wx:if="{{statistics.joinedClubs > 0}}">{{statistics.joinedClubs}}</view>
+                <view class="badge badge--dot" wx:if="{{bd.joined_clubs.count > 0 && bd.joined_clubs.seen}}"></view>
+                <view class="badge" wx:elif="{{bd.joined_clubs.count > 0 && !bd.joined_clubs.seen}}">{{bd.joined_clubs.count > 99 ? '99+' : bd.joined_clubs.count}}</view>
               </view>
               <view class="grid-text">我的协会</view>
             </view>
@@ -64,7 +65,8 @@
             <view class="grid-item" bind:tap="navigateToMyApplications">
               <view class="grid-icon">
                 <t-icon name="assignment" size="24px" color="rgb(223, 118, 176)" />
-                <view class="badge" wx:if="{{statistics.pendingApplications > 0}}">{{statistics.pendingApplications}}</view>
+                <view class="badge badge--dot" wx:if="{{bd.pending_my_applications.count > 0 && bd.pending_my_applications.seen}}"></view>
+                <view class="badge" wx:elif="{{bd.pending_my_applications.count > 0 && !bd.pending_my_applications.seen}}">{{bd.pending_my_applications.count > 99 ? '99+' : bd.pending_my_applications.count}}</view>
               </view>
               <view class="grid-text">入会申请</view>
             </view>
@@ -74,7 +76,8 @@
             <view class="grid-item" bind:tap="navigateToPaypersonal">
               <view class="grid-icon">
                 <t-icon name="money" size="24px" color="rgb(223, 118, 176)" />
-                <view class="badge" wx:if="{{statistics.unpaidPayments > 0}}">{{statistics.unpaidPayments}}</view>
+                <view class="badge badge--dot" wx:if="{{bd.unpaid_payments.count > 0 && bd.unpaid_payments.seen}}"></view>
+                <view class="badge" wx:elif="{{bd.unpaid_payments.count > 0 && !bd.unpaid_payments.seen}}">{{bd.unpaid_payments.count > 99 ? '99+' : bd.unpaid_payments.count}}</view>
               </view>
               <view class="grid-text">我的缴费</view>
             </view>
@@ -97,7 +100,8 @@
             <view class="grid-item" bind:tap="navigateToMyEvents" data-type="prego">
               <view class="grid-icon">
                 <t-icon name="calendar-event" size="24px" color="rgb(223, 118, 176)" />
-                <view class="badge" wx:if="{{statistics.pregoEvents > 0}}">{{statistics.pregoEvents}}</view>
+                <view class="badge badge--dot" wx:if="{{bd.my_events_prego.count > 0 && bd.my_events_prego.seen}}"></view>
+                <view class="badge" wx:elif="{{bd.my_events_prego.count > 0 && !bd.my_events_prego.seen}}">{{bd.my_events_prego.count > 99 ? '99+' : bd.my_events_prego.count}}</view>
               </view>
               <view class="grid-text">预计开始</view>
             </view>
@@ -107,7 +111,8 @@
             <view class="grid-item" bind:tap="navigateToMyEvents" data-type="going">
               <view class="grid-icon">
                 <t-icon name="cardmembership" size="24px" color="rgb(223, 118, 176)" />
-                <view class="badge" wx:if="{{statistics.goingEvents > 0}}">{{statistics.goingEvents}}</view>
+                <view class="badge badge--dot" wx:if="{{bd.my_events_going.count > 0 && bd.my_events_going.seen}}"></view>
+                <view class="badge" wx:elif="{{bd.my_events_going.count > 0 && !bd.my_events_going.seen}}">{{bd.my_events_going.count > 99 ? '99+' : bd.my_events_going.count}}</view>
               </view>
               <view class="grid-text">正在进行</view>
             </view>
@@ -117,18 +122,21 @@
             <view class="grid-item" bind:tap="navigateToMyEvents" data-type="ended">
               <view class="grid-icon">
                 <t-icon name="calendar-2" size="24px" color="rgb(223, 118, 176)" />
-                <view class="badge" wx:if="{{statistics.endedEvents > 0}}">{{statistics.endedEvents}}</view>
+                <view class="badge badge--dot" wx:if="{{bd.my_events_ended.count > 0 && bd.my_events_ended.seen}}"></view>
+                <view class="badge" wx:elif="{{bd.my_events_ended.count > 0 && !bd.my_events_ended.seen}}">{{bd.my_events_ended.count > 99 ? '99+' : bd.my_events_ended.count}}</view>
               </view>
               <view class="grid-text">已结束</view>
             </view>
           </ripple>
           
           <ripple rippleColor="rgba(223, 118, 176, 0.8)" duration="800">
-            <view class="grid-item" bind:tap="navigateToMyEvents" data-type="quit">
+            <view class="grid-item" bind:tap="navigateToMyEvents" data-type="cancelled">
               <view class="grid-icon">
                 <t-icon name="close-rectangle" size="24px" color="rgb(223, 118, 176)" />
+                <view class="badge badge--dot" wx:if="{{bd.my_events_cancelled.count > 0 && bd.my_events_cancelled.seen}}"></view>
+                <view class="badge" wx:elif="{{bd.my_events_cancelled.count > 0 && !bd.my_events_cancelled.seen}}">{{bd.my_events_cancelled.count > 99 ? '99+' : bd.my_events_cancelled.count}}</view>
               </view>
-              <view class="grid-text">已退出</view>
+              <view class="grid-text">已取消</view>
             </view>
           </ripple>
         </view>
@@ -149,7 +157,8 @@
             <view class="grid-item" bind:tap="showPregoEvents">
               <view class="grid-icon">
                 <t-icon name="calendar-event" size="24px" color="rgb(223, 118, 176)" />
-                <view class="badge" wx:if="{{statistics.managedPregoEvents > 0}}">{{statistics.managedPregoEvents}}</view>
+                <view class="badge badge--dot" wx:if="{{bd.managed_events_prego.count > 0 && bd.managed_events_prego.seen}}"></view>
+                <view class="badge" wx:elif="{{bd.managed_events_prego.count > 0 && !bd.managed_events_prego.seen}}">{{bd.managed_events_prego.count > 99 ? '99+' : bd.managed_events_prego.count}}</view>
               </view>
               <view class="grid-text">预计开始</view>
             </view>
@@ -159,7 +168,8 @@
             <view class="grid-item" bind:tap="showGoingEvents">
               <view class="grid-icon">
                 <t-icon name="cardmembership" size="24px" color="rgb(223, 118, 176)" />
-                <view class="badge" wx:if="{{statistics.managedGoingEvents > 0}}">{{statistics.managedGoingEvents}}</view>
+                <view class="badge badge--dot" wx:if="{{bd.managed_events_going.count > 0 && bd.managed_events_going.seen}}"></view>
+                <view class="badge" wx:elif="{{bd.managed_events_going.count > 0 && !bd.managed_events_going.seen}}">{{bd.managed_events_going.count > 99 ? '99+' : bd.managed_events_going.count}}</view>
               </view>
               <view class="grid-text">正在进行</view>
             </view>
@@ -283,7 +293,8 @@
               <view class="grid-item" bind:tap="navigateToClubApplications" data-club_id="{{item.club_id}}">
                 <view class="grid-icon">
                   <t-icon name="pen-ball" size="24px" color="rgb(223, 118, 176)" />
-                  <view class="badge" wx:if="{{item.pending_applications > 0}}">{{item.pending_applications}}</view>
+                  <view class="badge badge--dot" wx:if="{{item.pending_badge_count > 0 && item.pending_badge_seen}}"></view>
+                  <view class="badge" wx:elif="{{item.pending_badge_count > 0 && !item.pending_badge_seen}}">{{item.pending_badge_count > 99 ? '99+' : item.pending_badge_count}}</view>
                 </view>
                 <view class="grid-text">入会审批</view>
               </view>
@@ -328,6 +339,8 @@
         </ripple>
       </view>
     </view>
+    <!-- 垫高：否则最后一屏内容会被 fixed 自定义 tabBar 挡住约 100～150rpx -->
+    <view class="profile-scroll-footer-spacer" aria-hidden="true"></view>
   </scroll-view>
 
   <!-- 全局全屏弹窗 - 统一管理所有 panel -->
@@ -440,6 +453,7 @@
           id="clubsPanel" 
           requestUrl="{{globalPopup.data.requestUrl}}" 
           bind:loaded="onGlobalPopupLoaded"
+          bind:update="onManagePanelUpdate"
           bind:close="closeGlobalPopup"
         />
 
@@ -447,7 +461,7 @@
         <club-applications-panel 
           wx:if="{{globalPopup.type === 'club-applications'}}"
           id="clubApplicationsPanel" 
-          clubId="{{globalPopup.data.clubId}}" 
+          club-id="{{globalPopup.id}}"
           bind:loaded="onGlobalPopupLoaded"
           bind:update="onManagePanelUpdate"
           bind:close="closeGlobalPopup"

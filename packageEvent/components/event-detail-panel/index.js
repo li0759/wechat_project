@@ -404,12 +404,31 @@ Component({
           url: `/event/${this.data.eventId}/join`,
           loadingText: '加入中...'
         });
-        if (res.Flag == '4000' || res.Flag == 4000) {
+        const ok = res.Flag == '4000' || res.Flag == 4000 || String(res.Flag) === '4000';
+        if (ok) {
           wx.showToast({ title: '加入成功', icon: 'success' });
           const event = { ...this.data.event };
           event.cur_user_is_joined = true;
           event.join_count = (event.join_count || 0) + 1;
+          if (!event.event_id) event.event_id = this.data.eventId;
           this.setData({ event });
+          const payload = {
+            event: {
+              ...event,
+              event_id: event.event_id || this.data.eventId,
+              cur_user_is_joined: true,
+              join_count: event.join_count,
+            },
+          };
+          this.triggerEvent('update', payload);
+          app.recordChange(this.data.eventId, 'update', {
+            type: 'event',
+            ...payload.event,
+          }, this);
+          // 与退出协会一致：先展示「已加入活动」，再自动收起外层弹窗
+          setTimeout(() => {
+            this.triggerEvent('close');
+          }, 1500);
         } else {
           wx.showToast({ title: res.message || '加入失败', icon: 'none' });
         }

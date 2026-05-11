@@ -1,8 +1,11 @@
-<t-tabbar 
-  value="{{active}}" 
-  bind:change="onTabChange" 
-  style="--td-primary-color-7: rgb(223, 118, 176);">
-  <t-tabbar-item wx:for="{{list}}" wx:key="index" icon="{{item.icon}}">
-    {{item.text}}
-  </t-tabbar-item>
-</t-tabbar>
+<view class="custom-tab-bar-root" hidden="{{tabBarHidden}}">
+  <t-tabbar
+    value="{{active}}"
+    bind:change="onTabChange"
+    style="--td-primary-color-7: rgb(223, 118, 176);"
+  >
+    <t-tabbar-item wx:for="{{list}}" wx:key="index" icon="{{item.icon}}">
+      {{item.text}}
+    </t-tabbar-item>
+  </t-tabbar>
+</view>

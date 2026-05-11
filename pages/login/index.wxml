@@ -31,7 +31,7 @@
     </view>
     
     <!-- 信息补全按钮区域 -->
-    <view wx:if="!{{userInfo_complete}}" class="profile-buttons">
+    <view wx:if="{{!userInfo_complete}}" class="profile-buttons">
       <view class="profile-section">
         <text class="section-title">完善个人信息</text>
         <view class="button-group">

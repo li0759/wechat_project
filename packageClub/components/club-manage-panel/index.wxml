@@ -159,20 +159,19 @@
         <!-- 封面 + 活动管理：同一行 -->
         <view class="split-row">
           <view class="split-half">
-            <ripple ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}" bindtap="onCoverClick">
-              <view class="panel panel-300">
-                <view class="panel-header">
-                  <view class="panel-title">
-                    <t-icon name="image" color="var(--md-sys-color-primary)" />
-                    <text>协会封面</text>
-                  </view>
-                  <text class="panel-hint">点击更换</text>
+            <!-- 封面：勿包 ripple，避免 tap 两次触发导致相册弹两次 -->
+            <view class="panel panel-300" bindtap="onCoverClick">
+              <view class="panel-header">
+                <view class="panel-title">
+                  <t-icon name="image" color="var(--md-sys-color-primary)" />
+                  <text>协会封面</text>
                 </view>
-                <view class="cover-preview">
-                  <image class="cover-img" src="{{clubDetail.cover_url || defaultCover}}" mode="aspectFill" />
-                </view>
+                <text class="panel-hint">点击更换</text>
               </view>
-            </ripple>
+              <view class="cover-preview">
+                <image class="cover-img" src="{{clubDetail.cover_url || defaultCover}}" mode="aspectFill" />
+              </view>
+            </view>
           </view>
 
           <view class="split-half">
@@ -208,10 +207,12 @@
                         wx:key="event_id"
                         ripple-color="rgba(223, 118, 176, 0.8)"
                         duration="{{800}}"
-                        bindtap="onActivityItemTap"
-                        data-id="{{item.event_id}}"
                       >
-                        <view class="activity-item {{item.is_cancelled ? 'activity-cancelled' : ''}}">
+                        <view
+                          class="activity-item {{item.is_cancelled ? 'activity-cancelled' : ''}}"
+                          bindtap="onActivityItemTap"
+                          data-id="{{item.event_id}}"
+                        >
                           <!-- 取消状态遮罩层 -->
                           <view wx:if="{{item.is_cancelled}}" class="activity-overlay">
                             <text>活动已取消</text>
@@ -1331,35 +1332,16 @@
       </view>
     </scroll-view>
 
-    <!-- 底部操作栏 -->
-    <view class="bottom-actions" wx:if="{{clubDetail && !clubDetail.isDelete}}">
-      <block wx:if="{{isPresident}}">
-        <!-- 会长：显示"分享协会"和"删除协会" -->
-        <view class="action-left">
-          <button class="action-btn primary" open-type="share">
-            <t-icon name="share" size="18" color="#fff" />
-            <text>分享协会</text>
-          </button>
-        </view>
-
-        <view class="action-right">
-          <ripple ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}" bindtap="deleteClub">
-            <view class="action-btn tertiary">
-              <t-icon name="delete" size="18" color="#EF4444" />
-              <text>删除协会</text>
-            </view>
-          </ripple>
-        </view>
-      </block>
-        
-      <!-- 非会长：只显示"分享协会" -->
-      <block wx:else>
-        <button class="action-btn primary" open-type="share" style="flex: 1;">
-          <t-icon name="share" size="18" color="#fff" />
-          <text>分享协会</text>
-        </button>
-      </block>
-    </view>
+    <!-- 底部操作栏（统一样式 styles/panel-bottom-actions.wxss） -->
+    <block wx:if="{{clubDetail && !clubDetail.isDelete}}">
+      <view wx:if="{{isPresident}}" class="bottom-actions bottom-actions--row">
+        <t-button class="bottom-action-btn" size="large" shape="round" theme="primary" open-type="share">分享协会</t-button>
+        <t-button class="bottom-action-btn" size="large" shape="round" theme="danger" variant="outline" bindtap="deleteClub">删除协会</t-button>
+      </view>
+      <view wx:else class="bottom-actions">
+        <t-button class="bottom-action-btn" size="large" shape="round" theme="primary" open-type="share">分享协会</t-button>
+      </view>
+    </block>
   </block>
 
   <!-- 共享成员详情弹窗（用于 isotope 点击）；组件常驻 DOM，避免 wx:if 整段挂载导致底栏 reflow 下跳（对齐 event-manage-panel） -->

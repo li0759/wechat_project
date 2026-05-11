@@ -1,3 +1,5 @@
+@import "../../../styles/panel-bottom-actions.wxss";
+
 /* 活动详情面板样式 - 复刻 event-detail 页面 */
 .event-detail-panel {
   position: relative;
@@ -104,10 +106,12 @@
   font-weight: 500;
 }
 
-/* 主内容区域 - 使用 calc 计算高度 */
+/* 主内容区域：在 flex 列内占满剩余高度（全屏弹层内勿用 100vh） */
 .main-content {
-  height: calc(100vh - 200rpx - 88rpx - 140rpx);
+  flex: 1;
+  min-height: 0;
   padding-bottom: 140rpx;
+  box-sizing: border-box;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -406,26 +410,9 @@
   color: #999;
 }
 
-/* 底部安全距离 */
+/* 底部安全距离（为固定底栏留白，与 panel-bottom-actions 配套） */
 .bottom-safe-area {
-  height: 210rpx;
-}
-
-/* 底部操作栏 */
-.bottom-actions {
-  position: absolute;
-  bottom: 150rpx;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-}
-
-.bottom-action-btn {
-  width: 420rpx;
+  height: 200rpx;
 }
 
 .nested-popup-shell {

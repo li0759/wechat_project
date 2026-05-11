@@ -22,7 +22,10 @@
     <view class="user-info {{userInfoActive ? 'user-info-active' : ''}}" bindtouchstart="handleUserInfoTouchStart" bindtouchend="handleUserInfoTouchEnd">
       <view class="avatar-wrap" bindtap="openMessagesFullscreen">
         <image class="avatar" src="{{userInfo.avatar}}"></image>
-        <view class="avatar-badge" wx:if="{{unread_messages_count > 0}}">{{unread_messages_count > 99 ? '99+' : unread_messages_count}}</view>
+        <view wx:if="{{notice_badge_count > 0}}" class="avatar-badge-wrap">
+          <view class="avatar-badge avatar-badge--dot" wx:if="{{notice_badge_seen}}"></view>
+          <view class="avatar-badge" wx:else>{{notice_badge_count > 99 ? '99+' : notice_badge_count}}</view>
+        </view>
       </view>
       <view class="user-detail">
         <text class="username" bindtap="navigateToUserInfo">{{userInfo.username || '点击登录'}}</text>
@@ -510,6 +513,7 @@
           id="globalEventJoinedPanel"
           event-id="{{globalPopup.id}}"
           bind:loaded="onGlobalPopupLoaded"
+          bind:update="onEventJoinedPanelUpdate"
           bind:close="closeGlobalPopup"
         />
         <!-- 活动管理 -->

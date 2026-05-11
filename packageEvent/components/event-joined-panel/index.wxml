@@ -13,9 +13,10 @@
   <!-- 主要内容 -->
   <view wx:if="{{featuredEvent}}" class="content-container">
     <!-- 选项卡（恢复 t-tabs） -->
-    <t-tabs 
+    <t-tabs
+      class="joined-tabs-host"
       animation="{{ { duration: 0.6 } }}"
-      value="{{currentTab}}" 
+      value="{{currentTab}}"
       bind:change="onTabChange"
       swipeable="{{true}}"
     >
@@ -414,30 +415,16 @@
     </view>
   </t-popup>
 
-  <!-- 底部操作栏 -->
-  <view class="bottom-actions" wx:if="{{featuredEvent && !featuredEvent.is_cancelled && !featuredEvent.club_deleted}}">
-    <view class="action-left">
-      <!-- 左侧可以添加其他按钮 -->
-    </view>
-
-    <view class="action-right">
-      <!-- 分享按钮 -->
-      <button class="action-btn secondary" open-type="share">
-        <t-icon name="share" size="18" color="#666" />
-        <text>分享</text>
-      </button>
-      
-      <!-- 退出活动按钮 -->
-      <ripple ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}" bindtap="quitEvent">
-        <view class="action-btn tertiary">
-          <t-icon name="close-circle" size="18" color="#EF4444" />
-          <text>退出活动</text>
-        </view>
-      </ripple>
-    </view>
   </view>
 
-  </view>
+  <!-- 底部操作栏（统一样式 styles/panel-bottom-actions.wxss，与 club-manage 双按钮行一致；底栏在 content-container 外避免被 tabs 裁切） -->
+  <block wx:if="{{featuredEvent && !featuredEvent.is_cancelled && !featuredEvent.club_deleted}}">
+    <view class="bottom-actions bottom-actions--row">
+      <t-button class="bottom-action-btn" size="large" shape="round" theme="primary" open-type="share">分享</t-button>
+      <t-button class="bottom-action-btn" size="large" shape="round" theme="danger" variant="outline" bindtap="quitEvent">退出活动</t-button>
+    </view>
+  </block>
+
 </view>
 
 

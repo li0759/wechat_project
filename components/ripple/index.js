@@ -35,6 +35,11 @@ Component({
       type: Number,
       value: 1.0
     },
+    // 涟漪层级（默认 1；当卡片内部有更高 z-index 元素时可上调）
+    layerZIndex: {
+      type: Number,
+      value: 1
+    },
     // 是否阻止 touchmove 冒泡（用于解决与某些可横向滑动组件的冲突）
     stopTouchMove: {
       type: Boolean,

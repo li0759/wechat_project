@@ -1,4 +1,4 @@
-<view class="page">
+<view class="page page-with-bottom-bar">
   <scroll-view class="page-scroll" scroll-y>
     <view class="rows">
       <!-- 协会名称（独立一框） -->
@@ -1107,13 +1107,16 @@
     </view>
   </scroll-view>
 
-  <!-- 底部提交（固定） -->
-  <view class="step-navigation">
-    <view class="nav-buttons">
-      <t-button theme="primary" size="large" shape="round" bindtap="submitForm" loading="{{creating}}" class="nav-btn">
-        创建协会
-      </t-button>
-    </view>
+  <!-- 底部操作栏（统一样式 styles/panel-bottom-actions.wxss） -->
+  <view class="bottom-actions">
+    <t-button
+      class="bottom-action-btn"
+      theme="primary"
+      size="large"
+      shape="round"
+      bindtap="submitForm"
+      loading="{{creating}}"
+    >创建协会</t-button>
   </view>
 
   <!-- 成员详情弹窗：已改为每个头像独立的 expandable-container（更可靠且层级正确） -->

@@ -294,6 +294,21 @@ def quit_club(club_id):
     
     # 软删除成员记录
     member.isDelete = True
+
+    # 退出协会：将该用户在本协会所有「未实际结束」的活动的参与记录标记为已退出
+    try:
+        uid = int(user_id) if not isinstance(user_id, int) else user_id
+    except (TypeError, ValueError):
+        uid = user_id
+    ongoing_club_events = Event.query.filter(
+        Event.clubID == club_id,
+        Event.actual_endTime.is_(None),
+    ).all()
+    for ev in ongoing_club_events:
+        ej = EventJoin.query.filter_by(eventID=ev.eventID, userID=uid).first()
+        if ej and not ej.isDelete:
+            ej.isDelete = True
+
     db.session.commit()
     
     return jsonify({
@@ -851,6 +866,38 @@ def get_club_members(club_id):
         EventJoin.userID
     ).all()
     participation_counts = {user_id: count for user_id, count in participation_counts_query}
+
+    # 各成员在本协会作为活动发起者（Event.authorID）的次数
+    authored_rows = (
+        db.session.query(Event.authorID, func.count(Event.eventID))
+        .filter(Event.clubID == club_id)
+        .group_by(Event.authorID)
+        .all()
+    )
+    authored_event_counts = {int(uid): int(c) for uid, c in authored_rows if uid is not None}
+
+    # 当前用户在该协会最近一次有效参与的活动（用于已加入协会面板）
+    last_participated_event = None
+    last_ej = (
+        EventJoin.query.join(Event, Event.eventID == EventJoin.eventID)
+        .filter(
+            EventJoin.userID == cur_user.userID,
+            Event.clubID == club_id,
+            EventJoin.isDelete == False,
+        )
+        .order_by(EventJoin.joinDate.desc())
+        .first()
+    )
+    if last_ej and last_ej.event:
+        ev = last_ej.event
+        last_participated_event = {
+            'event_id': ev.eventID,
+            'title': ev.title,
+            'cover_url': ev.cover.fileUrl if ev.cover else None,
+            'pre_startTime': ev.pre_startTime.isoformat() if ev.pre_startTime else None,
+            'actual_startTime': ev.actual_startTime.isoformat() if ev.actual_startTime else None,
+            'actual_endTime': ev.actual_endTime.isoformat() if ev.actual_endTime else None,
+        }
     
     # 角色排序优先级
     role_priority = {
@@ -891,7 +938,10 @@ def get_club_members(club_id):
             'join_date': member.joinDate.isoformat() if member.joinDate else None,
             'is_current_user': member.userID == cur_user.userID,
             'participation_count': participation_counts.get(member.userID, 0),
+            'authored_event_count': int(authored_event_counts.get(member.userID, 0)),
         }
+        if member.userID == cur_user.userID and last_participated_event is not None:
+            member_info['last_participated_event'] = last_participated_event
         
         # 将成员分配到对应角色组
         role = member.role if member.role in members_by_role else 'member'

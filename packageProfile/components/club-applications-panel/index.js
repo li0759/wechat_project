@@ -43,15 +43,15 @@ Component({
     /**
      * 供外部调用的数据加载方法
      */
-    loadData() {
+    async loadData() {
       if (this.properties.clubId) {
-        this.fetchApplications();
-        // 触发loaded事件
-    this.triggerEvent('loaded');
-      } else {
-        this.triggerEvent('loaded');
+        await this.fetchApplications();
       }
+      this.triggerEvent('loaded');
     },
+
+    /** 仅阻止冒泡到折叠行，勿依赖空 catch 吞掉子按钮 bind:tap */
+    stopBubble() {},
 
     // 切换展开/折叠状态
   toggleExpand(e) {
@@ -65,10 +65,6 @@ Component({
       });
     },
 
-    // 阻止事件冒泡
-  stopPropagation(e) {
-      // 阻止事件冒泡，避免触发展开/折叠
-  },
 
     // 统一请求方法
   request(options) {
@@ -103,7 +99,7 @@ Component({
           method: 'GET'
         });
         
-        if (allRes.Flag === '4000') {
+        if (allRes.Flag == '4000') {
           // 格式化日期并添加展开状态
     let formattedData = allRes.data.map(item => {
             return {
@@ -145,25 +141,35 @@ Component({
       }
     },
 
-    // 显示批准对话框
-  showApproveDialog(e) {
-      const applicationId = e.currentTarget.dataset.applicationid;
-      
+    // 显示批准对话框（data-application-id → dataset.applicationId）
+    showApproveDialog(e) {
+      const applicationId =
+        e.currentTarget?.dataset?.applicationId ??
+        e.currentTarget?.dataset?.applicationid;
+      if (applicationId == null || applicationId === '') {
+        wx.showToast({ title: '缺少申请ID', icon: 'none' });
+        return;
+      }
       this.setData({
         currentProcessingId: applicationId,
         showApproveDialog: true,
-        approveOpinion: ''
+        approveOpinion: '',
       });
     },
 
     // 显示拒绝对话框
-  showRejectDialog(e) {
-      const index = e.currentTarget.dataset.applicationid;
-      
+    showRejectDialog(e) {
+      const applicationId =
+        e.currentTarget?.dataset?.applicationId ??
+        e.currentTarget?.dataset?.applicationid;
+      if (applicationId == null || applicationId === '') {
+        wx.showToast({ title: '缺少申请ID', icon: 'none' });
+        return;
+      }
       this.setData({
-        currentProcessingId: index,
+        currentProcessingId: applicationId,
         showRejectDialog: true,
-        rejectOpinion: ''
+        rejectOpinion: '',
       });
     },
 
@@ -211,41 +217,45 @@ Component({
             opinion: opinion
           }
         });
-        if (res.Flag === '4000') {
+        if (res.Flag == '4000') {
           wx.showToast({
             title: operation === 'approved' ? '已批准' : '已拒绝',
             icon: 'success'
           });
 
-          // 如果是批准申请，发送通知消息
-    if (res.data.approved && res.data) {
-            const message_data = {
-              booker_id: res.data.appliced_user_id,
-              url: `/packageClub/club-joined/index?clubId=${res.data.club_id}`,
-              operation: 'application_processed',
-              text: '您加入' + res.data.club_name + '协会的申请已被批准，现在您可以参与协会活动了',
-              media: app.convertToThumbnailUrl(res.data.club_cover, 300)
-            };
-            
-            await app.message(message_data);
-          } else if (res.data) {
-            const message_data = {
-              booker_id: res.data.appliced_user_id,
-              url: `/packageClub/club-detail/index?clubId=${res.data.club_id}`,
-              operation: 'application_processed',
-              text: '您加入' + res.data.club_name + '协会的申请被拒绝，理由：' + res.data.opinion
-            };
-            
-            await app.message(message_data);
+          // 站内信失败不影响审批结果
+          try {
+            if (res.data && res.data.approved) {
+              const message_data = {
+                booker_id: res.data.appliced_user_id,
+                url: `/packageClub/club-joined/index?clubId=${res.data.club_id}`,
+                operation: 'application_processed',
+                text: '您加入' + res.data.club_name + '协会的申请已被批准，现在您可以参与协会活动了',
+                media: res.data.club_cover
+                  ? app.convertToThumbnailUrl(res.data.club_cover, 300)
+                  : undefined,
+              };
+              await app.message(message_data);
+            } else if (res.data) {
+              const message_data = {
+                booker_id: res.data.appliced_user_id,
+                url: `/packageClub/club-detail/index?clubId=${res.data.club_id}`,
+                operation: 'application_processed',
+                text: '您加入' + res.data.club_name + '协会的申请被拒绝，理由：' + (res.data.opinion || ''),
+              };
+              await app.message(message_data);
+            }
+          } catch (msgErr) {
+            console.warn('application message notify failed', msgErr);
           }
-          
-          this.fetchApplications();
-          
-          // 触发更新事件，通知父组件刷新数据
-    this.triggerEvent('update');
+
+          await this.fetchApplications();
+
+          // 触发更新事件，通知父组件刷新角标等
+          this.triggerEvent('update');
         } else {
           wx.showToast({
-            title: res.message || '操作失败',
+            title: res.message || res.Message || '操作失败',
             icon: 'none'
           });
         }

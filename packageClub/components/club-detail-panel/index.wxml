@@ -107,7 +107,7 @@
             <t-icon name="calendar" size="32rpx" color="#666" />
             <view class="info-content">
               <text class="info-label">近期活动</text>
-              <text class="info-value">{{club.recent_events ? club.recent_events.length : 0}}个</text>
+              <text class="info-value">{{detailEventsList.length || 0}}个</text>
             </view>
           </view>
         </view>
@@ -137,49 +137,85 @@
           <view class="section-title">最近活动</view>
         </view>
 
-        <view class="activities-list" wx:if="{{club.recent_events && club.recent_events.length > 0}}">
+        <view class="activities-list" wx:if="{{detailEventsList.length > 0}}">
           <ripple
-            wx:for="{{club.recent_events}}"
+            wx:for="{{detailEventsList}}"
+            wx:for-index="evIdx"
             wx:key="event_id"
             ripple-color="rgba(223, 118, 176, 0.8)"
             duration="{{800}}"
-            bindtap="onClubActivityTap"
-            data-event-id="{{item.event_id}}"
+            layer-z-index="{{10}}"
           >
-          <view class="activity-item">
-            <!-- 地图背景 -->
-            <view class="activity-map-bg" wx:if="{{item.mapImageUrl}}">
-              <image class="map-bg-image" src="{{item.mapImageUrl}}" mode="aspectFill" />
-              <view class="map-fade-left"></view>
-              <view class="map-fade-bottom"></view>
-              <view class="map-fade-corner"></view>
-            </view>
-            
-            <!-- 活动信息内容 -->
-            <view class="activity-content">
-              <view class="activity-title">{{item.title}}</view>
-              <view class="activity-desc" wx:if="{{item.content}}">{{item.content}}</view>
-              
-              <view class="activity-meta">
-                <view class="meta-row" wx:if="{{item.pre_startTime}}">
-                  <t-icon name="time" size="28rpx" color="#666" />
-                  <text class="meta-text">{{item.pre_startTime}}{{item.pre_endTime ? ' ~ ' + item.pre_endTime : ''}}</text>
-                </view>
-                <view class="meta-row" wx:if="{{item.location || (item.location_data && item.location_data.address)}}">
-                  <t-icon name="location" size="28rpx" color="#666" />
-                  <text class="meta-text">{{item.location || (item.location_data && item.location_data.address) || '待定'}}</text>
-                </view>
-                <view class="meta-row">
-                  <t-icon name="usergroup" size="28rpx" color="#666" />
-                  <text class="meta-text">{{item.join_count || 0}}人参与</text>
+            <view class="club-detail-activity-poster-item">
+              <view
+                class="featured-event-poster-trigger"
+                bindtap="onClubActivityTap"
+                data-event-id="{{item.event_id}}"
+              >
+                <view class="featured-event-poster-card">
+                  <view class="featured-poster-hero">
+                    <view class="featured-hero-map" wx:if="{{item.premap_url || item.mapImageUrl}}">
+                      <animated-map
+                        map-url="{{item.premap_url || item.mapImageUrl}}"
+                        zoom-min="{{14}}"
+                        zoom-max="{{16}}"
+                        width-rpx="{{0}}"
+                        height-rpx="{{520}}"
+                        clip-radius-rpx="{{0}}"
+                        show-edge-fades="{{true}}"
+                        anim-ms="{{800}}"
+                        pause-ms="{{5000}}"
+                        fade-ms="{{300}}"
+                        enlarge-to="{{2}}"
+                        shrink-from="{{2}}"
+                        shrink-to="{{1}}"
+                        base-scale="{{1}}"
+                      />
+                    </view>
+                    <view class="featured-hero-isotope" wx:if="{{item.isotopeData && item.isotopeData.length}}">
+                      <isotope
+                        id="clubDetailActivityIso{{evIdx}}"
+                        items="{{item.isotopeData}}"
+                        layoutMode="masonryHorizontal"
+                        masonryHorizontal="{{masonryHorizontalConfig}}"
+                        width="100%"
+                        height="200rpx"
+                        gutter="{{10}}"
+                        transitionDuration="0.75s"
+                        groupInterval="6000"
+                        backgroundColor="rgba(0,0,0,0)"
+                      />
+                    </view>
+                    <view class="featured-hero-bottom-readability" aria-hidden="true"></view>
+                    <view class="event-content event-content--hero">
+                      <view class="event-title">{{item.title}}</view>
+                      <view class="event-desc" wx:if="{{item.content}}">{{item.content}}</view>
+                      <view class="event-meta">
+                        <view class="meta-row" wx:if="{{item.pre_startTime}}">
+                          <t-icon name="time" size="28rpx" color="#666" />
+                          <text class="meta-text">{{item.pre_startTime}}{{item.pre_endTime ? ' ~ ' + item.pre_endTime : ''}}</text>
+                        </view>
+                        <view class="meta-row">
+                          <t-icon name="usergroup" size="28rpx" color="#666" />
+                          <text class="meta-text">{{item.join_count || 0}}人参与</text>
+                        </view>
+                      </view>
+                      <view class="event-action-row event-action-row--hero event-action-row--detailOnly">
+                        <view class="event-status {{item.statusClass}}">{{item.statusText}}</view>
+                        <view class="hero-action-address" wx:if="{{item.location}}">
+                          <t-icon name="location" size="28rpx" color="#666" />
+                          <text class="hero-action-address-text">{{item.location}}</text>
+                        </view>
+                      </view>
+                    </view>
+                  </view>
                 </view>
               </view>
             </view>
-          </view>
           </ripple>
         </view>
 
-        <view class="empty-activities" wx:else>
+        <view class="empty-activities" wx:elif="{{!loading && detailEventsEmpty}}">
           <text>暂无最近活动</text>
         </view>
       </view>
@@ -188,11 +224,11 @@
       <view class="bottom-safe-area"></view>
     </scroll-view>
 
-    <!-- 底部操作栏（对齐 event-detail-panel 风格） -->
-    <view class="bottom-actions {{club.cur_user_is_superuser ? 'bottom-actions-two' : ''}}">
+    <!-- 底部操作栏（统一样式 styles/panel-bottom-actions.wxss） -->
+    <view class="bottom-actions {{club.cur_user_is_superuser ? 'bottom-actions--row' : ''}}">
       <t-button
         wx:if="{{club.cur_user_is_superuser}}"
-        class="bottom-action-btn bottom-action-btn-left"
+        class="bottom-action-btn"
         size="large"
         shape="round"
         theme="danger"
@@ -202,7 +238,7 @@
 
       <!-- 申请加入协会按钮 -->
       <t-button
-        class="bottom-action-btn {{club.cur_user_is_superuser ? 'bottom-action-btn-right' : ''}}"
+        class="bottom-action-btn"
         wx:if="{{!club.cur_user_is_member && !club.cur_user_has_pending_application}}"
         size="large"
         shape="round"
@@ -210,19 +246,21 @@
         bindtap="applyToJoin"
       >申请加入协会</t-button>
       <t-button
-        class="bottom-action-btn {{club.cur_user_is_superuser ? 'bottom-action-btn-right' : ''}}"
+        class="bottom-action-btn"
         wx:elif="{{club.cur_user_has_pending_application}}"
         size="large"
         shape="round"
         disabled
       >申请审核中</t-button>
       <t-button
-        class="bottom-action-btn {{club.cur_user_is_superuser ? 'bottom-action-btn-right' : ''}}"
+        class="bottom-action-btn"
         wx:elif="{{club.cur_user_is_member}}"
         size="large"
         shape="round"
-        disabled
-      >已加入协会</t-button>
+        theme="danger"
+        variant="outline"
+        bindtap="quitClub"
+      >点击退出</t-button>
     </view>
 
     <!-- 活动详情（嵌套全屏弹窗）：点击活动卡片弹出 -->
@@ -251,6 +289,7 @@
             id="nestedEventDetailPanel"
             event-id="{{nestedEventDetail.eventId}}"
             bind:loaded="onNestedEventDetailLoaded"
+            bind:update="onNestedEventDetailUpdate"
             bind:close="closeNestedEventDetail"
           />
         </block>

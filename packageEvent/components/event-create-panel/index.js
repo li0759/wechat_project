@@ -1114,8 +1114,10 @@ Component({
   
 
 
-  // 选择地点
+  // 选择地点（防抖：避免 tap 链 / 历史 ripple 叠触发两次选点）
   chooseLocation() {
+    if (this._chooseLocAt && Date.now() - this._chooseLocAt < 800) return;
+    this._chooseLocAt = Date.now();
     wx.chooseLocation({
       latitude: 23.176149,
       longitude: 113.261868,
@@ -1217,26 +1219,70 @@ Component({
         await this.createSchedule();
       }
       
-      // 4. 所有操作完成后发送通知
-    const message_data = {
+      // 4. 所有操作完成后发送通知 + 首页缓存字段（与 heat/list、going 列表对齐）
+      const fd = this.data.formData || {};
+      let location_data = null;
+      let premap_url = '';
+      if (fd.latitude != null && fd.longitude != null && fd.latitude !== '' && fd.longitude !== '') {
+        const lat = parseFloat(fd.latitude);
+        const lon = parseFloat(fd.longitude);
+        if (!Number.isNaN(lat) && !Number.isNaN(lon)) {
+          location_data = {
+            name: fd.locationName || '',
+            address: fd.locationAddress || '',
+            latitude: lat,
+            longitude: lon,
+          };
+          premap_url =
+            (await buildGeoapifyStaticMapUrl({
+              longitude: lon,
+              latitude: lat,
+              width: 600,
+              height: 400,
+              zoom: 14,
+            })) || '';
+        }
+      }
+
+      const message_data = {
         club_id: eventResult.clubId,
         url: `/packageEvent/event-detail/index?eventId=${eventResult.eventID}`,
         operation: 'event_create',
         text: eventResult.clubName + '发布了新活动：' + eventResult.title + '，快来查看详情并报名参加吧！',
-        media: app.convertToThumbnailUrl(eventResult.cover_url, 300)
+        media: (() => {
+          const u = eventResult.cover_url;
+          if (!u) return undefined;
+          return String(u).indexOf('/download/') !== -1
+            ? app.convertToThumbnailUrl(u, 300)
+            : u;
+        })(),
       };
-      
+
       await app.message_for_club(message_data);
-      
-      // 统一记录变更（event 创建）
+
+      const preStartRaw = fd.preStartTimeDisplay || '';
+      const preEndRaw = fd.preEndTimeDisplay || '';
+      const startTimeForHome = preStartRaw
+        ? (app.formatDateTime(new Date(String(preStartRaw).replace(' ', 'T'))) || preStartRaw)
+        : '';
+
       getApp().recordChange(eventResult.eventID, 'create', {
         type: 'event',
         event_id: eventResult.eventID,
-        content: eventResult.content,
-        cover_url: eventResult.cover_url,
         title: eventResult.title,
+        content: eventResult.content,
+        description: eventResult.content,
+        cover_url: eventResult.cover_url,
         club_id: eventResult.clubId,
-        club_name: eventResult.clubName
+        club_name: eventResult.clubName,
+        pre_startTime: preStartRaw,
+        pre_endTime: preEndRaw,
+        start_time: startTimeForHome,
+        location_data,
+        premap_url,
+        join_count: 0,
+        latest_joins: [],
+        is_ended: false,
       });
       
       // 触发创建成功事件

@@ -88,25 +88,31 @@ Component({
 
   lifetimes: {
     attached() {
-      // 组件初始化，但不加载数据
-    const showAllEvents = this.properties.requestUrl.includes('/all');
-      this.setData({
-        requestUrl: this.properties.requestUrl,
-        showAllEvents: showAllEvents,
-        clientFilter: this.properties.clientFilter || ''
-      });
+      this._syncListRouteContext();
     }
   },
 
   methods: {
+    /**
+     * 只同步 WXML 需要的派生状态。不要在 data 里再写 requestUrl/clientFilter（与 properties 同名
+     * 易干扰基础库；列表请求一律读 this.properties）。
+     */
+    _syncListRouteContext() {
+      const url = this.properties.requestUrl || '/event/user_joined/list/all';
+      this.setData({
+        showAllEvents: url.indexOf('/all') !== -1
+      });
+    },
+
     applyClientFilter(list) {
-      const mode = this.data.clientFilter;
+      const mode = `${this.properties.clientFilter == null ? '' : this.properties.clientFilter}`;
       if (!mode) return list || [];
       const arr = Array.isArray(list) ? list : [];
       if (mode === 'managedCancelled') {
         return arr.filter(e => !!e && (e.is_cancelled || e.club_deleted));
       }
       if (mode === 'joinedQuit') {
+        // 仅协会已删除（与「已取消」列表区分；后者走 /user_joined/list/cancelled）
         return arr.filter(e => !!e && e.club_deleted);
       }
       return arr;
@@ -115,6 +121,7 @@ Component({
      * 供外部调用的数据加载方法
      */
     loadData() {
+      this._syncListRouteContext();
       this.initData();
       // 触发loaded事件
     this.triggerEvent('loaded');
@@ -149,13 +156,14 @@ Component({
       }
 
       try {
-        const requestUrl = `${this.data.requestUrl}?mode=page&page=${page}`;
+        const base = this.properties.requestUrl || '/event/user_joined/list/all';
+        const requestUrl = `${base}?mode=page&page=${page}`;
         const response = await this.request({
           url: requestUrl,
           method: 'GET'
         });
         
-        if (response.Flag == '4000') {
+        if (this._isApiSuccess(response && response.Flag)) {
           const events = response.data.records || [];
           const realData = events.map(event => ({
             ...event,
@@ -245,16 +253,21 @@ Component({
       return app.formatDateTime(timeString);
     },
 
+    _isApiSuccess(flag) {
+      return flag === '4000' || flag === 4000 || String(flag) === '4000';
+    },
+
     requestEventsByMonth(year, month) {
       this.setData({ isLoading: true });
       
-      const requestUrl = `${this.data.requestUrl}?mode=month&year=${year}&month=${month}`;
+      const base = this.properties.requestUrl || '/event/user_joined/list/all';
+      const requestUrl = `${base}?mode=month&year=${year}&month=${month}`;
 
       return this.request({
         url: requestUrl,
         method: 'GET'
       }).then(res => {
-        if (res.Flag == '4000') {
+        if (this._isApiSuccess(res && res.Flag)) {
           return res;
         } else {
           wx.showToast({ 
@@ -399,8 +412,9 @@ Component({
     onEventTap(e) {
       const eventId = e.currentTarget.dataset.event_id;
       
-      const isUserManage = this.data.requestUrl && this.data.requestUrl.includes('user_manage');
-      const isUserJoined = this.data.requestUrl && this.data.requestUrl.includes('user_joined');
+      const route = this.properties.requestUrl || '';
+      const isUserManage = route.includes('user_manage');
+      const isUserJoined = route.includes('user_joined');
       
       // 获取点击坐标
     let tapX, tapY;

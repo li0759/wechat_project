@@ -17,7 +17,8 @@ Component({
     clubMemberChart: [],
     genderChart: [],
     unitChart: [],
-    hideCharts: false  // 用于在动画时隐藏图表
+    hideCharts: false,  // 用于在动画时隐藏图表
+    splitByClub: true
   },
 
   lifetimes: {
@@ -145,7 +146,14 @@ Component({
     }
   },
 
-   // 下载Excel
+  onSplitByClubChange(e) {
+    const values = (e.detail && e.detail.value) || []
+    this.setData({
+      splitByClub: values.includes('split')
+    })
+  },
+
+   // 下载导出文件（xlsx/zip/rar）
    async downloadExcel() {
     this.setData({ downloading: true })
     wx.showLoading({
@@ -153,11 +161,14 @@ Component({
     })
     
     const token = wx.getStorageSync('token')
-    const response = await this.request('/statistics/export/all_club/users', 'GET')
+    const response = await this.request('/statistics/export/all_club/users', 'GET', {
+      split_by_club: this.data.splitByClub ? 1 : 0
+    })
     
     if (response.code === 200) {
       const downloadUrl = response.data.download_url
-      const filename = response.data.filename
+      const backendFilename = (response.data.filename || '').toLowerCase()
+      const fileExt = this.getFileExt(backendFilename || downloadUrl) || 'zip'
       
       wx.hideLoading()
       wx.showToast({
@@ -176,8 +187,14 @@ Component({
             // 保存到相册或打开文件
             wx.openDocument({
               filePath: res.tempFilePath,
-              fileType: 'xlsx',
-              showMenu: true
+              fileType: fileExt,
+              showMenu: true,
+              fail: () => {
+                wx.showToast({
+                  title: `已下载${fileExt}文件`,
+                  icon: 'none'
+                })
+              }
             })
           } else {
             wx.showToast({
@@ -214,14 +231,14 @@ Component({
   },
 
 
-  // 查看协会详情
-  viewClubDetail(e) {
-    const clubId = e.currentTarget.dataset.clubId
-    // 可以跳转到协会详情页或显示更多信息
-    wx.showToast({
-      title: '查看协会详情功能开发中',
-      icon: 'none'
-    })
+  getFileExt(input) {
+    if (!input) return ''
+    const cleanInput = String(input).split('?')[0]
+    const index = cleanInput.lastIndexOf('.')
+    if (index === -1 || index === cleanInput.length - 1) {
+      return ''
+    }
+    return cleanInput.substring(index + 1).toLowerCase()
   },
 
     // 网络请求封装

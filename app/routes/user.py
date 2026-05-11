@@ -387,7 +387,6 @@ def delete_user(user_id):
         return jsonify({'Flag':'4001','message': '该用户不存在'}), 404
 
 
-
 def sync_wecom_users_to_db():
     """从企业微信同步用户数据到数据库"""
     try:
@@ -538,8 +537,12 @@ def sync_wecom_users_to_db():
 
                 if existing_user:
                     # 更新现有用户（全量一致：按字段对齐）
+                    # 库中已有手机号的不再被通讯录 mobile 覆盖（小程序授权等已写入）
+                    existing_phone = (getattr(existing_user, 'phone', None) or '').strip()
                     updated = False
                     for field, value in user_data.items():
+                        if field == 'phone' and existing_phone:
+                            continue
                         if getattr(existing_user, field) != value:
                             setattr(existing_user, field, value)
                             updated = True

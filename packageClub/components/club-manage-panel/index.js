@@ -1,5 +1,30 @@
 const app = getApp()
 
+/**
+ * 从原生 tap 或 ripple 的 triggerEvent('tap', { x, y, changedTouches }) 解析点击坐标。
+ * 仅用 bindtap 接 ripple 时 e.changedTouches 往往为空，坐标在 e.detail。
+ */
+function resolveTapClientXY(e) {
+  const d = e.detail || {}
+  const fromDetail = d.changedTouches && d.changedTouches[0]
+  if (fromDetail) {
+    return { tapX: fromDetail.clientX, tapY: fromDetail.clientY }
+  }
+  if (typeof d.x === 'number' && typeof d.y === 'number') {
+    return { tapX: d.x, tapY: d.y }
+  }
+  if (e.changedTouches && e.changedTouches[0]) {
+    const t = e.changedTouches[0]
+    return { tapX: t.clientX, tapY: t.clientY }
+  }
+  if (e.touches && e.touches[0]) {
+    const t = e.touches[0]
+    return { tapX: t.clientX, tapY: t.clientY }
+  }
+  const sys = wx.getSystemInfoSync()
+  return { tapX: sys.windowWidth / 2, tapY: sys.windowHeight / 2 }
+}
+
 Component({
   properties: {
     clubId: {
@@ -509,19 +534,7 @@ Component({
     onActivityItemTap(e) {
       const eventId = e.currentTarget.dataset.id
       if (eventId) {
-        // 获取点击坐标
-    let tapX, tapY;
-        if (e.changedTouches && e.changedTouches[0]) {
-          tapX = e.changedTouches[0].clientX;
-          tapY = e.changedTouches[0].clientY;
-        } else if (e.touches && e.touches[0]) {
-          tapX = e.touches[0].clientX;
-          tapY = e.touches[0].clientY;
-        } else {
-          const sys = wx.getSystemInfoSync();
-          tapX = sys.windowWidth / 2;
-          tapY = sys.windowHeight / 2;
-        }
+        const { tapX, tapY } = resolveTapClientXY(e)
 
         
         // 设置嵌套弹窗状态
@@ -549,20 +562,7 @@ Component({
     },
 
     onCreateActivityTap(e) {
-
-      // 获取点击坐标
-    let tapX, tapY;
-      if (e.changedTouches && e.changedTouches[0]) {
-        tapX = e.changedTouches[0].clientX;
-        tapY = e.changedTouches[0].clientY;
-      } else if (e.touches && e.touches[0]) {
-        tapX = e.touches[0].clientX;
-        tapY = e.touches[0].clientY;
-      } else {
-        const sys = wx.getSystemInfoSync();
-        tapX = sys.windowWidth / 2;
-        tapY = sys.windowHeight / 2;
-      }
+      const { tapX, tapY } = resolveTapClientXY(e)
 
       // 重置状态并展开弹窗
     this.setData({

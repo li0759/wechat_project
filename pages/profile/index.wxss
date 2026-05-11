@@ -16,15 +16,28 @@ page {
   flex-direction: column;
   background-color: #F8F9FB;
   height: 100vh;
-  padding-bottom: 100rpx;
-  padding-top: 0rpx!important；
+  min-height: 0;
+  box-sizing: border-box;
+  /* 底部留白改由 scroll 内 spacer 承担，避免与 flex 高度叠加算错 */
+  padding-top: 0 !important;
 }
 
-/* 添加scroll-view样式 */
+/* scroll-view：占满除自定义 tabBar 外的区域（勿用 100vh-500rpx，会把可视区算乱、底部滚不到） */
 .scroll-container {
-  flex: 1;
-  height: calc(100vh - 500rpx); /* 减去头部的高度 */
+  flex: 1 1 0;
+  min-height: 0;
+  height: 0;
+  width: 100%;
+  box-sizing: border-box;
   padding-top: 20rpx;
+}
+
+/* 滚动末尾：垫在「退出登录」等之下，避开 fixed 自定义 tabBar（约 100rpx+）+ 安全区；略多留 ~50rpx 防机型误差 */
+.profile-scroll-footer-spacer {
+  height: calc(168rpx + constant(safe-area-inset-bottom));
+  height: calc(168rpx + env(safe-area-inset-bottom));
+  flex-shrink: 0;
+  width: 100%;
 }
 
 /* 头部用户信息 */
@@ -231,6 +244,14 @@ page {
   z-index: 10;
 }
 
+.badge.badge--dot {
+  min-width: 16rpx;
+  width: 16rpx;
+  height: 16rpx;
+  padding: 0;
+  font-size: 0;
+}
+
 .grid-text {
   font-size: 24rpx;
   color: var(--md-sys-color-on-surface);
@@ -407,14 +428,18 @@ page {
   font-size: 12px;
 }
 
-/* 弹窗内容样式 */
+/* 弹窗内容样式：高度须贴合全屏 sheet 内容区（top 至 bottom），勿用 100vh，否则比可视区高一截会裁掉底栏 */
 .popup-content-wrapper {
   position: relative;
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
   border-radius: 30rpx 30rpx 0 0;
   overflow: hidden;
   background: #f7f8fa;
+  /* 本页为 Tab 页：底栏需整体上移，避开 custom-tab-bar（变量供各 panel 内 .bottom-actions 继承） */
+  --tab-bar-visual-gap: 64rpx;
 }
 
 .popup-skeleton {
@@ -422,7 +447,9 @@ page {
   top: 0;
   left: 0;
   right: 0;
-  min-height: 100vh;
+  bottom: 0;
+  height: 100%;
+  min-height: 0;
   z-index: 10;
   padding: 0;
   background: #f7f8fa;

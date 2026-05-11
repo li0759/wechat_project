@@ -151,6 +151,10 @@ page {
   background: #6F767E;
 }
 
+.status-tag.join-quit {
+  background: #78716c;
+}
+
 /* 灰色蒙层效果 */
 .event-overlay {
   position: absolute;
@@ -422,10 +426,23 @@ page {
 /* ========== 嵌套弹窗样式 ========== */
 
 .nested-popup-shell {
+  position: relative;
   width: 100%;
   height: 100%;
-  position: relative;
+  min-height: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   border-radius: 30rpx 30rpx 0 0;
   background: #f7f8fa;
+}
+
+.nested-popup-shell > event-manage-panel,
+.nested-popup-shell > event-detail-panel,
+.nested-popup-shell > event-joined-panel {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  align-self: stretch;
 }

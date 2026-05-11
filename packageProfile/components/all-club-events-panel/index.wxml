@@ -3,11 +3,34 @@
   <scroll-view class="panel-scroll" scroll-y="{{true}}" show-scrollbar="{{false}}">
     <view class="page-header">
       <view class="title">活动数据</view>
-      <view class="header-actions">
-        <t-button theme="primary" size="small" loading="{{downloading}}" class="download-btn" bindtap="downloadExcel">
-          下载Excel
-        </t-button>
+    </view>
+
+    <view class="date-filter-card">
+      <view class="date-filter-title">按日期范围查看图表</view>
+      <view class="date-filter-row">
+        <view class="date-picker-item">
+          <view class="date-label">开始日期</view>
+          <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
+            <view class="date-picker-value">{{startDate || '请选择开始日期'}}</view>
+          </picker>
+        </view>
+        <view class="date-picker-item">
+          <view class="date-label">结束日期</view>
+          <picker mode="date" value="{{endDate}}" bindchange="onEndDateChange">
+            <view class="date-picker-value">{{endDate || '请选择结束日期'}}</view>
+          </picker>
+        </view>
       </view>
+      <t-button
+        wx:if="{{startDate && endDate}}"
+        theme="primary"
+        size="small"
+        loading="{{downloading}}"
+        class="download-btn"
+        bindtap="downloadCharts"
+      >
+        下载图表
+      </t-button>
     </view>
     
     <view wx:if="{{loading}}" class="loading-container">
@@ -82,50 +105,6 @@
       </view>
     </view>
     
-    <!-- 活动列表 -->
-    <view class="list-section">
-      <view class="section-title">
-        <view class="title-text">最近活动</view>
-        <view class="title-desc">共{{events.length}}个活动</view>
-      </view>
-      
-      <view class="event-list">
-        <view class="event-item" wx:for="{{events}}" wx:key="event_id">
-          <view class="event-header">
-            <view class="event-title">{{item.title}}</view>
-            <view class="event-club">{{item.club.club_name}}</view>
-          </view>
-          <view class="event-info">
-            <view class="info-row">
-              <text class="info-label">时间:</text>
-              <text class="info-value">{{item.pre_start_time}}</text>
-            </view>
-            <view class="info-row">
-              <text class="info-label">地点:</text>
-              <text class="info-value">{{item.location_name || '待定'}}</text>
-            </view>
-            <view class="info-row">
-              <text class="info-label">预算:</text>
-              <text class="info-value budget">¥{{item.budget || 0}}</text>
-            </view>
-          </view>
-          <view class="event-stats">
-            <view class="stat-item">
-              <text class="stat-value">{{item.total_participants}}</text>
-              <text class="stat-label">报名</text>
-            </view>
-            <view class="stat-item">
-              <text class="stat-value">{{item.checked_in_count}}</text>
-              <text class="stat-label">签到</text>
-            </view>
-            <view class="stat-item">
-              <text class="stat-value">{{Math.round(item.checked_in_count/item.total_participants*100) || 0}}%</text>
-              <text class="stat-label">签到率</text>
-            </view>
-          </view>
-        </view>
-      </view>
-    </view>
     </view>
 
     <view class="bottom-safe-area"></view>

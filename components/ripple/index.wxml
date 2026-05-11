@@ -7,7 +7,7 @@
   bindtap="onTap"
 >
   <!-- 涟漪效果层 -->
-  <view class="ripple-layer">
+  <view class="ripple-layer" style="z-index: {{layerZIndex}};">
     <view 
       wx:for="{{ripples}}" 
       wx:key="id" 

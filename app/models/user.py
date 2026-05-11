@@ -1,5 +1,7 @@
 from app import db
 from datetime import datetime
+from sqlalchemy.dialects.mysql import JSON
+
 
 class User(db.Model):
     __tablename__ = 'user'
@@ -61,4 +63,20 @@ class User(db.Model):
         return roles
     
     def __repr__(self):
-        return f'<User {self.userName}>' 
+        return f'<User {self.userName}>'
+
+
+class UserBadge(db.Model):
+    """每用户一行；badges 为 JSON：标量 key 为 {count, seen}；club_pending_applications 下按 club_id 字符串嵌套。"""
+
+    __tablename__ = 'user_badge'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    userID = db.Column(db.Integer, db.ForeignKey('user.userID'), unique=True, nullable=False, index=True)
+    badges = db.Column(JSON, nullable=False, default=dict)
+    updateDate = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    user = db.relationship('User', backref=db.backref('user_badge_row', uselist=False))
+
+    def __repr__(self):
+        return f'<UserBadge user={self.userID}>'

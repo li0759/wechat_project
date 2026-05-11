@@ -133,10 +133,13 @@
   margin-right: 0;
 }
 
-.avatar-badge {
+.avatar-badge-wrap {
   position: absolute;
   top: -6rpx;
   right: -6rpx;
+}
+
+.avatar-badge {
   background-color: #ff4d4f;
   color: #fff;
   font-size: 20rpx;
@@ -147,6 +150,15 @@
   text-align: center;
   padding: 0 6rpx;
   box-shadow: 0 2rpx 4rpx rgba(255, 77, 79, 0.3);
+}
+
+.avatar-badge--dot {
+  min-width: 16rpx;
+  width: 16rpx;
+  height: 16rpx;
+  padding: 0;
+  line-height: 0;
+  border-radius: 50%;
 }
 
 /* 使用JS处理active状态，移除伪类 */
@@ -1794,14 +1806,18 @@ scroll-view {
 }
 
 
-/* 弹窗内容容器 */
+/* 弹窗内容容器：高度贴合 sheet 内容区，勿用 100vh（会裁底栏，且 profile/home 与 fs-top 组合表现不一致） */
 .popup-content-wrapper {
   position: relative;
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
   border-radius: 30rpx 30rpx 0 0;
   overflow: hidden;
   background: #f7f8fa;
+  /* Tab 页：底栏整体上移，避开 custom-tab-bar */
+  --tab-bar-visual-gap: 64rpx;
 }
 
 /* 全局弹窗骨架屏 */
@@ -1810,7 +1826,9 @@ scroll-view {
   top: 0;
   left: 0;
   right: 0;
-  min-height: 100vh;
+  bottom: 0;
+  height: 100%;
+  min-height: 0;
   z-index: 10;
   padding: 0;
   background: #f7f8fa;

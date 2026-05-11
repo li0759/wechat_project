@@ -228,43 +228,44 @@
         <!-- 第7行：封面(左) + 地址地图(右)（300rpx） -->
         <view class="split-row row-300">
           <view class="split-half">
-            <ripple ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}" bindtap="onChangeCover">
-              <view class="panel panel-300">
-                <view class="panel-header">
-                  <view class="panel-title">
-                    <t-icon name="image" color="var(--md-sys-color-primary)" />
-                    <text>封面</text>
-                  </view>
-                  <text class="panel-hint">点我更换</text>
+            <!-- 封面：勿包 ripple，否则 tap 会冒泡/派发两次导致连续两次调起相册 -->
+            <view class="panel panel-300" bindtap="onChangeCover">
+              <view class="panel-header">
+                <view class="panel-title">
+                  <t-icon name="image" color="var(--md-sys-color-primary)" />
+                  <text>封面</text>
                 </view>
-                <image class="panel-image" src="{{event.cover_url || defaultCover}}" mode="aspectFill" />
+                <text class="panel-hint">点我更换</text>
               </view>
-            </ripple>
+              <image class="panel-image" src="{{event.cover_url || defaultCover}}" mode="aspectFill" />
+            </view>
           </view>
           
           <view class="split-half">
-            <ripple ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}" bindtap="chooseLocation">
-              <view class="panel panel-300">
-                <view class="panel-header">
-                  <view class="panel-title">
-                    <t-icon name="location" color="var(--md-sys-color-primary)" />
-                    <text>地址</text>
-                  </view>
-                  <text class="panel-hint">点我更换</text>
+            <!-- 地图选点：勿包 ripple，与封面一致，避免 tap 两次调起选点 -->
+            <view class="panel panel-300" bindtap="chooseLocation">
+              <view class="panel-header">
+                <view class="panel-title">
+                  <t-icon name="location" color="var(--md-sys-color-primary)" />
+                  <text>地址</text>
                 </view>
-                <view wx:if="{{locationMapUrl}}" class="panel-map-wrap">
-                  <image
-                    class="panel-map-img"
-                    src="{{locationMapUrl}}"
-                    mode="aspectFill"
-                  />
-                </view>
-                <view wx:else class="panel-map-empty">
-                  <t-icon name="location" size="48" color="#bbb" />
-                  <view class="panel-map-empty-text">未设置地点</view>
+                <text class="panel-hint">点我更换</text>
+              </view>
+              <view wx:if="{{locationMapUrl}}" class="panel-map-wrap">
+                <image
+                  class="panel-map-img"
+                  src="{{locationMapUrl}}"
+                  mode="aspectFill"
+                />
+                <view class="panel-map-address-overlay" wx:if="{{event.location || (event.location_data && (event.location_data.name || event.location_data.address))}}">
+                  <text class="panel-map-address-text">{{event.location || event.location_data.name || event.location_data.address}}</text>
                 </view>
               </view>
-            </ripple>
+              <view wx:else class="panel-map-empty">
+                <t-icon name="location" size="48" color="#bbb" />
+                <view class="panel-map-empty-text">未设置地点</view>
+              </view>
+            </view>
           </view>
         </view>
 
@@ -684,62 +685,22 @@
       <view class="footer-space"></view>
     </scroll-view>
 
-    <!-- 底部操作栏 -->
-    <view class="bottom-actions" wx:if="{{event && !event.is_cancelled && !event.club_deleted}}">
-      <view class="action-left">
-        <!-- 可以添加左侧按钮，如分享到协会等 -->
+    <!-- 底部操作栏（统一样式 styles/panel-bottom-actions.wxss，与 event-detail-panel 一致用 t-button） -->
+    <block wx:if="{{event && !event.is_cancelled && !event.club_deleted}}">
+      <view wx:if="{{!event.actual_startTime}}" class="bottom-actions bottom-actions--row bottom-actions--compact">
+        <t-button class="bottom-action-btn" size="medium" shape="round" theme="primary" bindtap="beginEvent">开始活动</t-button>
+        <t-button class="bottom-action-btn" size="medium" shape="round" theme="light" open-type="share">分享</t-button>
+        <t-button class="bottom-action-btn" size="medium" shape="round" theme="danger" variant="outline" bindtap="cancelEvent">取消活动</t-button>
       </view>
-
-      <view class="action-right">
-        <!-- 未开始：显示"开始活动"和"分享" -->
-        <block wx:if="{{!event.actual_startTime}}">
-          <ripple ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}" bindtap="beginEvent">
-            <view class="action-btn primary">
-              <t-icon name="play-circle" size="20" color="#fff" />
-              <text>开始活动</text>
-            </view>
-          </ripple>
-          <button class="action-btn secondary" open-type="share">
-            <t-icon name="share" size="18" color="#666" />
-            <text>分享活动</text>
-          </button>
-          <ripple ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}" bindtap="cancelEvent">
-            <view class="action-btn tertiary">
-              <t-icon name="close-circle" size="18" color="#EF4444" />
-              <text>取消活动</text>
-            </view>
-          </ripple>
-        </block>
-        
-        <!-- 进行中：显示"结束活动"和"分享" -->
-        <block wx:elif="{{!event.actual_endTime}}">
-          <ripple ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}" bindtap="endEvent">
-            <view class="action-btn danger">
-              <t-icon name="stop-circle" size="20" color="#fff" />
-              <text>结束活动</text>
-            </view>
-          </ripple>
-          <button class="action-btn secondary" open-type="share">
-            <t-icon name="share" size="18" color="#666" />
-            <text>分享活动</text>
-          </button>
-          <ripple ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}" bindtap="cancelEvent">
-            <view class="action-btn tertiary">
-              <t-icon name="close-circle" size="18" color="#EF4444" />
-              <text>取消活动</text>
-            </view>
-          </ripple>
-        </block>
-        
-        <!-- 已结束：只显示"分享" -->
-        <block wx:else>
-          <button class="action-btn primary" open-type="share" style="flex: 1;">
-            <t-icon name="share" size="18" color="#fff" />
-            <text>分享活动</text>
-          </button>
-        </block>
+      <view wx:elif="{{!event.actual_endTime}}" class="bottom-actions bottom-actions--row bottom-actions--compact">
+        <t-button class="bottom-action-btn" size="medium" shape="round" theme="danger" bindtap="endEvent">结束活动</t-button>
+        <t-button class="bottom-action-btn" size="medium" shape="round" theme="light" open-type="share">分享</t-button>
+        <t-button class="bottom-action-btn" size="medium" shape="round" theme="danger" variant="outline" bindtap="cancelEvent">取消活动</t-button>
       </view>
-    </view>
+      <view wx:else class="bottom-actions">
+        <t-button class="bottom-action-btn" size="large" shape="round" theme="primary" open-type="share">分享活动</t-button>
+      </view>
+    </block>
   </block>
 
   <!-- 共享成员详情弹窗 -->

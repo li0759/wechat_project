@@ -9,26 +9,24 @@
             <view class="user-name">{{item.appliced_user_name}}</view>
           </view>
           <view class="summary-right">
-            <!-- 待审批状态显示操作按钮 -->
-            <block wx:if="{{!item.processedDate}}">
+            <!-- 待审批：用 catchtap 包住按钮，阻止冒泡到整行 toggleExpand；勿在 t-button 上同时 bindtap+catchtap（会吞掉打开弹窗） -->
+            <view wx:if="{{!item.processedDate}}" class="summary-actions" catchtap="stopBubble">
               <t-button
                 size="small"
                 theme="primary"
-                bindtap="showApproveDialog"
-                data-applicationid="{{item.applicationID}}"
                 class="summary-btn primary-btn"
-                catchtap="stopPropagation"
+                data-application-id="{{item.applicationID}}"
+                bind:tap="showApproveDialog"
               >批准</t-button>
               <t-button
                 size="small"
                 theme="default"
                 variant="outline"
-                bindtap="showRejectDialog"
-                data-applicationid="{{item.applicationID}}"
                 class="summary-btn"
-                catchtap="stopPropagation"
+                data-application-id="{{item.applicationID}}"
+                bind:tap="showRejectDialog"
               >拒绝</t-button>
-            </block>
+            </view>
             <!-- 已处理状态显示状态 -->
             <view wx:else class="summary-status {{item.approved ? 'status-approved' : 'status-rejected'}}">
               {{item.approved ? '已批准' : '已拒绝'}}
@@ -82,7 +80,7 @@
       value="{{ approveOpinion }}"
       placeholder="请输入批准意见（选填）"
       maxlength="200"
-      bindchange="onApproveOpinionChange"
+      bind:change="onApproveOpinionChange"
     />
   </view>
 </t-dialog>
@@ -101,7 +99,7 @@
       value="{{ rejectOpinion }}"
       placeholder="请输入拒绝理由（必填）"
       maxlength="200"
-      bindchange="onRejectOpinionChange"
+      bind:change="onRejectOpinionChange"
     />
   </view>
 </t-dialog>

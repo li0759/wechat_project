@@ -208,7 +208,7 @@
       <view class="bottom-safe-area"></view>
     </scroll-view>
 
-    <!-- 底部操作栏 -->
+    <!-- 底部操作栏（统一样式 styles/panel-bottom-actions.wxss） -->
     <view class="bottom-actions" wx:if="{{event && !event.cur_user_is_joined}}">
       <!-- 未加入协会：显示申请加入协会按钮 -->
       <block wx:if="{{!event.cur_user_in_club}}">

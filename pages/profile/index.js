@@ -20,7 +20,8 @@ Page({
       unpaidPayments: 0,  // 未缴费的收款数量
       pregoEvents: 0,     // 预计开始的活动数
       goingEvents: 0,     // 正在进行的活动数
-      endedEvents: 0,      // 已结束的活动数
+      endedEvents: 0,      // 已结束的活动数（仅 actual_endTime）
+      cancelledEvents: 0,  // 已取消/已退出参与（未实际结束）
       // Task 8.2: 我管理的活动统计
       managedPregoEvents: 0,   // 我管理的预计开始活动数
       managedGoingEvents: 0,   // 我管理的正在进行活动数
@@ -53,7 +54,21 @@ Page({
     useFallbackNavigation: false,
 
     /** 与 app.notifyFullscreenBackIntercept 同步：根级唯一 page-container 拦截系统返回 */
-    fsBackInterceptShow: false
+    fsBackInterceptShow: false,
+
+    bd: {
+      joined_clubs: { count: 0, seen: true },
+      pending_my_applications: { count: 0, seen: true },
+      unpaid_payments: { count: 0, seen: true },
+      my_events_prego: { count: 0, seen: true },
+      my_events_going: { count: 0, seen: true },
+      my_events_ended: { count: 0, seen: true },
+      my_events_cancelled: { count: 0, seen: true },
+      managed_events_prego: { count: 0, seen: true },
+      managed_events_going: { count: 0, seen: true },
+      managed_events_ended: { count: 0, seen: true },
+      managed_events_cancelled: { count: 0, seen: true }
+    }
   },
 
   onFsBackInterceptBeforeLeave() {
@@ -176,6 +191,36 @@ Page({
   },
 
   /**
+   * 自定义 tabBar 会盖住全屏弹层底栏；随弹层显隐隐藏/显示 tabBar
+   */
+  /** custom tabBar：用 getTabBar 隐藏，避免 wx.showTabBar 叠出系统双栏 */
+  _setCustomTabBarHidden(hidden) {
+    try {
+      if (typeof this.getTabBar === 'function') {
+        const tb = this.getTabBar();
+        if (tb && typeof tb.setTabBarHidden === 'function') {
+          tb.setTabBarHidden(!!hidden);
+        }
+      }
+    } catch (e) {}
+  },
+
+  syncProfileTabBarWithOverlay() {
+    try {
+      const visible = Boolean((this.data.globalPopup || {}).visible)
+      if (this.__lastProfilePopupVisible === visible) return
+      this.__lastProfilePopupVisible = visible
+      this._setCustomTabBarHidden(visible)
+    } catch (e) {}
+  },
+
+  onUnload() {
+    try {
+      this._setCustomTabBarHidden(false)
+    } catch (e) {}
+  },
+
+  /**
    * 打开创建弹窗
    */
   openCreatePopup(e) {
@@ -194,7 +239,9 @@ Page({
         bgColor: '#f3e3f3ff',
         sheetBgColor: '#f3e3f3ff'
       }
-    }, () => {      // 让组件自己处理坐标获取和展开动画
+    }, () => {
+      this.syncProfileTabBarWithOverlay()
+      // 让组件自己处理坐标获取和展开动画
       setTimeout(() => {
         const popup = this.selectComponent('#globalFullscreenPopup');
         if (popup && popup.handleTriggerTap) {
@@ -225,7 +272,9 @@ Page({
         bgColor,
         sheetBgColor
       }
-    }, () => {      // 让组件自己处理坐标获取和展开动画
+    }, () => {
+      this.syncProfileTabBarWithOverlay()
+      // 让组件自己处理坐标获取和展开动画
       setTimeout(() => {
         const popup = this.selectComponent('#globalFullscreenPopup');
         if (popup && popup.handleTriggerTap) {
@@ -279,13 +328,15 @@ Page({
             eventData: eventData
           }
         }
-      }, () => {        // 自动打开时使用屏幕中心坐数
-      setTimeout(() => {
-    const popup = this.selectComponent('#globalFullscreenPopup');
+      }, () => {
+        this.syncProfileTabBarWithOverlay()
+        // 自动打开时使用屏幕中心坐标
+        setTimeout(() => {
+          const popup = this.selectComponent('#globalFullscreenPopup');
           if (popup && popup.expand) {
             const sys = wx.getSystemInfoSync();
             popup.expand(sys.windowWidth / 2, sys.windowHeight / 2);
-          } else {          }
+          } else {}
         }, 50);
       });
     } catch (error) {      wx.showToast({ title: '加载失败', icon: 'none' });
@@ -360,6 +411,160 @@ Page({
     });
   },
 
+  _profileBadgeFlagOk(res) {
+    const f = res && res.data && res.data.Flag;
+    return f === 4000 || f === '4000' || String(f) === '4000';
+  },
+
+  _pickBadgeEnt(badges, k) {
+    const ent = badges && badges[k];
+    if (!ent || typeof ent !== 'object') return { count: 0, seen: true };
+    return { count: Number(ent.count) || 0, seen: !!ent.seen };
+  },
+
+  _applyProfileBadgePayload(data) {
+    const badges = (data && data.badges) || {};
+    const ct = (data && data.counts_top) || {};
+    const p = (k) => this._pickBadgeEnt(badges, k);
+    const bd = {
+      joined_clubs: p('joined_clubs'),
+      pending_my_applications: p('pending_my_applications'),
+      unpaid_payments: p('unpaid_payments'),
+      my_events_prego: p('my_events_prego'),
+      my_events_going: p('my_events_going'),
+      my_events_ended: p('my_events_ended'),
+      my_events_cancelled: p('my_events_cancelled'),
+      managed_events_prego: p('managed_events_prego'),
+      managed_events_going: p('managed_events_going'),
+      managed_events_ended: p('managed_events_ended'),
+      managed_events_cancelled: p('managed_events_cancelled')
+    };
+    const nest =
+      badges.club_pending_applications && typeof badges.club_pending_applications === 'object'
+        ? badges.club_pending_applications
+        : {};
+    const managedClubs = (this.data.managedClubs || []).map((item) => {
+      const cid = item.club_id != null ? item.club_id : item.clubID;
+      const sid = String(cid != null ? cid : '');
+      const ent = nest[sid] || {};
+      return {
+        ...item,
+        pending_badge_count: Number(ent.count) || 0,
+        pending_badge_seen: !!ent.seen
+      };
+    });
+    const jc = ct.joined_clubs != null ? Number(ct.joined_clubs) : bd.joined_clubs.count;
+    const je = ct.joined_events != null ? Number(ct.joined_events) : this.data.statistics.joinedEvents;
+    const up = ct.unpaid_payments != null ? Number(ct.unpaid_payments) : bd.unpaid_payments.count;
+    const hasEverManaged =
+      (bd.managed_events_prego.count +
+        bd.managed_events_going.count +
+        bd.managed_events_ended.count +
+        bd.managed_events_cancelled.count) > 0;
+    const currentlyManaging = bd.managed_events_prego.count + bd.managed_events_going.count > 0;
+    this.setData({
+      bd,
+      managedClubs,
+      hasEverManaged,
+      currentlyManaging,
+      'statistics.joinedClubs': jc,
+      'statistics.joinedEvents': je,
+      'statistics.unpaidPayments': up,
+      'statistics.pendingApplications': bd.pending_my_applications.count,
+      'statistics.pregoEvents': bd.my_events_prego.count,
+      'statistics.goingEvents': bd.my_events_going.count,
+      'statistics.endedEvents': bd.my_events_ended.count,
+      'statistics.cancelledEvents': bd.my_events_cancelled.count,
+      'statistics.managedPregoEvents': bd.managed_events_prego.count,
+      'statistics.managedGoingEvents': bd.managed_events_going.count,
+      'statistics.managedEndedEvents': bd.managed_events_ended.count,
+      'statistics.managedCancelledEvents': bd.managed_events_cancelled.count
+    });
+  },
+
+  fetchProfileBadges() {
+    return new Promise((resolve) => {
+      const token = wx.getStorageSync('token');
+      if (!token) {
+        resolve();
+        return;
+      }
+      wx.request({
+        url: app.globalData.request_url + '/badge',
+        method: 'GET',
+        header: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        complete: () => resolve(),
+        success: (res) => {
+          if (this._profileBadgeFlagOk(res) && res.data && res.data.data) {
+            this._applyProfileBadgePayload(res.data.data);
+          }
+        }
+      });
+    });
+  },
+
+  _profilePopupBadgeKeys() {
+    const gp = this.data.globalPopup || {};
+    const t = gp.type;
+    const d = gp.data || {};
+    const url = d.requestUrl || '';
+    const cf = d.clientFilter || '';
+    const keys = [];
+    let clubIds = null;
+    if (t === 'clubs') keys.push('joined_clubs');
+    else if (t === 'joined-events' || t === 'event-joined') {
+      keys.push('my_events_prego', 'my_events_going', 'my_events_ended', 'my_events_cancelled');
+    } else if (t === 'my-applications') keys.push('pending_my_applications');
+    else if (t === 'paypersonal') keys.push('unpaid_payments');
+    else if (t === 'club-applications' && gp.id) {
+      keys.push('club_pending_applications');
+      clubIds = [Number(gp.id)];
+    } else if (t === 'events') {
+      if (url.indexOf('/user_joined/list/prego') >= 0) keys.push('my_events_prego');
+      else if (url.indexOf('/user_joined/list/going') >= 0) keys.push('my_events_going');
+      else if (url.indexOf('/user_joined/list/ended') >= 0) keys.push('my_events_ended');
+      else if (url.indexOf('/user_joined/list/cancelled') >= 0) keys.push('my_events_cancelled');
+      else if (url.indexOf('/user_joined/list/all') >= 0) {
+        keys.push('my_events_prego', 'my_events_going', 'my_events_ended', 'my_events_cancelled');
+      } else if (url.indexOf('/user_manage/list/prego') >= 0) keys.push('managed_events_prego');
+      else if (url.indexOf('/user_manage/list/going') >= 0) keys.push('managed_events_going');
+      else if (url.indexOf('/user_manage/list/ended') >= 0) keys.push('managed_events_ended');
+      else if (url.indexOf('/user_manage/list/') >= 0 && cf === 'managedCancelled') keys.push('managed_events_cancelled');
+      else if (url.indexOf('/user_manage/list/all') >= 0) {
+        keys.push('managed_events_prego', 'managed_events_going', 'managed_events_ended', 'managed_events_cancelled');
+      }
+    }
+    return keys.length ? { keys, club_ids: clubIds } : null;
+  },
+
+  _profileMarkSeenForCurrentPopup() {
+    const spec = this._profilePopupBadgeKeys();
+    const token = wx.getStorageSync('token');
+    if (!token || !spec) return;
+    const body = { keys: spec.keys };
+    if (spec.club_ids && spec.club_ids.length) body.club_ids = spec.club_ids;
+    wx.request({
+      url: app.globalData.request_url + '/badge/seen',
+      method: 'POST',
+      header: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      data: body,
+      success: (res) => {
+        if (this._profileBadgeFlagOk(res) && res.data && res.data.data) {
+          this._applyProfileBadgePayload(res.data.data);
+        } else {
+          this.fetchProfileBadges();
+        }
+      },
+      fail: () => this.fetchProfileBadges()
+    });
+  },
+
   /**
    * 获取用户数据
    */
@@ -385,6 +590,7 @@ Page({
       this.fetchMyEventsCount(),      // 新增：获取我的活动各状态数数
       this.fetchManagedEventsCount()  // Task 8.2: 获取我管理的活动各状态数数
       ]);
+      await this.fetchProfileBadges();
     this.setData({
         loading: false
       });
@@ -592,7 +798,7 @@ Page({
     // 角标/统计不计入“协会已删除”的活动
     const all = await this.fetchAllEventsPaged('/event/user_joined/list/all');
     const valid = all.filter(e => e && !e.club_deleted);
-    const goingCount = valid.filter(e => e.actual_startTime && !e.actual_endTime && !e.is_cancelled).length;
+    const goingCount = valid.filter(e => !e.join_is_delete && e.actual_startTime && !e.actual_endTime && !e.is_cancelled).length;
     this.setData({ 'statistics.joinedEvents': goingCount });
     return goingCount;
   },
@@ -600,16 +806,22 @@ Page({
   /**
    * 获取我的活动各状态数据   */
   async fetchMyEventsCount() {
-    // 角标/统计不计入“协会已删除”的活动
+    // 预计开始/进行中：不计入协会已删除（与角标语义一致）
+    // 已结束/已取消：与列表接口一致，需计入协会已删除等仍返回在列表里的记录
     const all = await this.fetchAllEventsPaged('/event/user_joined/list/all');
     const valid = all.filter(e => e && !e.club_deleted);
-    const pregoCount = valid.filter(e => !e.actual_startTime && !e.is_cancelled).length;
-    const goingCount = valid.filter(e => e.actual_startTime && !e.actual_endTime && !e.is_cancelled).length;
-    const endedCount = valid.filter(e => !!e.actual_endTime).length;
+    const pregoCount = valid.filter(e => !e.join_is_delete && !e.actual_startTime && !e.is_cancelled).length;
+    const goingCount = valid.filter(e => !e.join_is_delete && e.actual_startTime && !e.actual_endTime && !e.is_cancelled).length;
+    const raw = (all || []).filter(e => !!e);
+    const endedCount = raw.filter(e => !!e.actual_endTime).length;
+    const cancelledCount = raw.filter(
+      e => !e.actual_endTime && (e.is_cancelled || e.join_is_delete)
+    ).length;
     this.setData({
       'statistics.pregoEvents': pregoCount,
       'statistics.goingEvents': goingCount,
-      'statistics.endedEvents': endedCount
+      'statistics.endedEvents': endedCount,
+      'statistics.cancelledEvents': cancelledCount
     });
   },
 
@@ -683,7 +895,8 @@ Page({
         });
       });
 
-      if (!res || res.Flag != 4000 || !res.data) break;
+      const flagOk = res && (res.Flag === '4000' || res.Flag === 4000 || String(res.Flag) === '4000');
+      if (!flagOk || !res.data) break;
       const records = res.data.records || [];
       all.push(...records);
       totalPages = (res.data.pagination && res.data.pagination.total_pages) ? res.data.pagination.total_pages : 1;
@@ -813,11 +1026,13 @@ Page({
         bgColor: '#f3e3f3ff',
         sheetBgColor: '#f3e3f3ff'
       }
-    }, () => {      setTimeout(() => {
+    }, () => {
+      this.syncProfileTabBarWithOverlay()
+      setTimeout(() => {
         const popup = this.selectComponent('#globalFullscreenPopup');
         if (popup && popup.handleTriggerTap) {
-          popup.handleTriggerTap(e);  // 👈 使用组件的方数
-      } else {        }
+          popup.handleTriggerTap(e);
+        } else {}
       }, 50);
     });
   },
@@ -837,11 +1052,13 @@ Page({
         bgColor: '#f3e3f3ff',
         sheetBgColor: '#f3e3f3ff'
       }
-    }, () => {      setTimeout(() => {
+    }, () => {
+      this.syncProfileTabBarWithOverlay()
+      setTimeout(() => {
         const popup = this.selectComponent('#globalFullscreenPopup');
         if (popup && popup.handleTriggerTap) {
-          popup.handleTriggerTap(e);  // 👈 使用组件的方数
-      } else {        }
+          popup.handleTriggerTap(e);
+        } else {}
       }, 50);
     });
   },
@@ -851,7 +1068,8 @@ Page({
     this.openGlobalPopup({
       type: 'joined-events',
       data: {
-        requestUrl: '/event/user_joined/list/all'
+        requestUrl: '/event/user_joined/list/all',
+        clientFilter: ''
       }
     });
   },
@@ -872,18 +1090,17 @@ Page({
     };
     
     this.setData({ globalPopup: popupConfig }, () => {
+      this.syncProfileTabBarWithOverlay()
       setTimeout(() => {
         const popup = this.selectComponent('#globalFullscreenPopup');
         if (popup && popup.handleTriggerTap) {
-          // 如果有事件对象，让组件自己获取坐数
-      if (e) {
+          if (e) {
             popup.handleTriggerTap(e);
           } else {
-            // 没有事件对象，使用屏幕中数
-      const sys = wx.getSystemInfoSync();
+            const sys = wx.getSystemInfoSync();
             popup.expand(sys.windowWidth / 2, sys.windowHeight / 2);
           }
-        } else {        }
+        } else {}
       }, 50);
     });
   },
@@ -892,31 +1109,14 @@ Page({
    * 导航到我的活动（根据类型?   */
   navigateToMyEvents(e) {
     const type = e.currentTarget.dataset.type;
-    if (type === 'quit') {
-      // 已退出：展示“我参加的活动”中协会已删除的活动
-      this._openGlobalPopup(e, {
-        type: 'events',
-        id: '',
-        data: {
-          requestUrl: `/event/user_joined/list/all`,
-          clientFilter: 'joinedQuit'
-        }
-      });
-      return;
-    }
 
     this._openGlobalPopup(e, {
       type: 'events',
       id: '',
-      data: { requestUrl: `/event/user_joined/list/${type}` }
-    });
-  },
-
-  navigateToMyApplications(e) {
-    wx.navigateTo({
-      url: '/packageClub/my-applications/index',
-      success: () => {      },
-      fail: (err) => {      }
+      data: {
+        requestUrl: `/event/user_joined/list/${type}`,
+        clientFilter: ''
+      }
     });
   },
 
@@ -973,7 +1173,10 @@ Page({
     this._openGlobalPopup(e, {
       type: 'events',
       id: '',
-      data: { requestUrl: `/event/user_manage/list/${type}` }
+      data: {
+        requestUrl: `/event/user_manage/list/${type}`,
+        clientFilter: ''
+      }
     });
   },
 
@@ -1026,7 +1229,10 @@ Page({
     this._openGlobalPopup(e, {
       type: 'events',
       id: '',
-      data: { requestUrl: `/event/club_public/${clubId}/list/all` }
+      data: {
+        requestUrl: `/event/club_public/${clubId}/list/all`,
+        clientFilter: ''
+      }
     });
   },
 
@@ -1268,6 +1474,8 @@ Page({
         'globalPopup.type': '',
         'globalPopup.id': '',
         'globalPopup.clubId': ''
+      }, () => {
+        this.syncProfileTabBarWithOverlay()
       });
     }, 800);
   },
@@ -1347,9 +1555,11 @@ Page({
   /**
    * 全局弹窗内容加载完成
    */
-  onGlobalPopupLoaded() {    this.setData({
+  onGlobalPopupLoaded() {
+    this.setData({
       'globalPopup.loading': false
     });
+    this._profileMarkSeenForCurrentPopup();
   },
 
   /**

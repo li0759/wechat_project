@@ -1,4 +1,4 @@
-﻿const app = getApp();
+const app = getApp();
 
 /**
  * 通用协会列表Panel组件
@@ -328,6 +328,7 @@ Component({
 
     onNestedClubManageUpdate(e) {      // 刷新协会列表
     this.loadClubList(1);
+      this.triggerEvent('update');
     },
 
     // ========= 嵌套 Club Detail 弹窗相关 =========
@@ -372,6 +373,7 @@ Component({
 
     onNestedClubDetailUpdate(e) {      // 刷新协会列表
     this.loadClubList(1);
+      this.triggerEvent('update');
     },
 
     // ========= 嵌套 Club Joined 弹窗相关 =========
@@ -416,6 +418,7 @@ Component({
 
     onNestedClubJoinedUpdate(e) {      // 刷新协会列表
     this.loadClubList(1);
+      this.triggerEvent('update');
     },
 
     onNavigateEventFromJoined(e) {

@@ -1,3 +1,5 @@
+@import "../../../styles/panel-bottom-actions.wxss";
+
 /* club-manage-panel 组件样式 - 对齐设计系统规范 */
 .club-manage-panel {
   --md-sys-color-primary: #DF76B0;
@@ -17,6 +19,8 @@
   height: 100%;
   overflow: hidden;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 灰色蒙层样式 */
@@ -59,7 +63,8 @@
 }
 
 .page-scroll {
-  height: calc(100vh - 200rpx);
+  flex: 1;
+  min-height: 0;
 }
 
 .loading {
@@ -2070,7 +2075,9 @@ event-create-panel .page {
 
 .nested-panel-wrapper event-create-panel .page-scroll,
 event-create-panel .page-scroll {
-  height: 100%;
+  flex: 1;
+  min-height: 0;
+  height: auto;
 }
 
 /* 危险操作区域样式 */
@@ -2154,107 +2161,5 @@ event-create-panel .page-scroll {
 }
 
 .share-button-inline::after {
-  border: none;
-}
-
-/* ===== 底部操作栏（参考 event-manage-panel）===== */
-.footer-space {
-  height: 300rpx; /* 为底部操作栏留出空间 */
-}
-
-.bottom-actions {
-  position: absolute;
-  bottom: 40rpx;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(0deg, rgba(255, 255, 255, 1) 0%, rgba(246, 246, 246, 0.9) 70%, transparent 100%);
-  backdrop-filter: blur(20rpx);
-}
-
-.action-left {
-  display: flex;
-  gap: 16rpx;
-}
-
-.action-right {
-  display: flex;
-  gap: 16rpx;
-  flex: 1;
-  justify-content: flex-end;
-}
-
-.action-btn {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  min-width: 120rpx;
-  height: 80rpx;
-  border-radius: 40rpx;
-  font-size: 28rpx;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  gap: 8rpx;
-}
-
-.action-btn.secondary {
-  background: rgba(0,0,0,0.05);
-  color: #666;
-  padding: 0 24rpx;
-}
-
-.action-btn.secondary:active {
-  background: rgba(0,0,0,0.1);
-  transform: scale(0.98);
-}
-
-.action-btn.primary {
-  background: linear-gradient(135deg, var(--md-sys-color-primary) 0%, var(--md-sys-color-primary-dark) 100%);
-  color: #fff;
-  padding: 0 32rpx;
-  min-width: 160rpx;
-  box-shadow: 0 4rpx 12rpx rgba(223, 118, 176, 0.25);
-}
-
-.action-btn.primary:active {
-  transform: scale(0.98);
-  box-shadow: 0 8rpx 20rpx rgba(223, 118, 176, 0.3);
-}
-
-.action-btn.danger {
-  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
-  color: #fff;
-  padding: 0 32rpx;
-  min-width: 160rpx;
-  box-shadow: 0 4rpx 12rpx rgba(239, 68, 68, 0.25);
-}
-
-.action-btn.danger:active {
-  transform: scale(0.98);
-  box-shadow: 0 8rpx 20rpx rgba(239, 68, 68, 0.3);
-}
-
-.action-btn.tertiary {
-  background: transparent;
-  color: #EF4444;
-  border: 1rpx solid #FEE2E2;
-  padding: 0 24rpx;
-  min-width: 100rpx;
-}
-
-.action-btn.tertiary:active {
-  background: #FEE2E2;
-  transform: scale(0.98);
-}
-
-/* 移除原生 button 的边框 */
-.action-btn.secondary::after,
-.action-btn.primary::after,
-.action-btn.danger::after,
-.action-btn.tertiary::after {
   border: none;
 }

@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request, current_app
 import os
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from ..models import Event, User, ClubMember, EventJoin, Club, Schedule, File
+from ..models import Event, User, ClubMember, EventJoin, Club, Schedule, File, Moment
 from .. import db, TEST_MODE
 from datetime import datetime, timedelta
 from sqlalchemy import and_, or_
@@ -13,6 +13,31 @@ from app.routes.message import send_wecom_message
 import requests
 
 bp = Blueprint('event', __name__, url_prefix='/api/v1/event')
+
+
+def _user_active_join_for_event(cur_user, event_id):
+    """当前用户在该活动下未软删除的参与记录。"""
+    if not cur_user:
+        return None
+    return next(
+        (
+            ej
+            for ej in cur_user.eventjoins
+            if ej.eventID == event_id and not getattr(ej, 'isDelete', False)
+        ),
+        None,
+    )
+
+
+def _event_user_has_active_join(event, cur_user):
+    """活动维度：当前用户是否仍在参与（未软删除）。"""
+    if not cur_user or not event:
+        return False
+    return any(
+        ej.userID == cur_user.userID and not getattr(ej, 'isDelete', False)
+        for ej in event.eventjoins
+    )
+
 
 # 生成地图预览URL（用于创建活动时的预览）
 @bp.route('/generate_map_url', methods=['POST'])
@@ -132,11 +157,11 @@ def get_eventlist(show):
                 'actual_endTime': event.actual_endTime.isoformat() if isinstance(event.actual_endTime, datetime) else event.actual_endTime,
                 'author_id': event.authorID,
                 'created_at': event.createDate.isoformat(),
-                'cur_user_is_joined': any(eventjoin.userID == cur_user.userID for eventjoin in event.eventjoins),
+                'cur_user_is_joined': _event_user_has_active_join(event, cur_user),
                 'cur_user_managed': any(manager.userID == cur_user.userID for manager in event.club.managers),
                 'cur_user_can_join': (
                     any(m.clubID == event.clubID for m in cur_user.clubmembers) and 
-                    not any(eventjoin.userID == cur_user.userID for eventjoin in event.eventjoins)
+                    not _event_user_has_active_join(event, cur_user)
                 ),
                 'is_ended': event.actual_endTime is not None,
                 'is_cancelled': event.is_cancelled
@@ -411,7 +436,42 @@ def update_location(event_id):
         event_update.location_address = location_data.get('address')
 
     db.session.commit()
-    return jsonify({'Flag':'4000','message': '更新活动位置成功'})
+
+    # 与 GET /event/:id 一致，便于前端刷新地图与首页热门 premap
+    out_location_data = None
+    out_premap_url = None
+    if (
+        hasattr(event_update, 'location_latitude')
+        and event_update.location_latitude
+        and hasattr(event_update, 'location_longitude')
+        and event_update.location_longitude
+    ):
+        out_location_data = {
+            'name': event_update.location_name,
+            'address': event_update.location_address,
+            'latitude': float(event_update.location_latitude),
+            'longitude': float(event_update.location_longitude),
+        }
+        out_premap_url = (
+            current_app.config['GEOAPIFY_MAP_URL'].format(
+                width=600,
+                height=400,
+                longitude=event_update.location_longitude,
+                latitude=event_update.location_latitude,
+                zoom=14,
+            )
+            + f"&apiKey={current_app.config['GEOAPIFY_API_KEY']}"
+        )
+
+    return jsonify({
+        'Flag': '4000',
+        'message': '更新活动位置成功',
+        'data': {
+            'location': event_update.location,
+            'location_data': out_location_data,
+            'premap_url': out_premap_url,
+        },
+    })
 
 @bp.route('/<int:event_id>/update_cover', methods=['POST'])
 @jwt_required()
@@ -491,9 +551,12 @@ def clockin(event_id):
 
     # 查找用户在该活动的参与记录
     event_join = EventJoin.query.filter_by(
-        eventID=event_id, 
-        userID=cur_user.userID
+        eventID=event_id,
+        userID=cur_user.userID,
+        isDelete=False,
     ).first()
+    if not event_join:
+        return jsonify({'Flag': '4001', 'message': '未参加该活动或已退出'}), 200
 
     # 更新打卡时间
     event_join.clockinDate = datetime.now(ZoneInfo('Asia/Shanghai'))
@@ -554,8 +617,8 @@ def get_event(event_id):
     user_id = get_jwt_identity()
     cur_user = User.query.filter_by(userID=user_id).first()
 		
-    # 通过关系属性获取用户参与记录
-    user_join = next((ej for ej in cur_user.eventjoins if ej.eventID == event_id), None)
+    # 通过关系属性获取用户参与记录（不含已软删除的退出）
+    user_join = _user_active_join_for_event(cur_user, event_id)
 
     # 准备位置数据
     if hasattr(event_show, 'location_latitude') and hasattr(event_show, 'location_longitude') and event_show.location_latitude and event_show.location_longitude:
@@ -682,8 +745,14 @@ def get_event(event_id):
             'real_cost': event_show.real_cost,
             'budget':event_show.budget,
             'approveDate':event_show.approveDate,
-            'join_count': len(event_show.eventjoins),
-            'clockin_count': len([ej for ej in event_show.eventjoins if ej.clockinDate is not None]),
+            'join_count': len([ej for ej in event_show.eventjoins if not getattr(ej, 'isDelete', False)]),
+            'clockin_count': len(
+                [
+                    ej
+                    for ej in event_show.eventjoins
+                    if not getattr(ej, 'isDelete', False) and ej.clockinDate is not None
+                ]
+            ),
             'cur_user_in_club': any(m.clubID == event_show.clubID for m in cur_user.clubmembers),
             'cur_user_is_joined': user_join is not None,  # 优化后的加入状态判断
             'cur_user_managed': any(manager.userID == cur_user.userID for manager in event_show.club.managers),
@@ -711,8 +780,8 @@ def get_event_members(event_id):
     user_id = get_jwt_identity()
     cur_user = User.query.filter_by(userID=user_id).first()
 
-    # 活动成员列表
-    event_joins = EventJoin.query.filter_by(eventID=event_id).all()
+    # 活动成员列表（不含已退出活动的记录）
+    event_joins = EventJoin.query.filter_by(eventID=event_id, isDelete=False).all()
 
     members = []
     for ej in event_joins:
@@ -781,7 +850,15 @@ def join_event(event_id):
     if not is_club_member:
         return jsonify({'Flag': '4001', 'message': '请先加入协会'}), 200
 
-    join = EventJoin(eventID=event_id, userID=cur_user.userID)
+    existing = EventJoin.query.filter_by(eventID=event_id, userID=cur_user.userID).first()
+    if existing:
+        if getattr(existing, 'isDelete', False):
+            existing.isDelete = False
+            db.session.commit()
+            return jsonify({'Flag': '4000', 'message': '加入活动成功'})
+        return jsonify({'Flag': '4000', 'message': '您已在该活动中'}), 200
+
+    join = EventJoin(eventID=event_id, userID=cur_user.userID, isDelete=False)
     db.session.add(join)
     db.session.commit()
     
@@ -805,13 +882,16 @@ def add_event_member(event_id, user_id):
         # 如果用户不在社团中，返回错误
         return jsonify({'Flag':'4000','message': '该用户不在社团中'}), 200
 
-    # 避免重复加入活动
+    # 避免重复加入活动（允许恢复已软删除的参与记录）
     existing_join = EventJoin.query.filter_by(eventID=event_id, userID=user_id).first()
     if existing_join:
-        # 如果用户已在活动中，返回错误
+        if getattr(existing_join, 'isDelete', False):
+            existing_join.isDelete = False
+            db.session.commit()
+            return jsonify({'Flag': '4000', 'message': '邀请参加活动成功'})
         return jsonify({'Flag':'4000','message': '该用户已在活动中'}), 200
 
-    join = EventJoin(eventID=event_id, userID=user_id)
+    join = EventJoin(eventID=event_id, userID=user_id, isDelete=False)
     db.session.add(join)
     db.session.commit()
     
@@ -838,12 +918,13 @@ def quit_event(event_id):
     if event_to_quit.actual_endTime is not None:
         return jsonify({'Flag': '4001', 'message': '活动已结束，无法退出'}), 200
 
-    # 通过关系属性查找具体的join记录
-    join_record = next((ej for ej in cur_user.eventjoins if ej.eventID == event_id), None)
+    join_record = EventJoin.query.filter_by(
+        eventID=event_id, userID=cur_user.userID, isDelete=False
+    ).first()
     if not join_record:
         return jsonify({'Flag': '4001', 'message': '您未加入该活动'}), 200
 
-    db.session.delete(join_record)
+    join_record.isDelete = True
     db.session.commit()
     
     return jsonify({'Flag':'4000','message': '退出活动成功'})
@@ -859,11 +940,11 @@ def remove_event_member(event_id, user_id):
         return jsonify({'Flag': '4002', 'message': message}), 200
 
     # 查找该用户在该活动中的参与记录
-    join_record = EventJoin.query.filter_by(eventID=event_id, userID=user_id).first()
+    join_record = EventJoin.query.filter_by(eventID=event_id, userID=user_id, isDelete=False).first()
     if not join_record:
         return jsonify({'Flag': '4004', 'message': '成员未参加该活动或已被移除'}), 200
 
-    db.session.delete(join_record)
+    join_record.isDelete = True
     db.session.commit()
     return jsonify({'Flag':'4000','message': '移除成员成功'})
 
@@ -886,39 +967,92 @@ def get_user_joined_eventlist(show):
     month = request.args.get('month', type=int)
     page = request.args.get('page', default=1, type=int)
 
-    # 获取当前用户
+    # 获取当前用户及每条活动对应的参与记录（含已软删除，供「全部」「已取消」等展示）
     user_id = get_jwt_identity()
     cur_user = User.query.filter_by(userID=user_id).first()
+    if cur_user is None:
+        return jsonify({'Flag': '4002', 'message': '用户不存在'}), 200
 
-    # 获取用户参加的所有活动（模仿get_eventlist的风格）
-    memberShips = cur_user.eventjoins
-    joined_events = [event_join.event for event_join in memberShips if event_join.event is not None]
+    join_by_event = {}
+    event_order = []
+    for ej in cur_user.eventjoins:
+        if ej.event is None:
+            continue
+        eid = ej.event.eventID
+        if eid not in join_by_event:
+            event_order.append(eid)
+        join_by_event[eid] = ej
+    joined_event_list = [join_by_event[eid].event for eid in event_order]
 
-    # Count模式处理
+    def _ej_active_for(e):
+        ej = join_by_event.get(e.eventID)
+        return ej is not None and not getattr(ej, 'isDelete', False)
+
+    def _in_ended_tab(e):
+        """仅已实际结束的活动（有 actual_endTime）。已结束活动不应再被退出/退会标记为软删参与。"""
+        return e.actual_endTime is not None
+
+    def _in_cancelled_tab(e):
+        """主办方取消，或用户已退出参与且活动尚未实际结束（与已取消归为一类）。"""
+        if e.actual_endTime is not None:
+            return False
+        ej = join_by_event.get(e.eventID)
+        return e.is_cancelled or (ej is not None and getattr(ej, 'isDelete', False))
+
+    # Count模式处理（不按月份）
     if mode == 'count':
-        prego_count = len([e for e in joined_events if e.actual_startTime is None and not e.is_cancelled])
-        going_count = len([e for e in joined_events if e.actual_startTime is not None and e.actual_endTime is None and not e.is_cancelled])
-        ended_count = len([e for e in joined_events if e.actual_endTime is not None])
-        
-        return jsonify({
-            'Flag':'4000',
-            'message': '获取成功',
-            'data': {
+        prego_count = len(
+            [
+                e
+                for e in joined_event_list
+                if _ej_active_for(e) and e.actual_startTime is None and not e.is_cancelled
+            ]
+        )
+        going_count = len(
+            [
+                e
+                for e in joined_event_list
+                if _ej_active_for(e)
+                and e.actual_startTime is not None
+                and e.actual_endTime is None
+                and not e.is_cancelled
+            ]
+        )
+        ended_count = len([e for e in joined_event_list if _in_ended_tab(e)])
+        cancelled_count = len([e for e in joined_event_list if _in_cancelled_tab(e)])
+
+        if show == 'all':
+            count_payload = {
                 'prego_count': prego_count,
                 'going_count': going_count,
                 'ended_count': ended_count,
-                'total_count': len(joined_events)
-            } if show == 'all' else {
-                'count': prego_count if show == 'prego' else (going_count if show == 'going' else ended_count)
+                'cancelled_count': cancelled_count,
+                'total_count': len(joined_event_list),
             }
+        elif show == 'prego':
+            count_payload = {'count': prego_count}
+        elif show == 'going':
+            count_payload = {'count': going_count}
+        elif show == 'ended':
+            count_payload = {'count': ended_count}
+        elif show == 'cancelled':
+            count_payload = {'count': cancelled_count}
+        else:
+            count_payload = {'count': len(joined_event_list)}
+
+        return jsonify({
+            'Flag':'4000',
+            'message': '获取成功',
+            'data': count_payload
         })
 
+    joined_after_month = joined_event_list
     # 时间过滤逻辑
     if mode == 'month':
         start_date = datetime(year, month, 1, tzinfo=ZoneInfo('Asia/Shanghai'))
         end_date = (datetime(year, month+1, 1, tzinfo=ZoneInfo('Asia/Shanghai')) if month < 12 
                    else datetime(year+1, 1, 1, tzinfo=ZoneInfo('Asia/Shanghai')))
-        joined_events = [e for e in joined_events if start_date <= (
+        joined_after_month = [e for e in joined_event_list if start_date <= (
             (e.actual_startTime.replace(tzinfo=ZoneInfo('Asia/Shanghai')) if e.actual_startTime.tzinfo is None else e.actual_startTime) if e.actual_startTime 
             else (e.pre_startTime.replace(tzinfo=ZoneInfo('Asia/Shanghai')) if e.pre_startTime 
                  else datetime.min.replace(tzinfo=ZoneInfo('Asia/Shanghai')))
@@ -926,15 +1060,26 @@ def get_user_joined_eventlist(show):
 
     # Show参数过滤
     if show == 'prego':
-        filtered_events = [e for e in joined_events if e.actual_startTime is None and not e.is_cancelled]
+        filtered_events = [
+            e for e in joined_after_month
+            if _ej_active_for(e) and e.actual_startTime is None and not e.is_cancelled
+        ]
     elif show == 'going':
-        filtered_events = [e for e in joined_events if e.actual_startTime is not None and e.actual_endTime is None and not e.is_cancelled]
+        filtered_events = [
+            e for e in joined_after_month
+            if _ej_active_for(e)
+            and e.actual_startTime is not None
+            and e.actual_endTime is None
+            and not e.is_cancelled
+        ]
     elif show == 'ended':
-        filtered_events = [e for e in joined_events if e.actual_endTime is not None]
+        filtered_events = [e for e in joined_after_month if _in_ended_tab(e)]
+    elif show == 'cancelled':
+        filtered_events = [e for e in joined_after_month if _in_cancelled_tab(e)]
     elif show == 'all':
-        filtered_events = joined_events
+        filtered_events = joined_after_month
     else:
-        filtered_events = joined_events
+        filtered_events = joined_after_month
 
     # 排序逻辑
     filtered_events = sorted(
@@ -945,6 +1090,31 @@ def get_user_joined_eventlist(show):
                            else datetime.min.replace(tzinfo=ZoneInfo('Asia/Shanghai')))),
         reverse=True
     )
+
+    def _joined_row(e):
+        ej = join_by_event.get(e.eventID)
+        c = e.club
+        return {
+            'event_id': e.eventID,
+            'title': e.title,
+            'club_id': c.clubID if c else None,
+            'club_name': c.clubName if c else None,
+            'club_cover': c.cover.fileUrl if c and c.cover else None,
+            'location': e.location,
+            'event_imgs': (
+                ([e.cover.fileUrl] if e.cover else []) +
+                ([file.fileUrl for file in (e.moments[-1].image_files or [])] if e.moments and e.moments[-1].image_files else [])
+            ),
+            'pre_startTime': e.pre_startTime.isoformat() if e.pre_startTime else None,
+            'actual_startTime': e.actual_startTime.isoformat() if e.actual_startTime else None,
+            'actual_endTime': e.actual_endTime.isoformat() if e.actual_endTime else None,
+            'joined_date': ej.joinDate.isoformat() if ej and ej.joinDate else None,
+            'clockin_date': ej.clockinDate.isoformat() if ej and ej.clockinDate else None,
+            'is_ended': e.actual_endTime is not None,
+            'is_cancelled': e.is_cancelled,
+            'club_deleted': c.isDelete if c else False,
+            'join_is_delete': bool(getattr(ej, 'isDelete', False)) if ej else False,
+        }
 
     # 分页处理
     if mode == 'page':
@@ -958,25 +1128,7 @@ def get_user_joined_eventlist(show):
             'Flag':'4000',
             'message': '获取成功',
             'data':{
-                'records': [{
-                    'event_id': e.eventID,
-                    'title': e.title,
-                    'club_id': e.club.clubID,
-                    'club_name': e.club.clubName,
-                    'club_cover': e.club.cover.fileUrl if e.club.cover else None,
-                    'location': e.location,
-                    'event_imgs': (
-                        ([e.cover.fileUrl] if e.cover else []) +
-                        ([file.fileUrl for file in (e.moments[-1].image_files or [])] if e.moments and e.moments[-1].image_files else [])
-                    ),
-                    'pre_startTime': e.pre_startTime.isoformat() if e.pre_startTime else None,
-                    'actual_startTime': e.actual_startTime.isoformat() if e.actual_startTime else None,
-                    'joined_date': next((ej.joinDate for ej in e.eventjoins if ej.userID == cur_user.userID), None),
-                    'clockin_date': next((ej.clockinDate for ej in e.eventjoins if ej.userID == cur_user.userID), None),
-                    'is_ended': e.actual_endTime is not None,
-                    'is_cancelled': e.is_cancelled,
-                    'club_deleted': e.club.isDelete  # 保留协会删除状态
-                } for e in paged_events],
+                'records': [_joined_row(e) for e in paged_events],
                 'pagination': {
                     'total_pages': total_pages,
                     'current_page': page,
@@ -989,24 +1141,7 @@ def get_user_joined_eventlist(show):
         return jsonify({
             'Flag':'4000',
             'message': '获取成功',
-            'data': [{
-                'event_id': e.eventID,
-                'title': e.title,
-                'club_id': e.club.clubID,
-                'club_name': e.club.clubName,
-                'club_cover': e.club.cover.fileUrl if e.club.cover else None,
-                'location': e.location,
-                'event_imgs': (
-                        ([e.cover.fileUrl] if e.cover else []) +
-                        ([file.fileUrl for file in (e.moments[-1].image_files or [])] if e.moments and e.moments[-1].image_files else [])
-                    ),
-                'actual_startTime': e.actual_startTime.isoformat() if e.actual_startTime else e.pre_startTime.isoformat(),
-                'pre_startTime': e.pre_startTime.isoformat() if e.pre_startTime else None,
-                'clockin_date': next((ej.clockinDate for ej in e.eventjoins if ej.userID == cur_user.userID), None),
-                'is_ended': e.actual_endTime is not None,
-                'is_cancelled': e.is_cancelled,
-                'club_deleted': e.club.isDelete  # 保留协会删除状态
-            } for e in filtered_events]
+            'data': [_joined_row(e) for e in filtered_events]
         })
 
 # 统一用户可参加活动接口 - 返回用户作为member加入的未删除协会的正在进行且未取消的活动
@@ -1112,7 +1247,7 @@ def get_user_can_join_eventlist(show):
                     'actual_startTime': e.actual_startTime.isoformat() if e.actual_startTime else e.pre_startTime.isoformat(),
                     'pre_startTime': e.pre_startTime.isoformat() if e.pre_startTime else None,
                     'join_count': len(e.eventjoins),
-                    'cur_user_can_join': not any(ej.userID == cur_user.userID for ej in e.eventjoins)
+                    'cur_user_can_join': not _event_user_has_active_join(e, cur_user)
                 } for e in paged_events],
                 'pagination': {
                     'total_pages': total_pages,
@@ -1310,6 +1445,65 @@ def get_user_manage_eventlist(show):
             } for e in filtered_events]
         })
 
+def _club_public_pick_featured_event(paged_events, tz):
+    """与小程序 club-joined-panel 一致：当前页内 进行中 > 即将开始 > 首条。"""
+    if not paged_events:
+        return None
+    now = datetime.now(tz)
+    for e in paged_events:
+        if e.actual_startTime is not None and e.actual_endTime is None:
+            return e
+    for e in paged_events:
+        if e.actual_startTime is None and e.pre_startTime is not None:
+            pst = e.pre_startTime
+            if pst.tzinfo is None:
+                pst = pst.replace(tzinfo=tz)
+            elif pst.tzinfo != tz:
+                pst = pst.astimezone(tz)
+            if pst > now:
+                return e
+    return paged_events[0]
+
+
+def _club_public_featured_isotope_payload(featured_e, max_moments=15, max_members=12):
+    """一次 SQL 取成员预览 + 动态缩略图，避免前端再调 /event/:id/members 与多页 /moment/event/:id。"""
+    if featured_e is None:
+        return None
+    eid = featured_e.eventID
+    joins = (
+        EventJoin.query.filter_by(eventID=eid, isDelete=False)
+        .order_by(EventJoin.joinID.asc())
+        .limit(max_members)
+        .all()
+    )
+    members = []
+    for ej in joins:
+        u = ej.user
+        if not u:
+            continue
+        members.append({
+            'user_id': u.userID,
+            'userID': u.userID,
+            'avatar': u.avatar.fileUrl if u.avatar else None,
+        })
+    moments_q = (
+        Moment.query.filter(Moment.ref_event_ID == eid)
+        .order_by(Moment.createDate.desc())
+        .limit(max_moments)
+        .all()
+    )
+    moments = []
+    for m in moments_q:
+        files = m.image_files or []
+        moments.append({
+            'momentID': m.momentID,
+            'image_files': [
+                {'fileUrl': f.fileUrl, 'file_url': f.fileUrl} for f in files
+            ],
+        })
+    return {'event_id': eid, 'members': members, 'moments': moments}
+
+
 # 统一社团公开活动接口 - 返回协会发起的正在进行且未取消的活动
 @bp.route('/club_public/<int:club_id>/list/<string:show>', methods=['GET'])
 @jwt_required()
@@ -1329,9 +1523,14 @@ def get_club_public_eventlist(club_id, show):
     cur_user = User.query.filter_by(userID=user_id).first()
 
     club = Club.query.filter_by(clubID=club_id).first()
-    # 权限检查
-    is_managed = any(manager.userID == cur_user.userID for manager in club.managers),
-    is_member = any(m.clubID == club_id for m in cur_user.clubmembers)
+    # 当前用户是否协会管理员、是否有效会员（勿在行尾加逗号，否则 is_managed 会变成元组）
+    is_managed = any(
+        manager.userID == cur_user.userID for manager in club.managers
+    )
+    is_member = any(
+        m.clubID == club_id and not getattr(m, 'isDelete', False)
+        for m in cur_user.clubmembers
+    )
 
     # 根据show参数获取活动
     if show == 'going':
@@ -1392,57 +1591,84 @@ def get_club_public_eventlist(club_id, show):
         total_pages = (total_records + PAGE_SIZE - 1) // PAGE_SIZE
 
         paged_events = club_events[(page-1)*PAGE_SIZE : page*PAGE_SIZE]
+        want_iso = request.args.get('include_featured_isotope', '').lower() in (
+            '1', 'true', 'yes', 'on',
+        )
+        featured_isotope = None
+        if want_iso and page == 1 and paged_events:
+            featured_e = _club_public_pick_featured_event(
+                paged_events, ZoneInfo('Asia/Shanghai')
+            )
+            featured_isotope = _club_public_featured_isotope_payload(featured_e)
+
+        public_records = []
+        for e in paged_events:
+            ej_active = _user_active_join_for_event(cur_user, e.eventID)
+            public_records.append({
+                'event_id': e.eventID,
+                'title': e.title,
+                'content': e.message,
+                'premap_url': (
+                    current_app.config['GEOAPIFY_MAP_URL'].format(
+                        width=600,
+                        height=400,
+                        longitude=e.location_longitude,
+                        latitude=e.location_latitude,
+                        zoom=14
+                    ) + f"&apiKey={current_app.config['GEOAPIFY_API_KEY']}"
+                    if (hasattr(e, 'location_latitude') and e.location_latitude and
+                        hasattr(e, 'location_longitude') and e.location_longitude)
+                    else None
+                ),
+                'location_data': {
+                    'name': e.location_name,
+                    'address': e.location_address,
+                    'latitude': e.location_latitude,
+                    'longitude': e.location_longitude
+                } if e.location_latitude and e.location_longitude else None,
+                'event_imgs': (
+                    ([e.cover.fileUrl] if e.cover else []) +
+                    ([file.fileUrl for file in (e.moments[-1].image_files or [])] if e.moments and e.moments[-1].image_files else [])
+                ),
+                'club_name': e.club.clubName,
+                'club_cover': e.club.cover.fileUrl if e.club.cover else None,
+                'actual_startTime': e.actual_startTime.isoformat() if e.actual_startTime else None,
+                'actual_endTime': e.actual_endTime.isoformat() if e.actual_endTime else None,
+                'pre_startTime': e.pre_startTime.isoformat() if e.pre_startTime else None,
+                'pre_endTime': e.pre_endTime.isoformat() if e.pre_endTime else None,
+                'cover': e.cover.fileUrl if e.cover else None,
+                'real_cost': e.real_cost,
+                'budget': e.budget,
+                'join_count': len([j for j in e.eventjoins if not getattr(j, 'isDelete', False)]),
+                'is_ended': e.actual_endTime is not None,
+                'is_cancelled': e.is_cancelled,
+                'cur_user_managed': is_managed,
+                'cur_user_can_join': is_member and not is_managed and ej_active is None,
+                'cur_user_is_joined': ej_active is not None,
+                'cur_user_join_date': ej_active.joinDate.isoformat() if ej_active and ej_active.joinDate else None,
+                'cur_user_clockin_date': (
+                    ej_active.clockinDate.isoformat()
+                    if ej_active and isinstance(ej_active.clockinDate, datetime)
+                    else None
+                ),
+            })
+
+        data_out = {
+            'records': public_records,
+            'pagination': {
+                'total_pages': total_pages,
+                'current_page': page,
+                'page_size': PAGE_SIZE,
+                'total_records': total_records
+            },
+        }
+        if want_iso:
+            data_out['featured_isotope'] = featured_isotope
+
         return jsonify({
             'Flag':'4000',
             'message': '获取成功',
-            'data':{
-                'records': [{
-                    'event_id': e.eventID,
-                    'title': e.title,
-                    'content': e.message,
-                    'premap_url': (
-                        current_app.config['GEOAPIFY_MAP_URL'].format(
-                            width=600, 
-                            height=400, 
-                            longitude=e.location_longitude, 
-                            latitude=e.location_latitude, 
-                            zoom=14
-                        ) + f"&apiKey={current_app.config['GEOAPIFY_API_KEY']}"
-                        if (hasattr(e, 'location_latitude') and e.location_latitude and 
-                            hasattr(e, 'location_longitude') and e.location_longitude) 
-                        else None
-                    ),
-                    'location_data': {
-                        'name': e.location_name,
-                        'address': e.location_address,
-                        'latitude': e.location_latitude,
-                        'longitude': e.location_longitude
-                    } if e.location_latitude and e.location_longitude else None,
-                     'event_imgs': (
-                        ([e.cover.fileUrl] if e.cover else []) +
-                        ([file.fileUrl for file in (e.moments[-1].image_files or [])] if e.moments and e.moments[-1].image_files else [])
-                    ), 
-                    'club_name': e.club.clubName,
-                    'club_cover': e.club.cover.fileUrl if e.club.cover else None,
-                    'actual_startTime': e.actual_startTime.isoformat() if e.actual_startTime else None,
-                    'pre_startTime': e.pre_startTime.isoformat() if e.pre_startTime else None,
-                    'cover': e.cover.fileUrl if e.cover else None,
-                    'real_cost': e.real_cost,
-                    'budget': e.budget,
-                    'join_count': len(e.eventjoins),
-                    'is_ended': e.actual_endTime is not None,
-                    'is_cancelled': e.is_cancelled,
-                    'cur_user_managed': is_managed,
-                    'cur_user_can_join': is_member and not is_managed and not any(ej.userID == cur_user.userID for ej in e.eventjoins),
-                    'cur_user_is_joined': any(ej.userID == cur_user.userID for ej in e.eventjoins)
-                } for e in paged_events],
-                'pagination': {
-                    'total_pages': total_pages,
-                    'current_page': page,
-                    'page_size': PAGE_SIZE,
-                    'total_records': total_records
-                }
-            }
+            'data': data_out
         })
     else:  # month模式
         return jsonify({
@@ -1528,8 +1754,8 @@ def get_hot_events():
         # 3. 用户相关性 (30%) - 最重要的因素
         user_relevance = 0
         
-        # 用户已加入该活动，分数为0（不推荐已参加的）
-        if any(ej.userID == cur_user.userID for ej in event_item.eventjoins):
+        # 用户已加入该活动，分数为0（不推荐已参加的；不含已退出）
+        if _event_user_has_active_join(event_item, cur_user):
             user_relevance = 0
         # 用户是该协会成员但未参加活动
         elif event_item.clubID in joined_club_ids:
@@ -1639,10 +1865,10 @@ def get_hot_events():
             'cover_url': e.cover.fileUrl if e.cover else None,
             # 用户状态字段
             'cur_user_managed': any(manager.userID == cur_user.userID for manager in e.club.managers),
-            'cur_user_is_joined': any(eventjoin.userID == cur_user.userID for eventjoin in e.eventjoins),
+            'cur_user_is_joined': _event_user_has_active_join(e, cur_user),
             'cur_user_can_join': (
                 e.clubID in joined_club_ids and 
-                not any(eventjoin.userID == cur_user.userID for eventjoin in e.eventjoins)
+                not _event_user_has_active_join(e, cur_user)
             ),
             'cur_user_is_club_member': e.clubID in joined_club_ids,
             # 最新5位参加人员
@@ -1653,7 +1879,11 @@ def get_hot_events():
                     'avatar': ej.user.avatar.fileUrl if ej.user.avatar else None,
                     'join_date': ej.joinDate.isoformat() if ej.joinDate else None
                 }
-                for ej in sorted(e.eventjoins, key=lambda x: x.joinDate or datetime.min, reverse=True)[:5]
+                for ej in sorted(
+                    [j for j in e.eventjoins if not getattr(j, 'isDelete', False)],
+                    key=lambda x: x.joinDate or datetime.min,
+                    reverse=True,
+                )[:5]
                 if ej.user  # Only include joins where user exists
             ]
         } for e in top_events]
@@ -1692,4 +1922,4 @@ def cancel_event(event_id):
             'title':event_to_cancel.title
         }
     })
- 
+
