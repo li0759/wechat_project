@@ -13,8 +13,8 @@
   globalData: {
     sky_system:{},
     sky_menu:{},
-    request_url:"https://www.vhhg.top/api/v1",
-    //request_url:"https://ghwtxh.msatmb.com:10443/api/v1",
+    //request_url:"https://www.vhhg.top/api/v1",
+    request_url:"https://ghwtxh.msatmb.com:10443/api/v1",
     static_url:"https://ghwtxh.msatmb.com:10443",
     userInfo: null,
     defaultImages: {

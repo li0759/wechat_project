@@ -9,16 +9,21 @@ Component({
   properties: {},
 
   data: {
-    loading: true,
+    loading: false,
     downloading: false,
     clubs: [],
     totalClubs: 0,
     totalMembers: 0,
+    totalDynamics: 0,
     clubMemberChart: [],
     genderChart: [],
     unitChart: [],
     hideCharts: false,  // 用于在动画时隐藏图表
-    splitByClub: true
+    splitByClub: true,
+    startDate: '',
+    endDate: '',
+    activityStartDate: '',
+    activityEndDate: ''
   },
 
   lifetimes: {
@@ -32,9 +37,8 @@ Component({
      * 供外部调用的数据加载方法
      */
     loadData() {
-      this.fetchData();
       // 触发loaded事件
-    this.triggerEvent('loaded');
+      this.triggerEvent('loaded');
     },
 
     /**
@@ -49,6 +53,42 @@ Component({
      */
     showCharts() {
       this.setData({ hideCharts: false });
+    },
+
+    onStartDateChange(e) {
+      const startDate = e.detail.value
+      this.setData({ startDate }, () => {
+        this.tryReloadByDateRange()
+      })
+    },
+
+    onEndDateChange(e) {
+      const endDate = e.detail.value
+      this.setData({ endDate }, () => {
+        this.tryReloadByDateRange()
+      })
+    },
+
+    tryReloadByDateRange() {
+      const { startDate, endDate, activityStartDate, activityEndDate } = this.data
+      if (!startDate || !endDate || !activityStartDate || !activityEndDate) {
+        return
+      }
+      if (new Date(startDate).getTime() > new Date(endDate).getTime()) {
+        wx.showToast({
+          title: '结束日期不能早于开始日期',
+          icon: 'none'
+        })
+        return
+      }
+      if (new Date(activityStartDate).getTime() > new Date(activityEndDate).getTime()) {
+        wx.showToast({
+          title: '活动结束日期不能早于开始日期',
+          icon: 'none'
+        })
+        return
+      }
+      this.fetchData()
     },
 
   // 加载数据
@@ -66,7 +106,12 @@ Component({
         return
       }
 
-      const response = await this.request('/statistics/show/all_club/users', 'GET')
+      const response = await this.request('/statistics/show/all_club/users', 'GET', {
+        start_date: this.data.startDate,
+        end_date: this.data.endDate,
+        activity_start_date: this.data.activityStartDate,
+        activity_end_date: this.data.activityEndDate
+      })
       
       if (response.code === 200) {
         const data = response.data
@@ -75,6 +120,7 @@ Component({
     const clubs = data.clubs || []
         const totalClubs = data.total_clubs || 0
         const totalMembers = data.total_members || 0
+        const totalDynamics = data.total_dynamic_count || 0
         
         // 处理图表数据
     const chartData = this.processChartData(clubs)
@@ -83,6 +129,7 @@ Component({
           clubs,
           totalClubs,
           totalMembers,
+          totalDynamics,
           clubMemberChart: chartData.clubMemberChart,
           genderChart: chartData.genderChart,
           unitChart: chartData.unitChart,
@@ -153,92 +200,96 @@ Component({
     })
   },
 
-   // 下载导出文件（xlsx/zip/rar）
-   async downloadExcel() {
-    this.setData({ downloading: true })
-    wx.showLoading({
-      title: '正在生成Excel文件...'
+  onActivityStartDateChange(e) {
+    this.setData({
+      activityStartDate: e.detail.value
+    }, () => {
+      this.tryReloadByDateRange()
     })
-    
-    const token = wx.getStorageSync('token')
-    const response = await this.request('/statistics/export/all_club/users', 'GET', {
-      split_by_club: this.data.splitByClub ? 1 : 0
-    })
-    
-    if (response.code === 200) {
-      const downloadUrl = response.data.download_url
-      const backendFilename = (response.data.filename || '').toLowerCase()
-      const fileExt = this.getFileExt(backendFilename || downloadUrl) || 'zip'
-      
-      wx.hideLoading()
-      wx.showToast({
-        title: '开始下载',
-        icon: 'none'
-      })
-      
-      // 下载文件 - 为Excel文件添加Authorization头
-    const downloadTask = wx.downloadFile({
-        url: downloadUrl,
-        header: {
-          'Authorization': `Bearer ${token}`
-        },
-        success: (res) => {
-          if (res.statusCode === 200) {
-            // 保存到相册或打开文件
-            wx.openDocument({
-              filePath: res.tempFilePath,
-              fileType: fileExt,
-              showMenu: true,
-              fail: () => {
-                wx.showToast({
-                  title: `已下载${fileExt}文件`,
-                  icon: 'none'
-                })
-              }
-            })
-          } else {
-            wx.showToast({
-              title: `文件下载失败 (${res.statusCode})`,
-              icon: 'none'
-            })
-          }
-        },
-        fail: (err) => {
-          wx.showToast({
-            title: '文件下载失败',
-            icon: 'none'
-          })
-        }
-      })
-      downloadTask.onProgressUpdate((res) => {
-        wx.showLoading({
-          title: `下载中: ${res.progress}%`,
-          mask: true
-        })
-        if (res.progress === 100) {
-          this.setData({ downloading: false })
-          wx.showToast({
-            title: '下载完成，正在打开',
-            icon: 'success'
-          })           
-          wx.hideLoading()
-        }
-      })
-
-    } else {
-      throw new Error(response.message || '生成Excel失败')
-    }   
   },
 
+  onActivityEndDateChange(e) {
+    this.setData({
+      activityEndDate: e.detail.value
+    }, () => {
+      this.tryReloadByDateRange()
+    })
+  },
 
-  getFileExt(input) {
-    if (!input) return ''
-    const cleanInput = String(input).split('?')[0]
-    const index = cleanInput.lastIndexOf('.')
-    if (index === -1 || index === cleanInput.length - 1) {
-      return ''
+   // 导出并通过后端发送给当前用户本人企业微信
+   async downloadExcel() {
+    try {
+      const { startDate, endDate, activityStartDate, activityEndDate } = this.data
+      if (!startDate || !endDate || !activityStartDate || !activityEndDate) {
+        wx.showToast({
+          title: '请先选择4个时间',
+          icon: 'none'
+        })
+        return
+      }
+      if (new Date(startDate).getTime() > new Date(endDate).getTime()) {
+        wx.showToast({
+          title: '结束日期不能早于开始日期',
+          icon: 'none'
+        })
+        return
+      }
+      if (new Date(activityStartDate).getTime() > new Date(activityEndDate).getTime()) {
+        wx.showToast({
+          title: '活动结束日期不能早于开始日期',
+          icon: 'none'
+        })
+        return
+      }
+
+      this.setData({ downloading: true })
+      wx.showLoading({
+        title: '正在生成文件...'
+      })
+      
+      const response = await this.request('/statistics/export/all_club/users/wecom_media', 'GET', {
+        split_by_club: this.data.splitByClub ? 1 : 0,
+        start_date: startDate,
+        end_date: endDate,
+        activity_start_date: activityStartDate,
+        activity_end_date: activityEndDate
+      })
+      
+      if (response.code !== 200) {
+        throw new Error(response.message || '生成会话文件失败')
+      }
+
+      wx.hideLoading()
+      const mediaId = response.data && response.data.media_id
+      if (!mediaId) {
+        throw new Error('服务端未返回 media_id')
+      }
+      wx.showLoading({
+        title: '正在发送文件...'
+      })
+      await this.sendWecomFileToSelf(mediaId)
+      wx.showToast({
+        title: '已发送到你本人企业微信',
+        icon: 'success'
+      })
+    } catch (error) {
+      wx.showToast({
+        title: error.message || '下载失败',
+        icon: 'none'
+      })
+    } finally {
+      wx.hideLoading()
+      this.setData({ downloading: false })
     }
-    return cleanInput.substring(index + 1).toLowerCase()
+  },
+
+  async sendWecomFileToSelf(mediaId) {
+    const resp = await this.request('/statistics/wecom/send_media_to_self', 'POST', {
+      media_id: mediaId
+    })
+    if (resp.code !== 200) {
+      throw new Error(resp.message || '发送到本人失败')
+    }
   },
 
     // 网络请求封装

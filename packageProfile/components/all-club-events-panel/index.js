@@ -16,7 +16,8 @@ Component({
     checkinChart: [],
     hideCharts: false,
     startDate: '',
-    endDate: ''
+    endDate: '',
+    splitByClub: true
   },
 
   methods: {
@@ -44,6 +45,13 @@ Component({
       const endDate = e.detail.value
       this.setData({ endDate }, () => {
         this.tryReloadByDateRange()
+      })
+    },
+
+    onSplitByClubChange(e) {
+      const values = (e.detail && e.detail.value) || []
+      this.setData({
+        splitByClub: values.includes('split')
       })
     },
 
@@ -215,81 +223,42 @@ Component({
       })
 
       try {
-        const token = wx.getStorageSync('token')
-        const response = await this.request('/statistics/export/all_club/all_event/details', 'GET', {
+        const response = await this.request('/statistics/export/all_club/all_event/details/wecom_media', 'GET', {
           start_date: startDate,
-          end_date: endDate
+          end_date: endDate,
+          split_by_club: this.data.splitByClub ? 1 : 0
         })
 
-        if (response.code !== 200 || !response.data || !response.data.download_url) {
+        if (response.code !== 200 || !response.data || !response.data.media_id) {
           throw new Error(response.message || '生成文件失败')
         }
 
-        const backendFilename = (response.data.filename || '').toLowerCase()
-        const downloadUrl = response.data.download_url || ''
-        const fileExt = this.getFileExt(backendFilename || downloadUrl) || 'zip'
-
-        const downloadTask = wx.downloadFile({
-          url: response.data.download_url,
-          header: {
-            Authorization: `Bearer ${token}`
-          },
-          success: (res) => {
-            if (res.statusCode === 200) {
-              wx.openDocument({
-                filePath: res.tempFilePath,
-                fileType: fileExt,
-                showMenu: true,
-                fail: () => {
-                  wx.showToast({
-                    title: `已下载${fileExt}文件`,
-                    icon: 'none'
-                  })
-                }
-              })
-            } else {
-              wx.showToast({
-                title: `文件下载失败 (${res.statusCode})`,
-                icon: 'none'
-              })
-            }
-          },
-          fail: () => {
-            wx.showToast({
-              title: '文件下载失败',
-              icon: 'none'
-            })
-          },
-          complete: () => {
-            wx.hideLoading()
-            this.setData({ downloading: false })
-          }
+        wx.showLoading({
+          title: '正在发送到你本人企业微信...'
         })
-
-        downloadTask.onProgressUpdate((progress) => {
-          wx.showLoading({
-            title: `下载中: ${progress.progress}%`,
-            mask: true
-          })
+        await this.sendWecomFileToSelf(response.data.media_id)
+        wx.showToast({
+          title: '已发送到你本人企业微信',
+          icon: 'success'
         })
       } catch (error) {
-        wx.hideLoading()
-        this.setData({ downloading: false })
         wx.showToast({
           title: error.message || '下载失败',
           icon: 'none'
         })
+      } finally {
+        wx.hideLoading()
+        this.setData({ downloading: false })
       }
     },
 
-    getFileExt(input) {
-      if (!input) return ''
-      const cleanInput = String(input).split('?')[0]
-      const index = cleanInput.lastIndexOf('.')
-      if (index === -1 || index === cleanInput.length - 1) {
-        return ''
+    async sendWecomFileToSelf(mediaId) {
+      const resp = await this.request('/statistics/wecom/send_media_to_self', 'POST', {
+        media_id: mediaId
+      })
+      if (resp.code !== 200) {
+        throw new Error(resp.message || '发送到本人失败')
       }
-      return cleanInput.substring(index + 1).toLowerCase()
     },
 
     request(url, method = 'GET', data = {}) {

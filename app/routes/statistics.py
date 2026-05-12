@@ -17,6 +17,7 @@ from minio.error import S3Error
 from flask import current_app
 import requests
 import hashlib
+import mimetypes
 try:
     import openpyxl
     from openpyxl import Workbook
@@ -77,90 +78,250 @@ def export_all_club_users():
     
     split_by_club_raw = request.args.get('split_by_club', '1')
     split_by_club = str(split_by_club_raw).lower() in {'1', 'true', 'yes', 'on'}
-
-    try:
-        clubs = Club.query.filter_by(isDelete=False).all()
-        if split_by_club:
-            return create_all_club_users_archive(clubs, 'all_club_users')
-        return create_all_users_single_archive(clubs, 'all_club_users')
-    except Exception as e:
-        return jsonify({'code': 5000, 'message': f'导出失败: {str(e)}'}), 200
-
-@bp.route('/export/club/<int:club_id>/all_event/details', methods=['GET'])
-@jwt_required()
-def export_club_all_event_details(club_id):
-    """导出指定协会的所有活动详细信息（包含图片）"""
-    # 权限检查
-    has_permission, message = check_permission(statistics.export_club_all_event_details.permission_judge)
-    if not has_permission:
-        return jsonify({'code': 4003, 'message': message}), 200
-    
-    user_id = get_jwt_identity()
-    current_user = User.query.filter_by(userID=user_id).first()
-    
-    if not current_user:
-        return jsonify({'code': 4004, 'message': '用户不存在'}), 200
-    
-    if not EXCEL_AVAILABLE:
-        return jsonify({'code': 5000, 'message': '服务器未安装Excel支持库'}), 200
-    
-    if not PILLOW_AVAILABLE:
-        return jsonify({'code': 5000, 'message': '服务器未安装图片处理库，将导出不含图片的版本'}), 200
-    
-    try:
-        # 验证协会是否存在
-        club = Club.query.filter_by(clubID=club_id).first()
-        if not club:
-            return jsonify({'code': 4004, 'message': '协会不存在'}), 200
-        
-        # 获取该协会的所有活动
-        events = Event.query.filter_by(clubID=club_id).all()
-        
-        return create_excel_file_with_images_and_upload(events, f'club_{club_id}_all_events', include_club_info=False)
-        
-    except Exception as e:
-        return jsonify({'code': 5000, 'message': f'导出失败: {str(e)}'}), 200
-
-@bp.route('/export/all_club/all_event/details', methods=['GET'])
-@jwt_required()
-def export_all_club_all_event_details():
-    """导出所有协会活动详情（每个协会一个sheet，包含图片缩略图与外部原图链接）"""
-    # 权限检查
-    has_permission, message = check_permission(statistics.export_all_club_all_event_details.permission_judge)
-    if not has_permission:
-        return jsonify({'code': 4003, 'message': message}), 200
-    
-    user_id = get_jwt_identity()
-    current_user = User.query.filter_by(userID=user_id).first()
-    
-    if not current_user:
-        return jsonify({'code': 4004, 'message': '用户不存在'}), 200
-    
-    if not EXCEL_AVAILABLE:
-        return jsonify({'code': 5000, 'message': '服务器未安装Excel支持库'}), 200
-    
-    if not PILLOW_AVAILABLE:
-        return jsonify({'code': 5000, 'message': '服务器未安装图片处理库，将导出不含图片的版本'}), 200
-    
     start_date = request.args.get('start_date', '').strip()
     end_date = request.args.get('end_date', '').strip()
+    activity_start_date = request.args.get('activity_start_date', '').strip()
+    activity_end_date = request.args.get('activity_end_date', '').strip()
 
     try:
         start_dt, end_dt = parse_date_range(start_date, end_date)
-
-        all_events = Event.query.join(Club).all()
-        events = [event for event in all_events if is_event_in_range(event, start_dt, end_dt)]
-
-        return create_all_club_event_details_rar_package(
-            events=events,
-            filename_prefix='all_club_all_events',
-            start_date=start_dt,
-            end_date=end_dt
-        )
+        activity_start_dt, activity_end_dt = parse_date_range(activity_start_date, activity_end_date)
+        clubs = Club.query.filter_by(isDelete=False).all()
+        if split_by_club:
+            return create_all_club_users_archive(clubs, 'all_club_users', start_dt, end_dt, activity_start_dt, activity_end_dt)
+        return create_all_users_single_archive(clubs, 'all_club_users', start_dt, end_dt, activity_start_dt, activity_end_dt)
     except ValueError:
         return jsonify({'code': 4001, 'message': '日期格式错误，请使用YYYY-MM-DD格式'}), 200
     except Exception as e:
         return jsonify({'code': 5000, 'message': f'导出失败: {str(e)}'}), 200
+
+@bp.route('/export/all_club/users/wecom_media', methods=['GET'])
+@jwt_required()
+def export_all_club_users_wecom_media():
+    """导出所有协会用户，并上传为企业微信会话文件素材，返回 media_id。"""
+    has_permission, message = check_permission(statistics.export_all_club_users.permission_judge)
+    if not has_permission:
+        return jsonify({'code': 4003, 'message': message}), 200
+
+    user_id = get_jwt_identity()
+    current_user = User.query.filter_by(userID=user_id).first()
+    if not current_user:
+        return jsonify({'code': 4004, 'message': '用户不存在'}), 200
+
+    if not EXCEL_AVAILABLE:
+        return jsonify({'code': 5000, 'message': '服务器未安装Excel支持库'}), 200
+
+    split_by_club_raw = request.args.get('split_by_club', '1')
+    split_by_club = str(split_by_club_raw).lower() in {'1', 'true', 'yes', 'on'}
+    start_date = request.args.get('start_date', '').strip()
+    end_date = request.args.get('end_date', '').strip()
+    activity_start_date = request.args.get('activity_start_date', '').strip()
+    activity_end_date = request.args.get('activity_end_date', '').strip()
+
+    try:
+        start_dt, end_dt = parse_date_range(start_date, end_date)
+        activity_start_dt, activity_end_dt = parse_date_range(activity_start_date, activity_end_date)
+        clubs = Club.query.filter_by(isDelete=False).all()
+        export_response = (
+            create_all_club_users_archive(clubs, 'all_club_users', start_dt, end_dt, activity_start_dt, activity_end_dt)
+            if split_by_club else
+            create_all_users_single_archive(clubs, 'all_club_users', start_dt, end_dt, activity_start_dt, activity_end_dt)
+        )
+        export_payload = export_response.get_json(silent=True) or {}
+
+        if export_payload.get('code') != 200:
+            return jsonify({
+                'code': export_payload.get('code', 5000),
+                'message': export_payload.get('message', '导出失败')
+            }), 200
+
+        file_data = export_payload.get('data') or {}
+        object_path = file_data.get('file_path')
+        file_name = file_data.get('filename') or f"all_club_users_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+        if not object_path:
+            return jsonify({'code': 5000, 'message': '导出结果缺少文件路径'}), 200
+
+        media_id = upload_minio_object_to_wecom_media(object_path=object_path, file_name=file_name)
+        return jsonify({
+            'code': 200,
+            'message': '已生成企业微信会话文件',
+            'data': {
+                'media_id': media_id,
+                'filename': file_name,
+                'archive_format': file_data.get('archive_format'),
+                'split_by_club': split_by_club,
+                'start_date': start_dt.strftime('%Y-%m-%d') if start_dt else '',
+                'end_date': end_dt.strftime('%Y-%m-%d') if end_dt else '',
+                'activity_start_date': activity_start_dt.strftime('%Y-%m-%d') if activity_start_dt else '',
+                'activity_end_date': activity_end_dt.strftime('%Y-%m-%d') if activity_end_dt else ''
+            }
+        }), 200
+    except ValueError:
+        return jsonify({'code': 4001, 'message': '日期格式错误，请使用YYYY-MM-DD格式'}), 200
+    except Exception as e:
+        return jsonify({'code': 5000, 'message': f'生成企业微信会话文件失败: {str(e)}'}), 200
+
+@bp.route('/wecom/send_media_to_self', methods=['POST'])
+@jwt_required()
+def send_wecom_media_to_self():
+    """无会话上下文时，将 media_id 文件发给当前登录用户本人。"""
+    has_permission, message = check_permission(statistics.export_all_club_users.permission_judge)
+    if not has_permission:
+        return jsonify({'code': 4003, 'message': message}), 200
+
+    payload = request.get_json(silent=True) or {}
+    media_id = (payload.get('media_id') or '').strip()
+    if not media_id:
+        return jsonify({'code': 4001, 'message': '缺少 media_id'}), 200
+
+    user_id = get_jwt_identity()
+    user = User.query.filter_by(userID=user_id).first()
+    if not user:
+        return jsonify({'code': 4004, 'message': '用户不存在'}), 200
+    if not user.wecomUserID:
+        return jsonify({'code': 4005, 'message': '当前用户未绑定企业微信账号，无法发送'}), 200
+
+    try:
+        send_wecom_file_message_to_users([user.wecomUserID], media_id)
+        return jsonify({'code': 200, 'message': '已发送到你本人的企业微信'}), 200
+    except Exception as e:
+        return jsonify({'code': 5000, 'message': f'发送失败: {str(e)}'}), 200
+
+@bp.route('/export/club/<int:club_id>/all_event/details/wecom_media', methods=['GET'])
+@jwt_required()
+def export_club_all_event_details_wecom_media(club_id):
+    """导出单协会活动详情并上传企业微信素材，返回 media_id。"""
+    has_permission, message = check_permission(statistics.export_club_all_event_details.permission_judge)
+    if not has_permission:
+        return jsonify({'code': 4003, 'message': message}), 200
+
+    user_id = get_jwt_identity()
+    current_user = User.query.filter_by(userID=user_id).first()
+    if not current_user:
+        return jsonify({'code': 4004, 'message': '用户不存在'}), 200
+
+    if not EXCEL_AVAILABLE:
+        return jsonify({'code': 5000, 'message': '服务器未安装Excel支持库'}), 200
+    if not PILLOW_AVAILABLE:
+        return jsonify({'code': 5000, 'message': '服务器未安装图片处理库'}), 200
+
+    start_date = request.args.get('start_date', '').strip()
+    end_date = request.args.get('end_date', '').strip()
+
+    try:
+        club = Club.query.filter_by(clubID=club_id).first()
+        if not club:
+            return jsonify({'code': 4004, 'message': '协会不存在'}), 200
+
+        start_dt, end_dt = parse_date_range(start_date, end_date)
+        club_events = Event.query.filter_by(clubID=club_id).all()
+        events = [event for event in club_events if is_event_in_range(event, start_dt, end_dt)]
+
+        export_response = create_all_event_details_single_package(
+            events=events,
+            filename_prefix=f'club_{club_id}_all_events',
+            start_date=start_dt,
+            end_date=end_dt
+        )
+        export_payload = export_response.get_json(silent=True) or {}
+        if export_payload.get('code') != 200:
+            return jsonify({
+                'code': export_payload.get('code', 5000),
+                'message': export_payload.get('message', '导出失败')
+            }), 200
+
+        file_data = export_payload.get('data') or {}
+        object_path = file_data.get('file_path')
+        file_name = file_data.get('filename') or f"club_{club_id}_all_events_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+        if not object_path:
+            return jsonify({'code': 5000, 'message': '导出结果缺少文件路径'}), 200
+
+        media_id = upload_minio_object_to_wecom_media(object_path=object_path, file_name=file_name)
+        return jsonify({
+            'code': 200,
+            'message': '已生成企业微信文件素材',
+            'data': {
+                'media_id': media_id,
+                'filename': file_name,
+                'archive_format': file_data.get('archive_format'),
+                'start_date': start_dt.strftime('%Y-%m-%d') if start_dt else '',
+                'end_date': end_dt.strftime('%Y-%m-%d') if end_dt else ''
+            }
+        }), 200
+    except ValueError:
+        return jsonify({'code': 4001, 'message': '日期格式错误，请使用YYYY-MM-DD格式'}), 200
+    except Exception as e:
+        return jsonify({'code': 5000, 'message': f'生成企业微信会话文件失败: {str(e)}'}), 200
+
+@bp.route('/export/all_club/all_event/details/wecom_media', methods=['GET'])
+@jwt_required()
+def export_all_club_all_event_details_wecom_media():
+    """导出所有协会活动详情并上传企业微信素材，返回 media_id。"""
+    has_permission, message = check_permission(statistics.export_all_club_all_event_details.permission_judge)
+    if not has_permission:
+        return jsonify({'code': 4003, 'message': message}), 200
+
+    user_id = get_jwt_identity()
+    current_user = User.query.filter_by(userID=user_id).first()
+    if not current_user:
+        return jsonify({'code': 4004, 'message': '用户不存在'}), 200
+
+    if not EXCEL_AVAILABLE:
+        return jsonify({'code': 5000, 'message': '服务器未安装Excel支持库'}), 200
+    if not PILLOW_AVAILABLE:
+        return jsonify({'code': 5000, 'message': '服务器未安装图片处理库'}), 200
+
+    start_date = request.args.get('start_date', '').strip()
+    end_date = request.args.get('end_date', '').strip()
+    split_by_club_raw = request.args.get('split_by_club', '1')
+    split_by_club = str(split_by_club_raw).lower() in {'1', 'true', 'yes', 'on'}
+
+    try:
+        start_dt, end_dt = parse_date_range(start_date, end_date)
+        all_events = Event.query.join(Club).all()
+        events = [event for event in all_events if is_event_in_range(event, start_dt, end_dt)]
+
+        export_response = (
+            create_all_club_event_details_rar_package(
+                events=events,
+                filename_prefix='all_club_all_events',
+                start_date=start_dt,
+                end_date=end_dt
+            ) if split_by_club else create_all_event_details_single_package(
+                events=events,
+                filename_prefix='all_club_all_events',
+                start_date=start_dt,
+                end_date=end_dt
+            )
+        )
+        export_payload = export_response.get_json(silent=True) or {}
+        if export_payload.get('code') != 200:
+            return jsonify({
+                'code': export_payload.get('code', 5000),
+                'message': export_payload.get('message', '导出失败')
+            }), 200
+
+        file_data = export_payload.get('data') or {}
+        object_path = file_data.get('file_path')
+        file_name = file_data.get('filename') or f"all_club_all_events_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+        if not object_path:
+            return jsonify({'code': 5000, 'message': '导出结果缺少文件路径'}), 200
+
+        media_id = upload_minio_object_to_wecom_media(object_path=object_path, file_name=file_name)
+        return jsonify({
+            'code': 200,
+            'message': '已生成企业微信文件素材',
+            'data': {
+                'media_id': media_id,
+                'filename': file_name,
+                'archive_format': file_data.get('archive_format'),
+                'split_by_club': split_by_club
+            }
+        }), 200
+    except ValueError:
+        return jsonify({'code': 4001, 'message': '日期格式错误，请使用YYYY-MM-DD格式'}), 200
+    except Exception as e:
+        return jsonify({'code': 5000, 'message': f'生成企业微信会话文件失败: {str(e)}'}), 200
 
 @bp.route('/export/event/<int:event_id>/details', methods=['GET'])
 @jwt_required()
@@ -234,19 +395,30 @@ def show_all_club_users():
     if not current_user:
         return jsonify({'code': 4004, 'message': '用户不存在'}), 200
     
+    start_date = request.args.get('start_date', '').strip()
+    end_date = request.args.get('end_date', '').strip()
+    activity_start_date = request.args.get('activity_start_date', '').strip()
+    activity_end_date = request.args.get('activity_end_date', '').strip()
+
     try:
+        start_dt, end_dt = parse_date_range(start_date, end_date)
+        activity_start_dt, activity_end_dt = parse_date_range(activity_start_date, activity_end_date)
         # 获取所有协会
         clubs = Club.query.all()
-        
+        selected_user_club_ids = {}
         result_data = []
         for club in clubs:
             # 获取该协会的所有成员
             members = ClubMember.query.filter(ClubMember.clubID == club.clubID).all()
+            filtered_members = [member for member in members if is_member_in_range(member, start_dt, end_dt)]
             
             member_list = []
-            for member in members:
+            for member in filtered_members:
                 user = User.query.filter(User.userID == member.userID).first()
                 if user:
+                    if user.userID not in selected_user_club_ids:
+                        selected_user_club_ids[user.userID] = set()
+                    selected_user_club_ids[user.userID].add(club.clubID)
                     member_list.append({
                         'user_id': user.userID,
                         'user_name': user.userName,
@@ -265,6 +437,15 @@ def show_all_club_users():
                 'member_count': len(member_list),
                 'members': member_list
             })
+
+        total_dynamic_count = 0
+        for uid, club_ids in selected_user_club_ids.items():
+            total_dynamic_count += count_user_moments_in_clubs(
+                user_id=uid,
+                club_ids=list(club_ids),
+                start_date=activity_start_dt,
+                end_date=activity_end_dt
+            )
         
         return jsonify({
             'code': 200,
@@ -272,10 +453,16 @@ def show_all_club_users():
             'data': {
                 'clubs': result_data,
                 'total_clubs': len(result_data),
-                'total_members': sum(club['member_count'] for club in result_data)
+                'total_members': sum(club['member_count'] for club in result_data),
+                'total_dynamic_count': total_dynamic_count,
+                'start_date': start_dt.strftime('%Y-%m-%d') if start_dt else '',
+                'end_date': end_dt.strftime('%Y-%m-%d') if end_dt else '',
+                'activity_start_date': activity_start_dt.strftime('%Y-%m-%d') if activity_start_dt else '',
+                'activity_end_date': activity_end_dt.strftime('%Y-%m-%d') if activity_end_dt else ''
             }
         })
-        
+    except ValueError:
+        return jsonify({'code': 4001, 'message': '日期格式错误，请使用YYYY-MM-DD格式'}), 200
     except Exception as e:
         return jsonify({'code': 5000, 'message': f'获取数据失败: {str(e)}'}), 200
 
@@ -294,14 +481,18 @@ def show_club_all_event_details(club_id):
     if not current_user:
         return jsonify({'code': 4004, 'message': '用户不存在'}), 200
     
+    start_date = request.args.get('start_date', '').strip()
+    end_date = request.args.get('end_date', '').strip()
+
     try:
         # 验证协会是否存在
         club = Club.query.filter_by(clubID=club_id).first()
         if not club:
             return jsonify({'code': 4004, 'message': '协会不存在'}), 200
-        
-        # 获取该协会的所有活动
-        events = Event.query.filter_by(clubID=club_id).all()
+
+        start_dt, end_dt = parse_date_range(start_date, end_date)
+        club_events = Event.query.filter_by(clubID=club_id).all()
+        events = [event for event in club_events if is_event_in_range(event, start_dt, end_dt)]
         
         event_list = []
         for event in events:
@@ -346,10 +537,14 @@ def show_club_all_event_details(club_id):
                 'events': event_list,
                 'total_events': len(event_list),
                 'total_participants': sum(event['total_participants'] for event in event_list),
-                'total_checked_in': sum(event['checked_in_count'] for event in event_list)
+                'total_checked_in': sum(event['checked_in_count'] for event in event_list),
+                'start_date': start_dt.strftime('%Y-%m-%d') if start_dt else '',
+                'end_date': end_dt.strftime('%Y-%m-%d') if end_dt else ''
             }
         })
-        
+
+    except ValueError:
+        return jsonify({'code': 4001, 'message': '日期格式错误，请使用YYYY-MM-DD格式'}), 200
     except Exception as e:
         return jsonify({'code': 5000, 'message': f'获取数据失败: {str(e)}'}), 200
 
@@ -1112,6 +1307,15 @@ def is_event_in_range(event, start_date, end_date):
         return False
     return start_date <= ref_dt <= end_date
 
+def is_member_in_range(member, start_date, end_date):
+    """判断会员加入记录是否在时间范围内。"""
+    if not start_date or not end_date:
+        return True
+    ref_dt = member.joinDate
+    if not ref_dt:
+        return False
+    return start_date <= ref_dt <= end_date
+
 def sanitize_sheet_title(sheet_title):
     """Excel sheet 名称清洗并截断到31字符。"""
     safe_title = re.sub(r'[\\/*?:\[\]]', '_', (sheet_title or '未命名协会')).strip()
@@ -1297,6 +1501,60 @@ def create_all_club_event_details_rar_package(events, filename_prefix, start_dat
                 **minio_response,
                 **summary,
                 'archive_format': archive_info['archive_format'],
+                'split_by_club': True,
+                'start_date': start_date.strftime('%Y-%m-%d') if start_date else '',
+                'end_date': end_date.strftime('%Y-%m-%d') if end_date else ''
+            }
+        })
+    finally:
+        try:
+            shutil.rmtree(temp_root, ignore_errors=True)
+        except Exception:
+            pass
+
+def create_all_event_details_single_package(events, filename_prefix, start_date=None, end_date=None):
+    """所有活动导出到单个Excel，活动文件夹不按协会分层。"""
+    if not EXCEL_AVAILABLE:
+        raise Exception("Excel支持库未安装")
+    if not PILLOW_AVAILABLE:
+        raise Exception("图片处理库未安装")
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    package_name = f"{filename_prefix}_single_{timestamp}"
+    temp_root = tempfile.mkdtemp(prefix='all_events_single_')
+    package_root = os.path.join(temp_root, package_name)
+    os.makedirs(package_root, exist_ok=True)
+
+    summary = {
+        'club_count': len(set([(event.club.clubID if event.club else -1) for event in events])),
+        'event_count': len(events),
+        'dynamic_image_count': 0
+    }
+
+    try:
+        excel_path = os.path.join(package_root, '所有活动.xlsx')
+        summary['dynamic_image_count'] = create_all_events_single_excel(
+            excel_path=excel_path,
+            events=events,
+            asset_root=package_root,
+            temp_root=temp_root
+        )
+
+        archive_info = create_export_archive(source_dir=package_root, output_dir=temp_root, package_name=package_name)
+        minio_response = upload_local_file_to_minio(
+            local_file_path=archive_info['archive_path'],
+            object_path=f"statistics/{archive_info['archive_filename']}",
+            content_type=archive_info['content_type']
+        )
+
+        return jsonify({
+            'code': 200,
+            'message': archive_info['message'],
+            'data': {
+                **minio_response,
+                **summary,
+                'archive_format': archive_info['archive_format'],
+                'split_by_club': False,
                 'start_date': start_date.strftime('%Y-%m-%d') if start_date else '',
                 'end_date': end_date.strftime('%Y-%m-%d') if end_date else ''
             }
@@ -1451,6 +1709,155 @@ def create_single_club_event_excel(excel_path, club_name, events, club_asset_fol
 
     return dynamic_image_count
 
+def create_all_events_single_excel(excel_path, events, asset_root, temp_root):
+    """生成所有活动单表Excel，原图文件夹按活动区分。"""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "全部活动"
+
+    headers = ['协会', '活动封面略缩图', '动态图片略缩图', '人员名单', '时间', '地点']
+    header_font = Font(bold=True, size=12)
+    header_fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    text_alignment = Alignment(horizontal="left", vertical="top", wrap_text=True)
+    center_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    ws.append(headers)
+    for col_idx in range(1, len(headers) + 1):
+        cell = ws.cell(row=1, column=col_idx)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+
+    ws.column_dimensions['A'].width = 24
+    ws.column_dimensions['B'].width = 26
+    ws.column_dimensions['C'].width = 58
+    ws.column_dimensions['D'].width = 42
+    ws.column_dimensions['E'].width = 30
+    ws.column_dimensions['F'].width = 30
+    ws.freeze_panes = 'A2'
+
+    dynamic_image_count = 0
+    temp_thumb_files = []
+    sorted_events = sorted(
+        events,
+        key=lambda item: get_event_reference_datetime(item) or datetime.min,
+        reverse=True
+    )
+
+    try:
+        for row_idx, event in enumerate(sorted_events, 2):
+            ws.row_dimensions[row_idx].height = 160
+
+            club_name = event.club.clubName if event.club else '未知协会'
+            ws.cell(row=row_idx, column=1, value=club_name).alignment = text_alignment
+
+            safe_title = sanitize_filename(event.title) or f"event_{event.eventID}"
+            event_folder_name = f"{event.eventID}_{safe_title}活动"
+            event_asset_folder = os.path.join(asset_root, event_folder_name)
+            dynamic_asset_folder = os.path.join(event_asset_folder, "动态原图")
+            os.makedirs(dynamic_asset_folder, exist_ok=True)
+
+            join_list = EventJoin.query.filter_by(eventID=event.eventID).all()
+            names = []
+            for join in join_list:
+                if hasattr(join, 'isDelete') and join.isDelete:
+                    continue
+                if join.user and join.user.userName:
+                    names.append(f"【{join.user.userName}】")
+
+            member_text = ''.join(names) if names else '无'
+            start_text = event.pre_startTime.strftime('%Y-%m-%d %H:%M') if event.pre_startTime else ''
+            end_text = event.pre_endTime.strftime('%Y-%m-%d %H:%M') if event.pre_endTime else ''
+            time_text = f"{start_text} - {end_text}".strip(' -') or '无'
+            location_text = event.location_name or event.location_address or event.location or '无'
+
+            ws.cell(row=row_idx, column=4, value=member_text).alignment = text_alignment
+            ws.cell(row=row_idx, column=5, value=time_text).alignment = center_alignment
+            ws.cell(row=row_idx, column=6, value=location_text).alignment = text_alignment
+
+            cover_cell = ws.cell(row=row_idx, column=2, value='无封面')
+            cover_cell.alignment = center_alignment
+            if event.cover and event.cover.fileUrl:
+                cover_bytes = download_image_from_minio(event.cover.fileUrl)
+                if cover_bytes:
+                    original_cover_path = extract_file_path_from_download_url(event.cover.fileUrl)
+                    cover_ext = os.path.splitext(original_cover_path)[1] if original_cover_path else '.jpg'
+                    cover_file_name = f"cover{cover_ext or '.jpg'}"
+                    cover_file_abs = os.path.join(event_asset_folder, cover_file_name)
+                    with open(cover_file_abs, 'wb') as f:
+                        f.write(cover_bytes)
+
+                    cover_thumb = generate_thumbnail_bytes(cover_bytes, minlength=50)
+                    if cover_thumb:
+                        fd, thumb_path = tempfile.mkstemp(prefix='cover_single_thumb_', suffix='.jpg', dir=temp_root)
+                        os.close(fd)
+                        with open(thumb_path, 'wb') as f:
+                            f.write(cover_thumb)
+                        temp_thumb_files.append(thumb_path)
+
+                        excel_cover = ExcelImage(thumb_path)
+                        excel_cover.anchor = f'B{row_idx}'
+                        ws.add_image(excel_cover)
+
+                    relative_cover_link = os.path.relpath(cover_file_abs, os.path.dirname(excel_path)).replace("\\", "/")
+                    cover_cell.value = '封面原图'
+                    cover_cell.hyperlink = relative_cover_link
+                    cover_cell.style = "Hyperlink"
+
+            dynamic_cell = ws.cell(row=row_idx, column=3, value='无动态图片')
+            dynamic_cell.alignment = center_alignment
+            moment_files = collect_event_moment_files(event)
+            if moment_files:
+                saved_dynamic_paths = []
+                for idx, file_obj in enumerate(moment_files, 1):
+                    if not file_obj.fileUrl:
+                        continue
+                    image_bytes = download_image_from_minio(file_obj.fileUrl)
+                    if not image_bytes:
+                        continue
+                    dynamic_image_count += 1
+                    origin_path = extract_file_path_from_download_url(file_obj.fileUrl)
+                    ext = os.path.splitext(origin_path)[1] if origin_path else '.jpg'
+                    dynamic_name = f"moment_{idx}{ext or '.jpg'}"
+                    dynamic_abs = os.path.join(dynamic_asset_folder, dynamic_name)
+                    with open(dynamic_abs, 'wb') as f:
+                        f.write(image_bytes)
+                    saved_dynamic_paths.append(dynamic_abs)
+
+                collage_bytes = build_moment_collage_thumbnail(moment_files, minlength=50, max_images=12)
+                if collage_bytes:
+                    fd, collage_path = tempfile.mkstemp(prefix='moment_single_thumb_', suffix='.jpg', dir=temp_root)
+                    os.close(fd)
+                    with open(collage_path, 'wb') as f:
+                        f.write(collage_bytes)
+                    temp_thumb_files.append(collage_path)
+
+                    excel_collage = ExcelImage(collage_path)
+                    excel_collage.anchor = f'C{row_idx}'
+                    ws.add_image(excel_collage)
+
+                if saved_dynamic_paths:
+                    relative_dynamic_link = os.path.relpath(saved_dynamic_paths[0], os.path.dirname(excel_path)).replace("\\", "/")
+                    dynamic_cell.value = '动态原图'
+                    dynamic_cell.hyperlink = relative_dynamic_link
+                    dynamic_cell.style = "Hyperlink"
+
+        wb.save(excel_path)
+    finally:
+        try:
+            wb.close()
+        except Exception:
+            pass
+        for tmp_file in temp_thumb_files:
+            if tmp_file and os.path.exists(tmp_file):
+                try:
+                    os.unlink(tmp_file)
+                except Exception:
+                    pass
+
+    return dynamic_image_count
+
 def create_rar_archive(source_dir, rar_path):
     """使用系统 rar/winrar 打包目录。"""
     rar_commands = []
@@ -1536,7 +1943,91 @@ def upload_local_file_to_minio(local_file_path, object_path, content_type):
         'create_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
 
-def create_all_club_users_archive(clubs, filename_prefix):
+def get_wecom_access_token():
+    """获取企业微信 access_token。"""
+    access_token = current_app.config.get('WECOM_TOKEN')
+    if access_token:
+        return access_token
+
+    corpid = current_app.config.get('WECOM_CORP_ID')
+    corpsecret = current_app.config.get('WECOM_SECRET')
+    if not corpid or not corpsecret:
+        raise Exception('企业微信配置不完整，请配置 WECOM_CORP_ID/WECOM_SECRET')
+
+    token_url = f'https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid={corpid}&corpsecret={corpsecret}'
+    token_response = requests.get(token_url, timeout=15)
+    token_data = token_response.json()
+    if token_data.get('errcode') != 0:
+        raise Exception(f'获取企业微信 access_token 失败: {token_data.get("errmsg", "未知错误")}')
+
+    access_token = token_data.get('access_token')
+    if not access_token:
+        raise Exception('企业微信 access_token 为空')
+
+    current_app.config['WECOM_TOKEN'] = access_token
+    return access_token
+
+def upload_minio_object_to_wecom_media(object_path, file_name):
+    """将 MinIO 对象上传到企业微信临时素材，返回 media_id。"""
+    access_token = get_wecom_access_token()
+    minio_client = get_minio_client()
+    bucket_name = current_app.config.get('MINIO_BUCKET', 'manage-mate')
+
+    obj = None
+    try:
+        obj = minio_client.get_object(bucket_name, object_path)
+        file_bytes = obj.read()
+    except Exception as e:
+        raise Exception(f'读取导出文件失败: {str(e)}')
+    finally:
+        if obj is not None:
+            try:
+                obj.close()
+                obj.release_conn()
+            except Exception:
+                pass
+
+    mime_type = mimetypes.guess_type(file_name)[0] or 'application/octet-stream'
+    upload_url = f'https://qyapi.weixin.qq.com/cgi-bin/media/upload?access_token={access_token}&type=file'
+    upload_resp = requests.post(
+        upload_url,
+        files={'media': (file_name, file_bytes, mime_type)},
+        timeout=60
+    )
+    upload_data = upload_resp.json()
+    if upload_data.get('errcode') != 0 or not upload_data.get('media_id'):
+        raise Exception(f'上传企业微信素材失败: {upload_data.get("errmsg", "未知错误")}')
+
+    return upload_data['media_id']
+
+def send_wecom_file_message_to_users(wecom_user_ids, media_id):
+    """调用企业微信 message/send，将文件素材发给指定用户列表。"""
+    if not wecom_user_ids:
+        raise Exception('接收用户为空')
+    if not media_id:
+        raise Exception('media_id 为空')
+
+    access_token = get_wecom_access_token()
+    agentid = current_app.config.get('WECOM_AGENT_ID')
+    if not agentid:
+        raise Exception('企业微信配置缺少 WECOM_AGENT_ID')
+
+    send_url = f'https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={access_token}'
+    payload = {
+        'touser': '|'.join(wecom_user_ids),
+        'msgtype': 'file',
+        'agentid': int(agentid),
+        'file': {
+            'media_id': media_id
+        },
+        'safe': 0
+    }
+    resp = requests.post(send_url, json=payload, timeout=30)
+    data = resp.json()
+    if data.get('errcode') != 0:
+        raise Exception(data.get('errmsg', '企业微信 message/send 调用失败'))
+
+def create_all_club_users_archive(clubs, filename_prefix, start_date=None, end_date=None, activity_start_date=None, activity_end_date=None):
     """导出所有协会用户：每协会Excel+协会文件夹，整体打包下载。"""
     if not EXCEL_AVAILABLE:
         raise Exception("Excel支持库未安装")
@@ -1572,7 +2063,11 @@ def create_all_club_users_archive(clubs, filename_prefix):
                     club=club,
                     excel_path=excel_path,
                     club_asset_folder=club_asset_folder,
-                    temp_root=temp_root
+                    temp_root=temp_root,
+                    start_date=start_date,
+                    end_date=end_date,
+                    activity_start_date=activity_start_date,
+                    activity_end_date=activity_end_date
                 )
                 summary['club_count'] += 1
                 summary['member_count'] += export_result['member_count']
@@ -1592,7 +2087,11 @@ def create_all_club_users_archive(clubs, filename_prefix):
                 **minio_response,
                 **summary,
                 'archive_format': archive_info['archive_format'],
-                'split_by_club': True
+                'split_by_club': True,
+                'start_date': start_date.strftime('%Y-%m-%d') if start_date else '',
+                'end_date': end_date.strftime('%Y-%m-%d') if end_date else '',
+                'activity_start_date': activity_start_date.strftime('%Y-%m-%d') if activity_start_date else '',
+                'activity_end_date': activity_end_date.strftime('%Y-%m-%d') if activity_end_date else ''
             }
         })
     finally:
@@ -1601,7 +2100,7 @@ def create_all_club_users_archive(clubs, filename_prefix):
         except Exception:
             pass
 
-def create_all_users_single_archive(clubs, filename_prefix):
+def create_all_users_single_archive(clubs, filename_prefix, start_date=None, end_date=None, activity_start_date=None, activity_end_date=None):
     """导出所有协会用户到单一Excel与单一文件夹。"""
     if not EXCEL_AVAILABLE:
         raise Exception("Excel支持库未安装")
@@ -1625,6 +2124,8 @@ def create_all_users_single_archive(clubs, filename_prefix):
         for club in clubs:
             members = ClubMember.query.filter_by(clubID=club.clubID, isDelete=False).all()
             for member in members:
+                if not is_member_in_range(member, start_date, end_date):
+                    continue
                 if not member.user:
                     continue
                 uid = member.user.userID
@@ -1646,7 +2147,9 @@ def create_all_users_single_archive(clubs, filename_prefix):
             excel_path=excel_path,
             asset_folder=asset_folder,
             user_rows=list(user_map.values()),
-            temp_root=temp_root
+            temp_root=temp_root,
+            activity_start_date=activity_start_date,
+            activity_end_date=activity_end_date
         )
         summary['member_count'] = export_result['member_count']
         summary['moment_image_count'] = export_result['moment_image_count']
@@ -1665,7 +2168,11 @@ def create_all_users_single_archive(clubs, filename_prefix):
                 **minio_response,
                 **summary,
                 'archive_format': archive_info['archive_format'],
-                'split_by_club': False
+                'split_by_club': False,
+                'start_date': start_date.strftime('%Y-%m-%d') if start_date else '',
+                'end_date': end_date.strftime('%Y-%m-%d') if end_date else '',
+                'activity_start_date': activity_start_date.strftime('%Y-%m-%d') if activity_start_date else '',
+                'activity_end_date': activity_end_date.strftime('%Y-%m-%d') if activity_end_date else ''
             }
         })
     finally:
@@ -1674,7 +2181,7 @@ def create_all_users_single_archive(clubs, filename_prefix):
         except Exception:
             pass
 
-def create_all_users_single_excel(excel_path, asset_folder, user_rows, temp_root):
+def create_all_users_single_excel(excel_path, asset_folder, user_rows, temp_root, activity_start_date=None, activity_end_date=None):
     """生成单表用户导出（新增协会列）。"""
     wb = Workbook()
     ws = wb.active
@@ -1730,7 +2237,12 @@ def create_all_users_single_excel(excel_path, asset_folder, user_rows, temp_root
             clubs_text = ''.join([f"【{name}】" for name in sorted(set(club_names))]) if club_names else '无'
             ws.cell(row=row_idx, column=4, value=clubs_text).alignment = text_alignment
 
-            event_names = get_user_joined_event_names_with_club(user.userID, club_ids)
+            event_names = get_user_joined_event_names_with_club(
+                user.userID,
+                club_ids,
+                start_date=activity_start_date,
+                end_date=activity_end_date
+            )
             events_text = ''.join([f"【{name}】" for name in event_names]) if event_names else '无'
             ws.cell(row=row_idx, column=5, value=events_text).alignment = text_alignment
 
@@ -1763,7 +2275,12 @@ def create_all_users_single_excel(excel_path, asset_folder, user_rows, temp_root
 
             moments_cell = ws.cell(row=row_idx, column=6, value='无动态')
             moments_cell.alignment = center_alignment
-            moment_files = collect_user_moment_files_in_clubs(user.userID, club_ids)
+            moment_files = collect_user_moment_files_in_clubs(
+                user.userID,
+                club_ids,
+                start_date=activity_start_date,
+                end_date=activity_end_date
+            )
             if moment_files:
                 saved_paths = []
                 for idx, file_obj in enumerate(moment_files, 1):
@@ -1815,7 +2332,7 @@ def create_all_users_single_excel(excel_path, asset_folder, user_rows, temp_root
         'moment_image_count': moment_image_count
     }
 
-def create_single_club_user_excel(club, excel_path, club_asset_folder, temp_root):
+def create_single_club_user_excel(club, excel_path, club_asset_folder, temp_root, start_date=None, end_date=None, activity_start_date=None, activity_end_date=None):
     """生成单个协会用户导出Excel与原图目录。"""
     wb = Workbook()
     ws = wb.active
@@ -1843,6 +2360,7 @@ def create_single_club_user_excel(club, excel_path, club_asset_folder, temp_root
     ws.freeze_panes = 'A2'
 
     members = ClubMember.query.filter_by(clubID=club.clubID, isDelete=False).all()
+    members = [member for member in members if is_member_in_range(member, start_date, end_date)]
     temp_thumb_files = []
     moment_image_count = 0
 
@@ -1866,7 +2384,12 @@ def create_single_club_user_excel(club, excel_path, club_asset_folder, temp_root
                 value=member.joinDate.strftime('%Y-%m-%d %H:%M:%S') if member.joinDate else ''
             ).alignment = center_alignment
 
-            event_names = get_user_joined_event_names_in_club(user.userID, club.clubID)
+            event_names = get_user_joined_event_names_in_club(
+                user.userID,
+                club.clubID,
+                start_date=activity_start_date,
+                end_date=activity_end_date
+            )
             ws.cell(row=row_idx, column=4, value=''.join([f"【{name}】" for name in event_names]) if event_names else '无').alignment = text_alignment
 
             avatar_cell = ws.cell(row=row_idx, column=2, value='无头像')
@@ -1898,7 +2421,12 @@ def create_single_club_user_excel(club, excel_path, club_asset_folder, temp_root
 
             moments_cell = ws.cell(row=row_idx, column=5, value='无动态')
             moments_cell.alignment = center_alignment
-            moment_files = collect_user_moment_files_in_club(user.userID, club.clubID)
+            moment_files = collect_user_moment_files_in_club(
+                user.userID,
+                club.clubID,
+                start_date=activity_start_date,
+                end_date=activity_end_date
+            )
             if moment_files:
                 saved_paths = []
                 for idx, file_obj in enumerate(moment_files, 1):
@@ -1950,7 +2478,7 @@ def create_single_club_user_excel(club, excel_path, club_asset_folder, temp_root
         'moment_image_count': moment_image_count
     }
 
-def get_user_joined_event_names_in_club(user_id, club_id):
+def get_user_joined_event_names_in_club(user_id, club_id, start_date=None, end_date=None):
     """获取用户在指定协会参加过的活动名称列表。"""
     joins = EventJoin.query.join(Event, Event.eventID == EventJoin.eventID).filter(
         EventJoin.userID == user_id,
@@ -1962,11 +2490,13 @@ def get_user_joined_event_names_in_club(user_id, club_id):
         if hasattr(join, 'isDelete') and join.isDelete:
             continue
         if join.event and join.event.title:
+            if start_date and end_date and not is_event_in_range(join.event, start_date, end_date):
+                continue
             if join.event.title not in names:
                 names.append(join.event.title)
     return names
 
-def get_user_joined_event_names_with_club(user_id, club_ids):
+def get_user_joined_event_names_with_club(user_id, club_ids, start_date=None, end_date=None):
     """获取用户在多个协会中的活动名，格式：协会-活动。"""
     if not club_ids:
         return []
@@ -1983,12 +2513,14 @@ def get_user_joined_event_names_with_club(user_id, club_ids):
         if hasattr(join, 'isDelete') and join.isDelete:
             continue
         if join.event and join.event.title and join.event.club and join.event.club.clubName:
+            if start_date and end_date and not is_event_in_range(join.event, start_date, end_date):
+                continue
             full_name = f"{join.event.club.clubName}-{join.event.title}"
             if full_name not in names:
                 names.append(full_name)
     return names
 
-def collect_user_moment_files_in_club(user_id, club_id):
+def collect_user_moment_files_in_club(user_id, club_id, start_date=None, end_date=None):
     """获取用户在指定协会发布过的动态图片文件。"""
     from app.models.file import File
 
@@ -2001,6 +2533,8 @@ def collect_user_moment_files_in_club(user_id, club_id):
         Moment.creatorID == user_id,
         db.or_(*moment_conditions)
     ).order_by(Moment.createDate.asc()).all()
+    if start_date and end_date:
+        moments = [moment for moment in moments if moment.createDate and start_date <= moment.createDate <= end_date]
 
     image_ids = []
     for moment in moments:
@@ -2016,7 +2550,7 @@ def collect_user_moment_files_in_club(user_id, club_id):
     file_map = {f.fileID: f for f in files}
     return [file_map[file_id] for file_id in image_ids if file_id in file_map]
 
-def collect_user_moment_files_in_clubs(user_id, club_ids):
+def collect_user_moment_files_in_clubs(user_id, club_ids, start_date=None, end_date=None):
     """获取用户在多个协会发布过的动态图片文件。"""
     from app.models.file import File
 
@@ -2032,6 +2566,8 @@ def collect_user_moment_files_in_clubs(user_id, club_ids):
         Moment.creatorID == user_id,
         db.or_(*moment_conditions)
     ).order_by(Moment.createDate.asc()).all()
+    if start_date and end_date:
+        moments = [moment for moment in moments if moment.createDate and start_date <= moment.createDate <= end_date]
 
     image_ids = []
     for moment in moments:
@@ -2046,6 +2582,26 @@ def collect_user_moment_files_in_clubs(user_id, club_ids):
     files = File.query.filter(File.fileID.in_(image_ids)).all()
     file_map = {f.fileID: f for f in files}
     return [file_map[file_id] for file_id in image_ids if file_id in file_map]
+
+def count_user_moments_in_clubs(user_id, club_ids, start_date=None, end_date=None):
+    """统计用户在多个协会中的动态数量（按动态时间可选过滤）。"""
+    if not club_ids:
+        return 0
+
+    club_event_ids = [event.eventID for event in Event.query.filter(Event.clubID.in_(club_ids)).all()]
+    moment_conditions = [Moment.ref_club_ID.in_(club_ids)]
+    if club_event_ids:
+        moment_conditions.append(Moment.ref_event_ID.in_(club_event_ids))
+
+    moments = Moment.query.filter(
+        Moment.creatorID == user_id,
+        db.or_(*moment_conditions)
+    ).all()
+
+    if start_date and end_date:
+        moments = [moment for moment in moments if moment.createDate and start_date <= moment.createDate <= end_date]
+
+    return len(moments)
 
 def create_excel_file_with_images_and_upload(events, filename_prefix, include_club_info=True):
     """创建包含图片的Excel文件并上传到MinIO，返回下载URL"""

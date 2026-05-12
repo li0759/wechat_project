@@ -29,8 +29,17 @@
         class="download-btn"
         bindtap="downloadCharts"
       >
-        下载图表
+        发送文件
       </t-button>
+
+      <view class="export-options">
+        <checkbox-group bindchange="onSplitByClubChange">
+          <label class="checkbox-label">
+            <checkbox value="split" checked="{{splitByClub}}" color="#df76b0" />
+            <text>按协会区分</text>
+          </label>
+        </checkbox-group>
+      </view>
     </view>
     
     <view wx:if="{{loading}}" class="loading-container">

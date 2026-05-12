@@ -3,28 +3,67 @@
   <scroll-view class="panel-scroll" scroll-y="{{true}}" show-scrollbar="{{false}}">
     <view class="page-header">
       <view class="title">会员数据</view>
-      <view class="header-actions">
-        <t-button theme="primary" size="small" loading="{{downloading}}" class="download-btn" bindtap="downloadExcel">
-          下载Excel
-        </t-button>
-      </view>
     </view>
 
-    <view class="export-options">
-      <checkbox-group bindchange="onSplitByClubChange">
-        <label class="checkbox-label">
-          <checkbox value="split" checked="{{splitByClub}}" color="#df76b0" />
-          <text>按协会区分</text>
-        </label>
-      </checkbox-group>
+    <view class="date-filter-card">
+      <view class="date-filter-title">按加入时间筛选用户</view>
+      <view class="date-filter-row">
+        <view class="date-picker-item">
+          <view class="date-label">开始日期</view>
+          <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
+            <view class="date-picker-value">{{startDate || '请选择开始日期'}}</view>
+          </picker>
+        </view>
+        <view class="date-picker-item">
+          <view class="date-label">结束日期</view>
+          <picker mode="date" value="{{endDate}}" bindchange="onEndDateChange">
+            <view class="date-picker-value">{{endDate || '请选择结束日期'}}</view>
+          </picker>
+        </view>
+      </view>
+      <view class="date-filter-title activity-title">按开展时间筛选活动</view>
+      <view class="date-filter-row">
+        <view class="date-picker-item">
+          <view class="date-label">活动开始日期</view>
+          <picker mode="date" value="{{activityStartDate}}" bindchange="onActivityStartDateChange">
+            <view class="date-picker-value">{{activityStartDate || '不限制'}}</view>
+          </picker>
+        </view>
+        <view class="date-picker-item">
+          <view class="date-label">活动结束日期</view>
+          <picker mode="date" value="{{activityEndDate}}" bindchange="onActivityEndDateChange">
+            <view class="date-picker-value">{{activityEndDate || '不限制'}}</view>
+          </picker>
+        </view>
+      </view>
+
+      <view class="export-options">
+        <checkbox-group bindchange="onSplitByClubChange">
+          <label class="checkbox-label">
+            <checkbox value="split" checked="{{splitByClub}}" color="#df76b0" />
+            <text>按协会区分</text>
+          </label>
+        </checkbox-group>
+      </view>
+
+      <t-button
+        wx:if="{{startDate && endDate && activityStartDate && activityEndDate}}"
+        theme="primary"
+        size="small"
+        loading="{{downloading}}"
+        class="download-btn"
+        bindtap="downloadExcel"
+      >
+        发送文件
+      </t-button>
     </view>
-    
-    <view wx:if="{{loading}}" class="loading-container">
+
+    <view wx:if="{{startDate && endDate && activityStartDate && activityEndDate && loading}}" class="loading-container">
       <t-loading size="24px" theme="circular" />
       <view class="loading-text">正在加载数据...</view>
     </view>
-    
-    <view wx:else class="content">
+
+    <view wx:elif="{{startDate && endDate && activityStartDate && activityEndDate}}" class="content">
       <!-- 总体统计卡片 -->
       <view class="stats-overview">
         <view class="stats-card">
@@ -38,6 +77,10 @@
         <view class="stats-card">
           <view class="stats-number">{{Math.round(totalMembers/totalClubs * 100)/100 || 0}}</view>
           <view class="stats-label">平均人数</view>
+        </view>
+        <view class="stats-card">
+          <view class="stats-number">{{totalDynamics}}</view>
+          <view class="stats-label">动态数量</view>
         </view>
       </view>
       
@@ -74,6 +117,10 @@
           />
         </view>
       </view>
+    </view>
+
+    <view wx:else class="empty-tip">
+      请先选择4个时间后查看图表并发送文件
     </view>
 
     <view class="bottom-safe-area"></view>
