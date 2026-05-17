@@ -1,9 +1,17 @@
 {
   "component": true,
   "usingComponents": {
-    "t-button": "tdesign-miniprogram/button/button",
-    "t-loading": "tdesign-miniprogram/loading/loading",
-    "bar-chart": "/components/charts/bar-chart/bar-chart",
-    "pie-chart": "/components/charts/pie-chart/pie-chart"
+    "t-search": "tdesign-miniprogram/search/search",
+    "t-toast": "tdesign-miniprogram/toast/toast",
+    "t-empty": "tdesign-miniprogram/empty/empty",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "club-event-indexes": "/components/club-event-indexes/index",
+    "club-events-skeleton": "/components/panel-skeleton/club-events-skeleton/index",
+    "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",
+    "event-create-panel": "/packageEvent/components/event-create-panel/index",
+    "event-create-skeleton": "/components/panel-skeleton/event-create-skeleton/index"
+  },
+  "componentPlaceholder": {
+    "event-create-panel": "event-create-skeleton"
   }
-} 
+}

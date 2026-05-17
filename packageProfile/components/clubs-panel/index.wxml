@@ -1,5 +1,9 @@
 <!-- 通用协会列表Panel -->
 <view class="club-panel-container">
+  <view wx:if="{{contentSuspended}}" class="panel-list-suspend-skeleton">
+    <view class="clubs-suspend-placeholder" />
+  </view>
+  <block wx:else>
   <scroll-view 
     class="clubs-scroll" 
     scroll-y="{{true}}"
@@ -89,16 +93,18 @@
     <!-- 底部安全距离 -->
     <view class="bottom-safe-area"></view>
   </scroll-view>
+  </block>
 
-  <!-- 嵌套的club-manage弹窗 -->
+  <!-- 嵌套的club-manage弹窗（delegateNestedToHost 时由宿主页 globalPopup 栈打开） -->
   <expandable-container_fullscreen 
-    wx:if="{{nestedClubManage.visible}}"
+    wx:if="{{!delegateNestedToHost && nestedClubManage.visible}}"
     id="nestedClubManagePopup" 
     expanded-width="750" 
     expanded-height="1800" 
     bg-color="rgba(223, 118, 176, 0.8)"
     fullscreen-sheet-bg-color="#f7f8fa"
     fullscreen-top-padding="{{0}}"
+    show-fullscreen-back="{{nestedManageFullscreenBackShow}}"
     bind:collapse="onNestedClubManageCollapse"
     bind:collapsed="onNestedClubManageCollapsed"
     bind:contentReady="onNestedClubManageContentReady"
@@ -118,6 +124,7 @@
           bind:loaded="onNestedClubManageLoaded"
           bind:update="onNestedClubManageUpdate"
           bind:close="closeNestedClubManage"
+          bind:host-fullscreen-back="onClubManageHostFullscreenBack"
         />
       </block>
     </view>
@@ -125,7 +132,7 @@
 
   <!-- 嵌套的club-detail弹窗 -->
   <expandable-container_fullscreen 
-    wx:if="{{nestedClubDetail.visible}}"
+    wx:if="{{!delegateNestedToHost && nestedClubDetail.visible}}"
     id="nestedClubDetailPopup" 
     expanded-width="750" 
     expanded-height="1800" 
@@ -158,7 +165,7 @@
 
   <!-- 嵌套的club-joined弹窗 -->
   <expandable-container_fullscreen 
-    wx:if="{{nestedClubJoined.visible}}"
+    wx:if="{{!delegateNestedToHost && nestedClubJoined.visible}}"
     id="nestedClubJoinedPopup" 
     expanded-width="750" 
     expanded-height="1800" 

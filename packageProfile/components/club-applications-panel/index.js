@@ -9,24 +9,41 @@ Component({
   properties: {
     clubId: {
       type: String,
-      value: ''
-    }
+      value: '',
+    },
+    /** 每页条数，默认 10，最大 50（与后端 get_event_timeline 上限一致） */
+    listPageSize: {
+      type: Number,
+      value: 10,
+    },
   },
 
   data: {
     allApplications: [],
+    applicationsCurrentPage: 0,
+    applicationsTotalPages: 1,
+    applicationsTotalRecords: 0,
+    applicationsListLoading: false,
+    applicationsListLoadingMore: false,
+    applicationsListEnd: false,
     currentProcessingId: null,
     showApproveDialog: false,
     showRejectDialog: false,
     approveOpinion: '',
     rejectOpinion: '',
-    isLoading: false
+    isLoading: false,
+    defaultAvatarUrl: '/assets/images/default-avatar.png',
   },
 
   lifetimes: {
     attached() {
-      // 组件初始化，但不加载数据
-  }
+      try {
+        const base = app.globalData && app.globalData.static_url
+        if (base) {
+          this.setData({ defaultAvatarUrl: `${base}/assets/default_avatar.webp` })
+        }
+      } catch (e) {}
+    },
   },
 
   methods: {
@@ -45,29 +62,54 @@ Component({
      */
     async loadData() {
       if (this.properties.clubId) {
-        await this.fetchApplications();
+        await this.fetchApplications(true);
       }
       this.triggerEvent('loaded');
     },
 
-    /** 仅阻止冒泡到折叠行，勿依赖空 catch 吞掉子按钮 bind:tap */
-    stopBubble() {},
-
-    // 切换展开/折叠状态
-  toggleExpand(e) {
-      const index = e.currentTarget.dataset.index;
-      const applications = this.data.allApplications;
-      
-      applications[index].expanded = !applications[index].expanded;
-      
-      this.setData({
-        allApplications: applications
-      });
+    onApplicationsScrollToLower() {
+      if (this.data.applicationsListLoading || this.data.applicationsListLoadingMore) return
+      if (this.data.applicationsListEnd) return
+      if (this.data.applicationsCurrentPage >= this.data.applicationsTotalPages) return
+      this.fetchApplications(false);
     },
 
+    /** 仅阻止冒泡到行内其它区域 */
+    stopBubble() {},
+
+    decorateApplicationAxis(rawDate) {
+      const d = rawDate ? new Date(rawDate) : null
+      if (!d || Number.isNaN(d.getTime())) return { axis_date: '', axis_time: '' }
+      const pad2 = (n) => String(n).padStart(2, '0')
+      return {
+        axis_date: `${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`,
+        axis_time: `${pad2(d.getHours())}:${pad2(d.getMinutes())}`,
+      }
+    },
+
+    formatApplicationItem(item) {
+      const rawAppDate = item.applicatedDate
+      const axis = this.decorateApplicationAxis(rawAppDate)
+      const applicatedDate = rawAppDate ? this.formatDate(rawAppDate) : ''
+      const processedDate = item.processedDate ? this.formatDate(item.processedDate) : ''
+      const processed = Boolean(processedDate)
+      const mainClass = processed
+        ? item.approved
+          ? 'tl-modal-main--milestone-start'
+          : 'tl-modal-main--milestone-end'
+        : ''
+      return {
+        ...item,
+        applicatedDate,
+        processedDate,
+        axis_date: axis.axis_date,
+        axis_time: axis.axis_time,
+        mainClass,
+      }
+    },
 
     // 统一请求方法
-  request(options) {
+    request(options) {
       return new Promise((resolve, reject) => {
         wx.request({
           url: app.globalData.request_url + options.url,
@@ -87,57 +129,91 @@ Component({
       });
     },
 
-    // 获取申请列表数据
-    async fetchApplications() {
-      this.setData({ isLoading: true });
-      const clubId = this.properties.clubId;
-      
+    /**
+     * @param {boolean} reset true 从第一页重拉；false 下一页追加
+     */
+    async fetchApplications(reset = false) {
+      const clubId = this.properties.clubId
+      if (!clubId) return
+
+      if (this._applicationsPagingLock) return
+      const pageSize = Math.min(50, Math.max(1, Math.floor(Number(this.properties.listPageSize) || 10)))
+      const nextPage = reset ? 1 : this.data.applicationsCurrentPage + 1
+      if (!reset) {
+        if (this.data.applicationsCurrentPage >= this.data.applicationsTotalPages) return
+        if (this.data.applicationsListEnd) return
+      }
+
+      this._applicationsPagingLock = true
+      if (reset) {
+        this.setData({
+          isLoading: true,
+          applicationsListLoading: true,
+          applicationsCurrentPage: 0,
+          applicationsTotalPages: 1,
+          applicationsTotalRecords: 0,
+          allApplications: [],
+          applicationsListEnd: false,
+        })
+      } else {
+        this.setData({ applicationsListLoadingMore: true })
+      }
+
       try {
-        // 获取所有申请
-    const allRes = await this.request({
-          url: `/club/application/${clubId}/list`,
-          method: 'GET'
-        });
-        
+        const allRes = await this.request({
+          url: `/club/application/${clubId}/list?page=${nextPage}&page_size=${pageSize}`,
+          method: 'GET',
+        })
+
         if (allRes.Flag == '4000') {
-          // 格式化日期并添加展开状态
-    let formattedData = allRes.data.map(item => {
-            return {
-              ...item,
-              applicatedDate: item.applicatedDate ? this.formatDate(item.applicatedDate) : '',
-              processedDate: item.processedDate ? this.formatDate(item.processedDate) : '',
-              expanded: false // 默认为折叠状态
-  };
-          });
-          
-          // 按申请时间排序（从新到旧）
-          formattedData.sort((a, b) => {
-            return new Date(b.applicatedDate) - new Date(a.applicatedDate);
-          });
-          
-          // 将已处理的申请排到后面
-          formattedData.sort((a, b) => {
-            if (a.processedDate && !b.processedDate) return 1;
-            if (!a.processedDate && b.processedDate) return -1;
-            return 0;
-          });
+          const payload = allRes.data || {}
+          const rawList = Array.isArray(payload.items)
+            ? payload.items
+            : Array.isArray(payload)
+              ? payload
+              : []
+          const pagination = payload.pagination || {}
+          const totalRecordsRaw = Number(pagination.total_records)
+          const safeTotal = Number.isFinite(totalRecordsRaw) ? totalRecordsRaw : rawList.length
+          const totalPagesRaw = Number(pagination.total_pages)
+          const totalPages = Number.isFinite(totalPagesRaw)
+            ? Math.max(1, totalPagesRaw)
+            : Math.max(1, Math.ceil((safeTotal || 0) / pageSize) || 1)
+          const currentPageRaw = Number(pagination.current_page)
+          const currentPage = Number.isFinite(currentPageRaw)
+            ? Math.max(1, currentPageRaw)
+            : nextPage
+
+          const formattedBatch = rawList.map((item) => this.formatApplicationItem(item))
+          const merged = reset ? formattedBatch : (this.data.allApplications || []).concat(formattedBatch)
+          const listEnd = currentPage >= totalPages || merged.length >= safeTotal
+
           this.setData({
-            allApplications: formattedData
-          });
+            allApplications: merged,
+            applicationsCurrentPage: currentPage,
+            applicationsTotalPages: totalPages,
+            applicationsTotalRecords: safeTotal,
+            applicationsListEnd: listEnd,
+          })
         } else {
           wx.showToast({
             title: allRes.message || '获取申请列表失败',
-            icon: 'none'
-          });
+            icon: 'none',
+          })
         }
       } catch (error) {
         wx.showToast({
           title: '网络错误，请重试',
-          icon: 'none'
-        });
-        console.error('获取申请列表失败:', error);
+          icon: 'none',
+        })
+        console.error('获取申请列表失败:', error)
       } finally {
-        this.setData({ isLoading: false });
+        this._applicationsPagingLock = false
+        this.setData({
+          isLoading: false,
+          applicationsListLoading: false,
+          applicationsListLoadingMore: false,
+        })
       }
     },
 
@@ -249,7 +325,7 @@ Component({
             console.warn('application message notify failed', msgErr);
           }
 
-          await this.fetchApplications();
+          await this.fetchApplications(true);
 
           // 触发更新事件，通知父组件刷新角标等
           this.triggerEvent('update');

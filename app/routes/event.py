@@ -4,8 +4,9 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..models import Event, User, ClubMember, EventJoin, Club, Schedule, File, Moment
 from .. import db, TEST_MODE
 from datetime import datetime, timedelta
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, case
 from zoneinfo import ZoneInfo
+from collections import defaultdict
 from app.permission import check_permission, event
 from flask_sqlalchemy import Pagination  # 如果用的是 Flask-SQLAlchemy
 from app.routes.file import delete_file_inside
@@ -228,7 +229,16 @@ def create_event(club_id):
         
     db.session.add(event_created)
     db.session.flush()
-    
+
+    # 发起人自动加入活动
+    db.session.add(
+        EventJoin(
+            eventID=event_created.eventID,
+            userID=cur_user.userID,
+            isDelete=False,
+        )
+    )
+
     db.session.commit()
 
     
@@ -814,6 +824,299 @@ def get_event_members(event_id):
             'members': sorted_members,
         }
     })
+
+
+@bp.route('/club/<int:club_id>/manage_events', methods=['GET'])
+@jwt_required()
+def get_club_manage_events(club_id):
+    """协会活动管理列表：供活动管理 panel 按月索引展示。"""
+    has_permission, message = check_permission(event.get_club_manage_events.permission_judge)
+    if not has_permission:
+        return jsonify({'Flag': '4002', 'message': message}), 200
+
+    club_show = Club.query.filter_by(clubID=club_id).first()
+    if not club_show:
+        return jsonify({'Flag': '4001', 'message': '协会不存在'}), 200
+
+    events = (
+        Event.query.filter_by(clubID=club_id)
+        .order_by(
+            Event.pre_startTime.desc(),
+            Event.createDate.desc(),
+            Event.eventID.desc(),
+        )
+        .all()
+    )
+
+    event_list = []
+    for ev in events:
+        joins = [j for j in (ev.eventjoins or []) if not getattr(j, 'isDelete', False)]
+        checked_in_count = sum(1 for j in joins if j.clockinDate is not None)
+        event_list.append({
+            'event_id': ev.eventID,
+            'title': ev.title or '',
+            'location_name': ev.location_name or ev.location or '',
+            'pre_start_time': ev.pre_startTime.strftime('%Y-%m-%d %H:%M:%S') if ev.pre_startTime else '',
+            'pre_end_time': ev.pre_endTime.strftime('%Y-%m-%d %H:%M:%S') if ev.pre_endTime else '',
+            'actual_start_time': ev.actual_startTime.strftime('%Y-%m-%d %H:%M:%S') if ev.actual_startTime else '',
+            'actual_end_time': ev.actual_endTime.strftime('%Y-%m-%d %H:%M:%S') if ev.actual_endTime else '',
+            'create_time': ev.createDate.strftime('%Y-%m-%d %H:%M:%S') if ev.createDate else '',
+            'cover_url': ev.cover.fileUrl if ev.cover else None,
+            'is_cancelled': bool(ev.is_cancelled),
+            'club_deleted': bool(ev.club.isDelete) if ev.club else False,
+            'total_participants': len(joins),
+            'checked_in_count': checked_in_count,
+        })
+
+    return jsonify({
+        'Flag': '4000',
+        'message': '调用成功',
+        'data': {
+            'club': {
+                'club_id': club_show.clubID,
+                'club_name': club_show.clubName,
+            },
+            'events': event_list,
+            'total_events': len(event_list),
+        },
+    })
+
+
+@bp.route('/<int:event_id>/participation', methods=['GET'])
+@jwt_required()
+def get_event_participation(event_id):
+    """活动参与明细（分页）：参与人员、参加时间、打卡时间、人员发布的动态。page 默认 1；page_size 默认 10，最大 50。"""
+    has_permission, message = check_permission(event.get_event_participation.permission_judge)
+    if not has_permission:
+        return jsonify({'Flag': '4002', 'message': message}), 200
+
+    ev = Event.query.filter_by(eventID=event_id).first()
+    if not ev:
+        return jsonify({'Flag': '4001', 'message': '活动不存在'}), 200
+
+    page = request.args.get('page', default=1, type=int) or 1
+    page_size = request.args.get('page_size', default=10, type=int) or 10
+    page = max(1, int(page))
+    page_size = max(1, min(int(page_size), 50))
+
+    join_date_null_last = case((EventJoin.joinDate.is_(None), 1), else_=0)
+    base_q = (
+        EventJoin.query.filter_by(eventID=event_id, isDelete=False)
+        .order_by(join_date_null_last.asc(), EventJoin.joinDate.desc(), EventJoin.joinID.desc())
+    )
+
+    total_records = base_q.count()
+    total_pages = max(1, (total_records + page_size - 1) // page_size) if total_records else 1
+    event_joins = (
+        base_q.offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+
+    clockin_count = base_q.filter(EventJoin.clockinDate.isnot(None)).count()
+    moment_count = Moment.query.filter_by(ref_event_ID=event_id).count()
+
+    user_ids = [ej.userID for ej in event_joins if ej.userID is not None]
+    moments_by_user = defaultdict(list)
+    if user_ids:
+        moments = (
+            Moment.query.filter(
+                Moment.ref_event_ID == event_id,
+                Moment.creatorID.in_(user_ids),
+            )
+            .order_by(Moment.createDate.desc(), Moment.momentID.desc())
+            .all()
+        )
+        for m in moments:
+            if m.creatorID is not None:
+                moments_by_user[m.creatorID].append(m)
+
+    def _fmt(dt):
+        if not dt:
+            return ''
+        return dt.strftime('%Y-%m-%d %H:%M')
+
+    def _serialize_moments(moments_list):
+        serialized = []
+        for m in moments_list:
+            image_urls = []
+            for f in (m.image_files or []):
+                url = getattr(f, 'fileUrl', None)
+                if url:
+                    image_urls.append(url)
+            desc = (m.description or '').strip() or '（无文字）'
+            t = _fmt(m.createDate)
+            serialized.append({
+                'moment_id': m.momentID,
+                'description': desc,
+                'create_time_display': t or None,
+                'image_urls': image_urls,
+            })
+        return serialized
+
+    items = []
+    for ej in event_joins:
+        user = ej.user
+        if not user:
+            continue
+        user_moments = moments_by_user.get(user.userID, [])
+        moment_lines = []
+        for m in user_moments:
+            desc = (m.description or '').strip() or '（无文字）'
+            t = _fmt(m.createDate)
+            moment_lines.append(f'{desc}（{t}）' if t else desc)
+        items.append({
+            'user_id': user.userID,
+            'user_name': user.userName or '',
+            'join_time': ej.joinDate.isoformat() if ej.joinDate else None,
+            'join_time_display': _fmt(ej.joinDate) or '—',
+            'clockin_time': ej.clockinDate.isoformat() if ej.clockinDate else None,
+            'clockin_time_display': _fmt(ej.clockinDate) or '未打卡',
+            'moment_count': len(user_moments),
+            'moments_text': '；'.join(moment_lines) if moment_lines else '无',
+            'moments': _serialize_moments(user_moments),
+        })
+
+    return jsonify({
+        'Flag': '4000',
+        'message': '调用成功',
+        'data': {
+            'event_id': ev.eventID,
+            'title': ev.title or '',
+            'summary': {
+                'participant_count': total_records,
+                'clockin_count': clockin_count,
+                'moment_count': moment_count,
+            },
+            'items': items,
+            'pagination': {
+                'total_pages': total_pages,
+                'current_page': page,
+                'page_size': page_size,
+                'total_records': total_records,
+            },
+        },
+    })
+
+
+def _event_timeline_iso(dt):
+    if not dt or not isinstance(dt, datetime):
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=ZoneInfo('Asia/Shanghai'))
+    else:
+        dt = dt.astimezone(ZoneInfo('Asia/Shanghai'))
+    return dt.isoformat()
+
+
+def _timeline_operator_brief(u):
+    if not u:
+        return None
+    return {
+        'user_id': u.userID,
+        'user_name': u.userName or '用户',
+        'avatar': u.avatar.fileUrl if getattr(u, 'avatar', None) and u.avatar else None,
+    }
+
+
+@bp.route('/<int:event_id>/timeline', methods=['GET'])
+@jwt_required()
+def get_event_timeline(event_id):
+    """活动操作时间线，支持 page / page_size 分页；含操作人头像、动态图片等。"""
+    has_permission, message = check_permission(event.get_event_timeline.permission_judge)
+    if not has_permission:
+        return jsonify({'Flag': '4002', 'message': message}), 200
+
+    page = request.args.get('page', default=1, type=int) or 1
+    page_size = request.args.get('page_size', default=5, type=int) or 5
+    page = max(1, int(page))
+    page_size = max(1, min(int(page_size), 50))
+
+    e = Event.query.filter_by(eventID=event_id).first()
+    if not e:
+        return jsonify({'Flag': '4001', 'message': '活动不存在'}), 200
+
+    author = User.query.filter_by(userID=e.authorID).first()
+    author_brief = _timeline_operator_brief(author)
+    author_name = (author.userName if author else None) or '用户'
+
+    raw = []
+
+    def append_row(at_dt, kind, summary, extra_id, operator, milestone=False, moment=None):
+        if not at_dt or not isinstance(at_dt, datetime):
+            return
+        raw.append({
+            'id': f'{kind}-{extra_id}-{_event_timeline_iso(at_dt)}',
+            'type': kind,
+            'at_dt': at_dt,
+            'summary': summary,
+            'operator': operator,
+            'milestone': bool(milestone),
+            'moment': moment,
+        })
+
+    if e.createDate:
+        append_row(e.createDate, 'created', f'{author_name} 创建活动', f'ev{e.eventID}', author_brief, False, None)
+
+    for ej in EventJoin.query.filter_by(eventID=event_id, isDelete=False).all():
+        u = ej.user
+        op = _timeline_operator_brief(u)
+        uname = (u.userName if u else '') or '用户'
+        if ej.joinDate:
+            append_row(ej.joinDate, 'join', f'{uname} 参加活动', f'ej{ej.joinID}', op, False, None)
+        if ej.clockinDate:
+            append_row(ej.clockinDate, 'clockin', f'{uname} 完成打卡', f'ejc{ej.joinID}', op, False, None)
+
+    if e.actual_startTime:
+        append_row(e.actual_startTime, 'started', '活动已开始', f'st{e.eventID}', author_brief, True, None)
+    if e.actual_endTime:
+        append_row(e.actual_endTime, 'ended', '活动已结束', f'en{e.eventID}', author_brief, True, None)
+
+    for m in Moment.query.filter_by(ref_event_ID=event_id).all():
+        if not m.createDate:
+            continue
+        cu = m.creator
+        cname = (cu.userName if cu else '') or '用户'
+        imgs = [{'file_id': f.fileID, 'fileUrl': f.fileUrl} for f in (m.image_files or [])]
+        moment_payload = {
+            'moment_id': m.momentID,
+            'description': (m.description or '').strip(),
+            'image_files': imgs,
+        }
+        append_row(m.createDate, 'moment', f'{cname} 发布动态', f'm{m.momentID}', _timeline_operator_brief(cu), False, moment_payload)
+
+    raw.sort(key=lambda r: r['at_dt'], reverse=True)
+    total_records = len(raw)
+    total_pages = max(1, (total_records + page_size - 1) // page_size) if total_records else 1
+    start = (page - 1) * page_size
+    page_slice = raw[start:start + page_size]
+
+    out_items = []
+    for r in page_slice:
+        out_items.append({
+            'id': r['id'],
+            'type': r['type'],
+            'at': _event_timeline_iso(r['at_dt']),
+            'summary': r['summary'],
+            'operator': r['operator'],
+            'milestone': r['milestone'],
+            'moment': r['moment'],
+        })
+
+    return jsonify({
+        'Flag': '4000',
+        'message': '获取成功',
+        'data': {
+            'items': out_items,
+            'pagination': {
+                'total_pages': total_pages,
+                'current_page': page,
+                'page_size': page_size,
+                'total_records': total_records,
+            },
+        },
+    })
+
 
 # 加入活动
 @bp.route('/<int:event_id>/join', methods=['GET'])

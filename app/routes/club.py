@@ -1,9 +1,9 @@
 from flask import Flask, Blueprint, request, jsonify
 from flask_jwt_extended import JWTManager, jwt_required,  get_jwt_identity
-from ..models import Event, User, ClubMember, EventJoin, Club, Schedule, File, ClubApplication
+from ..models import Event, User, ClubMember, EventJoin, Club, Schedule, File, ClubApplication, Moment
 from app import db, TEST_MODE
 from datetime import datetime, timedelta
-from sqlalchemy import func 
+from sqlalchemy import func, case
 import base64
 import hashlib
 import os
@@ -442,48 +442,87 @@ def get_application_for_club_pending(club_id):
         } for app in pending_applications]
     })
 
-# 查看某协会的所有入会申请
+# 查看某协会的所有入会申请（分页；风格对齐 get_event_timeline：items + pagination）
+# 查询参数：page 默认 1；page_size 默认 10，最大 50
+# 排序：未处理在前，同组按申请时间降序
+# 返回：data.items, data.pagination { total_pages, current_page, page_size, total_records }
 # 返回参数：
 # 4000: 调用成功
+# 4001: 协会不存在
 # 4002：该用户无权限调用该API
 @bp.route('/application/<int:club_id>/list', methods=['GET'])
 @jwt_required()
 def get_all_applications_for_club(club_id):
-    # 权限检查
     has_permission, message = check_permission(club.get_all_applications_for_club.permission_judge)
     if not has_permission:
         return jsonify({'Flag': '4002', 'message': message}), 200
 
-    # 当前接口不依赖当前用户实体，避免在某些身份上下文下出现空用户异常
     _ = get_jwt_identity()
-    
-    # 检查协会是否存在且未删除
+
     club_show = Club.query.filter_by(clubID=club_id).first()
+    if not club_show:
+        return jsonify({'Flag': '4001', 'message': '协会不存在'}), 200
 
+    page = request.args.get('page', default=1, type=int) or 1
+    page_size = request.args.get('page_size', default=10, type=int) or 10
+    page = max(1, int(page))
+    page_size = max(1, min(int(page_size), 50))
 
-    # 获取所有申请，并按 applicatedDate 为 null 的排在前面
-    applications = club_show.clubApplications
-    sorted_applications = sorted(
-        applications,
-        key=lambda app: (app.applicatedDate is not None, app.applicatedDate)
+    pending_first = case(
+        (ClubApplication.processedDate.is_(None), 0),
+        else_=1,
     )
-    
-    return jsonify({
-        'Flag':'4000',
-        'message': '调用成功',
-        'data': [{
+
+    applicated_null_last = case(
+        (ClubApplication.applicatedDate.is_(None), 1),
+        else_=0,
+    )
+    base_q = ClubApplication.query.filter_by(clubID=club_id).order_by(
+        pending_first.asc(),
+        applicated_null_last.asc(),
+        ClubApplication.applicatedDate.desc(),
+        ClubApplication.applicationID.desc(),
+    )
+
+    total_records = base_q.count()
+    total_pages = max(1, (total_records + page_size - 1) // page_size) if total_records else 1
+    apps = (
+        base_q.offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+
+    def _serialize_application(app):
+        return {
             'applicationID': app.applicationID,
             'approved': app.approved,
             'appliced_user_name': app.appliced_user.userName if app.appliced_user else '未知用户',
             'appliced_user_id': app.appliced_user.userID if app.appliced_user else None,
-            'appliced_user_avartor': app.appliced_user.avatar.fileUrl if app.appliced_user and app.appliced_user.avatar else None, 
-            'applicatedDate': app.applicatedDate,
+            'appliced_user_avartor': (
+                app.appliced_user.avatar.fileUrl
+                if app.appliced_user and app.appliced_user.avatar
+                else None
+            ),
+            'applicatedDate': app.applicatedDate.isoformat() if app.applicatedDate else None,
             'processed_user_name': app.processed_user.userName if app.processed_user else None,
             'processed_user_id': app.processed_user.userID if app.processed_user else None,
-            'club_name': app.club.clubName,
-            'processedDate': app.processedDate,
-            'opinion': app.opinion
-        } for app in sorted_applications]
+            'club_name': app.club.clubName if app.club else None,
+            'processedDate': app.processedDate.isoformat() if app.processedDate else None,
+            'opinion': app.opinion,
+        }
+
+    return jsonify({
+        'Flag': '4000',
+        'message': '调用成功',
+        'data': {
+            'items': [_serialize_application(a) for a in apps],
+            'pagination': {
+                'total_pages': total_pages,
+                'current_page': page,
+                'page_size': page_size,
+                'total_records': total_records,
+            },
+        },
     })
 
 # 将指定用户加入社团(不用走审批流程)
@@ -979,6 +1018,163 @@ def get_club_members(club_id):
         'data': {
             'members': sorted_members,
         }
+    })
+
+
+@bp.route('/<int:club_id>/member/<int:user_id>/activity_stats', methods=['GET'])
+@jwt_required()
+def get_member_activity_stats(club_id, user_id):
+    """成员活动统计（分页）。查询参数 page 默认 1；page_size 默认 10，最大 50。"""
+    # 复用成员列表权限：协会管理侧查看成员活动统计
+    has_permission, message = check_permission(club.get_club_members.permission_judge)
+    if not has_permission:
+        return jsonify({'Flag': '4002', 'message': message}), 200
+
+    club_show = Club.query.filter_by(clubID=club_id).first()
+    if not club_show:
+        return jsonify({'Flag': '4001', 'message': '社团不存在'}), 200
+
+    member = ClubMember.query.filter_by(clubID=club_id, userID=user_id, isDelete=False).first()
+    if not member:
+        return jsonify({'Flag': '4001', 'message': '成员不存在'}), 200
+
+    page = request.args.get('page', default=1, type=int) or 1
+    page_size = request.args.get('page_size', default=10, type=int) or 10
+    page = max(1, int(page))
+    page_size = max(1, min(int(page_size), 50))
+
+    join_date_null_last = case((EventJoin.joinDate.is_(None), 1), else_=0)
+    base_q = (
+        EventJoin.query.join(Event, Event.eventID == EventJoin.eventID)
+        .filter(
+            Event.clubID == club_id,
+            EventJoin.userID == user_id,
+            EventJoin.isDelete == False,
+        )
+        .order_by(join_date_null_last.asc(), EventJoin.joinDate.desc(), EventJoin.joinID.desc())
+    )
+
+    total_records = base_q.count()
+    total_pages = max(1, (total_records + page_size - 1) // page_size) if total_records else 1
+    event_joins = (
+        base_q.offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+
+    clockin_count = base_q.filter(EventJoin.clockinDate.isnot(None)).count()
+    all_event_ids_subq = (
+        db.session.query(EventJoin.eventID)
+        .join(Event, Event.eventID == EventJoin.eventID)
+        .filter(
+            Event.clubID == club_id,
+            EventJoin.userID == user_id,
+            EventJoin.isDelete == False,
+            EventJoin.eventID.isnot(None),
+        )
+    )
+    moment_count = (
+        Moment.query.filter(
+            Moment.creatorID == user_id,
+            Moment.ref_event_ID.in_(all_event_ids_subq),
+        ).count()
+    )
+
+    event_ids = [ej.eventID for ej in event_joins if ej.eventID is not None]
+    moments_by_event = {}
+    if event_ids:
+        moment_date_null_last = case((Moment.createDate.is_(None), 1), else_=0)
+        moments = (
+            Moment.query.filter(
+                Moment.creatorID == user_id,
+                Moment.ref_event_ID.in_(event_ids),
+            )
+            .order_by(moment_date_null_last.asc(), Moment.createDate.desc(), Moment.momentID.desc())
+            .all()
+        )
+        for m in moments:
+            eid = m.ref_event_ID
+            if eid is None:
+                continue
+            moments_by_event.setdefault(eid, []).append(m)
+
+    def _fmt(dt):
+        if not dt:
+            return None
+        return dt.strftime('%Y-%m-%d %H:%M')
+
+    def _serialize_moments(moments_list):
+        serialized = []
+        for m in moments_list:
+            image_urls = []
+            for f in (m.image_files or []):
+                url = getattr(f, 'fileUrl', None)
+                if url:
+                    image_urls.append(url)
+            desc = (m.description or '').strip() or '（无文字）'
+            t = _fmt(m.createDate)
+            serialized.append({
+                'moment_id': m.momentID,
+                'description': desc,
+                'create_time_display': t,
+                'image_urls': image_urls,
+            })
+        return serialized
+
+    items = []
+    for ej in event_joins:
+        ev = ej.event
+        if not ev:
+            continue
+        ev_moments = moments_by_event.get(ev.eventID, [])
+        latest_moment = ev_moments[0] if ev_moments else None
+        latest_desc = (latest_moment.description or '').strip() if latest_moment else ''
+        latest_image_urls = []
+        if latest_moment:
+            for f in (latest_moment.image_files or []):
+                url = getattr(f, 'fileUrl', None)
+                if url:
+                    latest_image_urls.append(url)
+        items.append({
+            'event_id': ev.eventID,
+            'event_title': ev.title,
+            'join_time': ej.joinDate.isoformat() if ej.joinDate else None,
+            'join_time_display': _fmt(ej.joinDate),
+            'clockin_time': ej.clockinDate.isoformat() if ej.clockinDate else None,
+            'clockin_time_display': _fmt(ej.clockinDate),
+            'moment_count': len(ev_moments),
+            'moments': _serialize_moments(ev_moments),
+            'latest_moment': {
+                'moment_id': latest_moment.momentID,
+                'description': latest_desc if latest_desc else '（无文字）',
+                'create_time': latest_moment.createDate.isoformat() if latest_moment and latest_moment.createDate else None,
+                'create_time_display': _fmt(latest_moment.createDate) if latest_moment else None,
+                'image_urls': latest_image_urls,
+            } if latest_moment else None,
+        })
+
+    return jsonify({
+        'Flag': '4000',
+        'message': '调用成功',
+        'data': {
+            'member': {
+                'user_id': member.userID,
+                'user_name': member.user.userName if member.user else None,
+                'member_id': member.memberID,
+            },
+            'summary': {
+                'event_count': total_records,
+                'clockin_count': clockin_count,
+                'moment_count': moment_count,
+            },
+            'items': items,
+            'pagination': {
+                'total_pages': total_pages,
+                'current_page': page,
+                'page_size': page_size,
+                'total_records': total_records,
+            },
+        },
     })
 
 # 切换会员角色

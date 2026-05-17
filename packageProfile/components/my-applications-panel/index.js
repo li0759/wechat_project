@@ -12,7 +12,8 @@ Component({
     applications: [],
     userInfo: {},
     currentWithdrawId: null,
-    showWithdrawDialog: false,
+    /** 与撤回方法名区分开，避免与 methods 同名产生歧义 */
+    withdrawDialogVisible: false,
     isLoading: false
   },
 
@@ -48,25 +49,24 @@ Component({
       });
     },
 
-    // 阻止事件冒泡
-  stopPropagation(e) {
-      // 阻止事件冒泡，避免触发展开/折叠
-  },
-
-    // 显示撤回确认对话数
-      showWithdrawDialog(e) {
-      const applicationId = e.currentTarget.dataset.applicationid;
-      
+    /** 撤回：dataset 必须放在原生 view 上（t-button 内点击时 currentTarget 往往拿不到 data-*） */
+    showWithdrawDialog(e) {
+      const ds = e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset : {};
+      const applicationId = ds.applicationId ?? ds.applicationid;
+      if (applicationId == null || applicationId === '') {
+        wx.showToast({ title: '缺少申请编号', icon: 'none' });
+        return;
+      }
       this.setData({
         currentWithdrawId: applicationId,
-        showWithdrawDialog: true
+        withdrawDialogVisible: true
       });
     },
 
     // 关闭对话数
       closeDialog() {
       this.setData({
-        showWithdrawDialog: false,
+        withdrawDialogVisible: false,
         currentWithdrawId: null
       });
     },
@@ -78,7 +78,7 @@ Component({
       const applicationId = this.data.currentWithdrawId;
       
       wx.showLoading({
-        title: '处理?..',
+        title: '处理中…',
       });
       
       try {
@@ -87,7 +87,7 @@ Component({
           method: 'GET'
         });
         
-        if (res.Flag === '4000') {
+        if (res.Flag === '4000' || res.Flag === 4000) {
           wx.showToast({
             title: '申请已撤', icon: 'success'
           });
@@ -143,7 +143,7 @@ Component({
           method: 'GET'
         });
         
-        if (res.Flag === '4000') {
+        if (res.Flag === '4000' || res.Flag === 4000) {
           // 格式化日期并添加展开状数
       let formattedData = res.data.map(item => {
             return {
@@ -169,7 +169,7 @@ Component({
           this.setData({
             applications: formattedData
           });
-        } else if (res.Flag === '4004') {
+        } else if (res.Flag === '4004' || res.Flag === 4004) {
           // 用户未发起任何加入申数
       this.setData({
             applications: []

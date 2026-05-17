@@ -5,11 +5,18 @@ Component({
     clubId: {
       type: String,
       value: ''
+    },
+    /** 为 true 时点击活动卡片由宿主页 globalPopup 栈打开，不再在组件内嵌套全屏 */
+    delegateNestedToHost: {
+      type: Boolean,
+      value: false
     }
   },
 
   data: {
     loading: true,
+    contentSuspended: false,
+    contentSuspendMode: '',
     club: null,
     clubMembers: [],
     /** 与 club-joined-panel：GET club_public 列表 + 逐条 GET /event/:id 合并后的活动卡片 */
@@ -528,6 +535,24 @@ Component({
       this.setData({ showImageViewer: false });
     },
 
+    suspendContentToBlank() {
+      this.setData({ contentSuspended: true, contentSuspendMode: 'blank' });
+    },
+
+    async resumeContentWithSkeletonReload() {
+      this.setData({ contentSuspended: true, contentSuspendMode: 'skeleton' });
+      if (this.data.clubId && this.loadClubData) {
+        try {
+          await this.loadClubData();
+        } catch (e) {}
+      }
+      this.setData({ contentSuspended: false, contentSuspendMode: '' });
+    },
+
+    onNestedEventExpandSettled() {
+      this.suspendContentToBlank();
+    },
+
     // 点击活动卡片：弹出活动详情（全屏弹窗）
     onClubActivityTap(e) {
       const eventId = e.currentTarget?.dataset?.eventId;
@@ -546,6 +571,12 @@ Component({
         const sys = wx.getSystemInfoSync();
         tapX = sys.windowWidth / 2;
         tapY = sys.windowHeight / 2;
+      }
+
+      if (this.properties.delegateNestedToHost) {
+        const popupType = e.currentTarget?.dataset?.popupType || 'event-detail';
+        this.triggerEvent('navigateEvent', { eventId, popupType, tapX, tapY });
+        return;
       }
 
       this.setData({
@@ -605,6 +636,7 @@ Component({
     },
 
     onNestedEventDetailCollapsed() {
+      this.resumeContentWithSkeletonReload();
       setTimeout(() => {
         this.setData({
           nestedEventDetail: {
@@ -617,6 +649,14 @@ Component({
           }
         });
       }, 300);
+    },
+
+    onNestedEventDetailCovered() {
+      this.suspendContentToBlank();
+    },
+
+    onNestedEventDetailUncovered() {
+      this.resumeContentWithSkeletonReload();
     },
 
     /** 退出协会：后端 GET /club/:id/quit（与 club-joined-panel 一致） */

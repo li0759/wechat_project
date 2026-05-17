@@ -46,6 +46,7 @@ Component({
       tapX: 0,
       tapY: 0
     },
+    nestedManageFullscreenBackShow: true,
     
     // 嵌套的event-detail弹窗状态
     nestedEventDetail: {
@@ -458,6 +459,7 @@ Component({
      */
     openNestedClubManage(clubId, tapX, tapY) {
       this.setData({
+        nestedManageFullscreenBackShow: true,
         nestedClubManage: {
           visible: true,
           loading: true,
@@ -518,6 +520,11 @@ Component({
       }
     },
 
+    onClubManageHostFullscreenBack(e) {
+      const show = !!(e.detail && e.detail.show)
+      this.setData({ nestedManageFullscreenBackShow: show })
+    },
+
     /**
      * 协会管理弹窗收起回调
      */
@@ -526,6 +533,7 @@ Component({
       
       setTimeout(() => {
         this.setData({
+          nestedManageFullscreenBackShow: true,
           'nestedClubManage.visible': false,
           'nestedClubManage.loading': true,
           'nestedClubManage.renderPanel': false,

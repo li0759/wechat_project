@@ -41,10 +41,11 @@
       catchtouchcancel="onFsTouchCancel"
     ></view>
 
-    <!-- 返回键 -->
+    <!-- 返回键：z-index 与 effectiveZIndex 联动；嵌套全屏盖住父级返回需宿主 bind:host-fullscreen-back 隐藏父级 showFullscreenBack -->
     <view 
+      wx:if="{{showFullscreenBack}}"
       class="fullscreen-back-btn"
-      style="position: absolute; top: calc(var(--fs-top, 0px) - 50rpx); left: 20rpx; width: 50rpx; height: 50rpx; z-index: 1001; display: flex; align-items: center; justify-content: center;"
+      style="position: absolute; top: calc(var(--fs-top, 0px) - 50rpx); left: 20rpx; width: 50rpx; height: 50rpx; z-index: {{effectiveZIndex + 8}}; display: flex; align-items: center; justify-content: center;"
       catchtap="handleFullscreenBack"
     >
       <view class="fullscreen-topbar-back-icon"></view>

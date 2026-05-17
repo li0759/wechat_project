@@ -1,0 +1,218 @@
+<wxs src="./index.wxs" module="cmbSide" />
+<view class="cmb" style="--td-brand-color: #df76b0; --td-brand-color-light: #fff0f6;">
+  <view class="cmb__body">
+    <view class="cmb__scroll-host" wx:key="lh-{{listRenderKey}}">
+      <scroll-view
+        class="cmb__scroll"
+        style="height: {{scrollAreaPx}}px;"
+        scroll-y="{{true}}"
+        scroll-with-animation="{{false}}"
+        scroll-into-view="{{scrollIntoView}}"
+        show-scrollbar="{{false}}"
+        enhanced="{{false}}"
+        enable-flex="{{true}}"
+        bindscroll="onScroll"
+      >
+        <block wx:for="{{groups}}" wx:key="anchorId" wx:for-item="grp">
+          <view class="cmb-anchor" id="{{grp.anchorId}}">
+            <view class="cmb-anchor__header">{{grp.sectionTitle}}</view>
+            <block wx:for="{{grp.children}}" wx:for-item="event" wx:key="event_id">
+              <view
+                class="member-item-wrapper {{selectedEventId ? 'member-item-wrapper--focus' : ''}} {{selectedEventId && selectedEventId !== ('' + event.event_id) ? 'member-item-wrapper--muted' : ''}}"
+                id="event-{{expandableIdSuffix}}-{{event.event_id}}"
+                bindlongpress="onEventRowLongPress"
+                data-eventid="{{event.event_id}}"
+                data-title="{{event.title}}"
+              >
+                <view
+                  class="member-item {{selectedEventId && selectedEventId === ('' + event.event_id) ? 'member-item--selected' : ''}} {{bulkMode ? 'member-item--bulk' : ''}}"
+                  bindtap="onEventRowTap"
+                  data-eventid="{{event.event_id}}"
+                  data-title="{{event.title}}"
+                >
+                  <view class="member-trigger-header {{selectedEventId ? 'member-trigger-header--focus' : ''}}">
+                    <view class="member-avatar-expandable">
+                      <view
+                        class="member-avatar-trigger {{selectedEventId ? 'member-avatar-trigger--focus' : ''}}"
+                      >
+                        <image
+                          class="member-avatar-image"
+                          src="{{event.cover_url || defaultCover}}"
+                          mode="aspectFill"
+                          lazy-load="{{true}}"
+                        />
+                      </view>
+                    </view>
+
+                    <view class="member-trigger-info {{selectedEventId ? 'member-trigger-info--focus' : ''}}">
+                      <view class="member-trigger-name-row {{selectedEventId ? 'member-trigger-name-row--focus' : ''}}">
+                        <text class="member-name">{{event.title}}</text>
+                        <view wx:if="{{!selectedEventId && event.is_cancelled}}" class="member-role-chip member-role-chip--cancelled">已取消</view>
+                        <view wx:elif="{{!selectedEventId && event.actual_end_time}}" class="member-role-chip member-role-chip--ended">已结束</view>
+                        <view wx:elif="{{!selectedEventId && event.actual_start_time}}" class="member-role-chip member-role-chip--going">进行中</view>
+                        <view wx:elif="{{!selectedEventId}}" class="member-role-chip member-role-chip--pre">未开始</view>
+                      </view>
+                      <view class="member-extra {{selectedEventId ? 'member-extra--hidden' : ''}}">
+                        <view class="member-meta-row" wx:if="{{event.pre_start_time_display}}">
+                          <text class="member-meta-chip">{{event.pre_start_time_display}}</text>
+                        </view>
+                        <view class="member-meta-row" wx:if="{{event.location_name}}">
+                          <text class="member-meta-chip member-position-chip">{{event.location_name}}</text>
+                        </view>
+                      </view>
+                    </view>
+                    <view wx:if="{{bulkMode}}" class="member-multi-check {{selectedEventMap['' + event.event_id] ? 'member-multi-check--on' : ''}}">
+                      <t-icon wx:if="{{selectedEventMap['' + event.event_id]}}" name="check" size="16" color="#ffffff" />
+                    </view>
+                  </view>
+                </view>
+              </view>
+            </block>
+          </view>
+        </block>
+      </scroll-view>
+    </view>
+
+    <view
+      wx:if="{{indexSidebar && indexSidebar.length}}"
+      class="cmb__sidebar"
+      id="cmb-sidebar-bar"
+      catchtouchstart="onSidebarTouchStart"
+      catchtouchmove="onSidebarTouchMove"
+      catchtouchend="onSidebarTouchEnd"
+      catchtouchcancel="onSidebarTouchEnd"
+    >
+      <view
+        class="cmb__sidebar-item {{sidebarActiveAnchor === item.anchorId ? 'cmb__sidebar-item--active' : ''}}"
+        wx:for="{{indexSidebar}}"
+        wx:key="anchorId"
+        catchtap="onSidebarItemTap"
+        data-anchor="{{item.anchorId}}"
+        data-label="{{item.label}}"
+      >
+        <view class="cmb__sidebar-char cmb__sidebar-char--lines2">{{item.label}}</view>
+        <view
+          class="cmb__sidebar-tips"
+          wx:if="{{showSidebarTips && sidebarActiveAnchor === item.anchorId}}"
+        >{{item.label}}</view>
+      </view>
+    </view>
+  </view>
+
+  <club-index-focus-panel
+    hidden="{{bulkMode}}"
+    visible="{{!!selectedEventId}}"
+    bind:close="onCloseFocusPanel"
+    bind:scrolltolower="onFocusPanelScrollToLower"
+  >
+      <block wx:for="{{groups}}" wx:key="anchorId" wx:for-item="grp">
+        <block wx:for="{{grp.children}}" wx:key="event_id" wx:for-item="event">
+          <view wx:if="{{selectedEventId === ('' + event.event_id)}}" class="am-user-detail cmb-focus-panel__detail">
+            <view class="am-detail-head">
+              <image
+                class="am-detail-avatar"
+                src="{{event.cover_url || defaultCover}}"
+                mode="aspectFill"
+                lazy-load="{{true}}"
+              />
+              <view class="am-detail-main">
+                <view class="am-detail-name">{{event.title}}</view>
+                <view class="am-detail-tags">
+                  <text wx:if="{{event.is_cancelled}}" class="am-tag am-tag-role member-role-chip--cancelled">已取消</text>
+                  <text wx:elif="{{event.actual_end_time}}" class="am-tag am-tag-role member-role-chip--ended">已结束</text>
+                  <text wx:elif="{{event.actual_start_time}}" class="am-tag am-tag-role member-role-chip--going">进行中</text>
+                  <text wx:else class="am-tag am-tag-role member-role-chip--pre">未开始</text>
+                </view>
+              </view>
+            </view>
+
+            <view class="am-detail-kv">
+              <view class="am-kv" wx:if="{{event.pre_start_time_display}}">
+                <text class="am-k">预计开始</text>
+                <text class="am-v">{{event.pre_start_time_display}}</text>
+              </view>
+              <view class="am-kv" wx:if="{{event.location_name}}">
+                <text class="am-k">地点</text>
+                <text class="am-v">{{event.location_name}}</text>
+              </view>
+            </view>
+
+            <view class="am-detail-actions" wx:if="{{!event.is_cancelled && !event.club_deleted}}">
+              <view wx:if="{{!event.actual_start_time}}" class="am-admin-actions">
+                <view class="am-btn am-btn-primary" hover-class="am-btn-hover" bindtap="onBeginEvent" data-eventid="{{event.event_id}}">开始活动</view>
+                <view class="am-btn am-btn-danger" hover-class="am-btn-danger-hover" bindtap="onCancelEvent" data-eventid="{{event.event_id}}">取消活动</view>
+              </view>
+              <view wx:elif="{{!event.actual_end_time}}" class="am-admin-actions">
+                <view class="am-btn am-btn-danger" hover-class="am-btn-danger-hover" bindtap="onEndEvent" data-eventid="{{event.event_id}}">结束活动</view>
+                <view class="am-btn am-btn-primary" hover-class="am-btn-hover" bindtap="onClockIn" data-eventid="{{event.event_id}}">点击打卡</view>
+              </view>
+            </view>
+
+            <view class="cmb-member-activity">
+              <view class="cmb-member-activity__head">
+                <view class="cmb-member-activity__head-main">
+                  <text class="cmb-member-activity__title">活动参与统计</text>
+                  <text wx:if="{{eventParticipationSummary}}" class="cmb-member-activity__summary">
+                    参与{{eventParticipationSummary.participant_count || 0}} / 打卡{{eventParticipationSummary.clockin_count || 0}} / 动态{{eventParticipationSummary.moment_count || 0}}
+                  </text>
+                </view>
+                <view
+                  class="cmb-member-activity__export {{detailExporting ? 'cmb-member-activity__export--loading' : ''}}"
+                  hover-class="cmb-member-activity__export--hover"
+                  bindtap="onExportEventDetail"
+                  data-eventid="{{event.event_id}}"
+                >
+                  <t-icon name="send" size="24" color="#df76b0" />
+                </view>
+              </view>
+              <view wx:if="{{eventParticipationLoading}}" class="cmb-member-activity__loading">加载中...</view>
+              <view wx:elif="{{!eventParticipationItems.length}}" class="cmb-member-activity__empty">暂无参与记录</view>
+              <view wx:else class="cmb-member-activity__list">
+                <view wx:for="{{eventParticipationItems}}" wx:key="user_id" class="cmb-member-activity__item">
+                  <view class="cmb-member-activity__event">{{item.user_name || '未知用户'}}</view>
+                  <view class="cmb-member-activity__line">
+                    <text class="cmb-member-activity__label">参加时间：</text>
+                    <text class="cmb-member-activity__value">{{item.join_time_display || '—'}}</text>
+                  </view>
+                  <view class="cmb-member-activity__line">
+                    <text class="cmb-member-activity__label">打卡时间：</text>
+                    <text class="cmb-member-activity__value">{{item.clockin_time_display || '未打卡'}}</text>
+                  </view>
+                  <view wx:if="{{item.moments && item.moments.length}}" class="cmb-member-activity__moments-wrap">
+                    <text class="cmb-member-activity__label">发布动态：</text>
+                    <view
+                      wx:for="{{item.moments}}"
+                      wx:for-item="mom"
+                      wx:key="moment_id"
+                      class="cmb-member-activity__moment-block"
+                    >
+                      <view class="cmb-member-activity__line cmb-member-activity__line--wrap">
+                        <text class="cmb-member-activity__value">{{mom.description}}（{{mom.create_time_display || '--'}}）</text>
+                      </view>
+                      <view wx:if="{{mom.image_urls && mom.image_urls.length}}" class="cmb-member-activity__imgs">
+                        <image
+                          wx:for="{{mom.image_urls}}"
+                          wx:for-item="imgUrl"
+                          wx:key="*this"
+                          class="cmb-member-activity__img"
+                          src="{{imgUrl}}"
+                          mode="aspectFill"
+                          lazy-load="{{true}}"
+                        />
+                      </view>
+                    </view>
+                  </view>
+                  <view wx:else class="cmb-member-activity__line cmb-member-activity__line--wrap">
+                    <text class="cmb-member-activity__label">发布动态：</text>
+                    <text class="cmb-member-activity__value">{{item.moments_text || '无'}}</text>
+                  </view>
+                </view>
+                <view wx:if="{{eventParticipationLoadingMore}}" class="cmb-member-activity__footer">加载更多...</view>
+                <view wx:elif="{{eventParticipationListEnd && eventParticipationItems.length}}" class="cmb-member-activity__footer">已加载全部</view>
+              </view>
+            </view>
+          </view>
+        </block>
+      </block>
+  </club-index-focus-panel>
+</view>

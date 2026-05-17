@@ -1,0 +1,249 @@
+<!--
+  仿 t-indexes：侧栏 + 分组吸顶 + 单 scroll-view（t-indexes 本体依赖页面滚动，弹层内不可用）
+-->
+<wxs src="./index.wxs" module="cmbSide" />
+<view class="cmb" style="--td-brand-color: #667eea; --td-brand-color-light: #eef0ff;">
+  <!-- 侧栏与 scroll-view 并排：原生 scroll-view 层级常盖住绝对定位兄弟，导致索引不可见 -->
+  <view class="cmb__body">
+    <!-- scroll-host 占满横向剩余高度；scroll-view 用 absolute 四向贴齐，避免 height:100% 在部分基础库下为 0 -->
+    <view class="cmb__scroll-host" wx:key="lh-{{listRenderKey}}">
+      <scroll-view
+        class="cmb__scroll"
+        style="height: {{scrollAreaPx}}px;"
+        scroll-y="{{true}}"
+        scroll-with-animation="{{false}}"
+        scroll-into-view="{{scrollIntoView}}"
+        show-scrollbar="{{false}}"
+        enhanced="{{false}}"
+        enable-flex="{{true}}"
+        bindscroll="onScroll"
+      >
+      <block wx:for="{{groups}}" wx:key="anchorId" wx:for-item="grp">
+        <view class="cmb-anchor" id="{{grp.anchorId}}">
+          <view class="cmb-anchor__header">{{grp.sectionTitle}}</view>
+          <block wx:for="{{grp.children}}" wx:for-item="member" wx:key="member_id">
+            <view
+              class="member-item-wrapper {{selectedMemberId ? 'member-item-wrapper--focus' : ''}} {{selectedMemberId && selectedMemberId !== ('' + member.member_id) ? 'member-item-wrapper--muted' : ''}}"
+              id="member-{{expandableIdSuffix}}-{{member.member_id}}"
+              bindlongpress="onMemberRowLongPress"
+              data-userid="{{member.user_id}}"
+              data-username="{{member.user_name}}"
+            >
+              <view
+                class="member-item {{selectedMemberId && selectedMemberId === ('' + member.member_id) ? 'member-item--selected' : ''}} {{bulkMode ? 'member-item--bulk' : ''}}"
+                bindtap="onMemberRowTap"
+                data-memberid="{{member.member_id}}"
+                data-userid="{{member.user_id}}"
+                data-username="{{member.user_name}}"
+              >
+                <view class="member-trigger-header {{selectedMemberId ? 'member-trigger-header--focus' : ''}}">
+                  <view class="member-avatar-expandable">
+                    <view
+                      class="member-avatar-trigger {{selectedMemberId ? 'member-avatar-trigger--focus' : ''}}"
+                    >
+                      <image
+                        class="member-avatar-image"
+                        src="{{member.avatar || defaultAvatar}}"
+                        mode="aspectFill"
+                        lazy-load="{{true}}"
+                      />
+                    </view>
+                  </view>
+
+                  <view class="member-trigger-info {{selectedMemberId ? 'member-trigger-info--focus' : ''}}">
+                    <view class="member-trigger-name-row {{selectedMemberId ? 'member-trigger-name-row--focus' : ''}}">
+                      <text class="member-name">{{member.user_name}}</text>
+                      <view wx:if="{{!selectedMemberId}}" class="member-role-chip {{member.role}}">{{roleNames[member.role]}}</view>
+                      <view wx:if="{{!selectedMemberId && member.is_current_user}}" class="current-badge">我</view>
+                    </view>
+                    <view class="member-extra {{selectedMemberId ? 'member-extra--hidden' : ''}}">
+                      <view class="member-meta-row">
+                        <text class="member-meta-chip" wx:if="{{member.department}}">{{member.department}}</text>
+                        <text class="member-meta-chip member-position-chip" wx:if="{{member.position}}">{{member.position}}</text>
+                      </view>
+                      <view class="member-meta-row member-join-row" wx:if="{{member.join_date && member.join_date !== '未知'}}">
+                        <text class="member-meta-chip member-join-chip">入会 {{member.join_date}}</text>
+                      </view>
+                      <view class="member-meta-row member-phone-row" wx:if="{{member.phone}}">
+                        <t-icon name="call" size="16" color="#999999" />
+                        <text class="member-phone-compact">{{member.phone}}</text>
+                      </view>
+                    </view>
+                  </view>
+                  <view wx:if="{{bulkMode}}" class="member-multi-check {{selectedUserMap['' + member.user_id] ? 'member-multi-check--on' : ''}}">
+                    <t-icon wx:if="{{selectedUserMap['' + member.user_id]}}" name="check" size="16" color="#ffffff" />
+                  </view>
+                </view>
+              </view>
+            </view>
+          </block>
+        </view>
+      </block>
+      </scroll-view>
+    </view>
+
+    <view
+      wx:if="{{indexSidebar && indexSidebar.length}}"
+      class="cmb__sidebar"
+      id="cmb-sidebar-bar"
+      catchtouchstart="onSidebarTouchStart"
+      catchtouchmove="onSidebarTouchMove"
+      catchtouchend="onSidebarTouchEnd"
+      catchtouchcancel="onSidebarTouchEnd"
+    >
+      <view
+        class="cmb__sidebar-item {{sidebarActiveAnchor === item.anchorId ? 'cmb__sidebar-item--active' : ''}}"
+        wx:for="{{indexSidebar}}"
+        wx:key="anchorId"
+        catchtap="onSidebarItemTap"
+        data-anchor="{{item.anchorId}}"
+        data-label="{{item.label}}"
+      >
+        <view class="cmb__sidebar-char cmb__sidebar-char--{{indexSidebarCharMode}}">{{ indexSidebarCharMode === 'hard4' ? cmbSide.max4(item.label) : item.label }}</view>
+        <view
+          class="cmb__sidebar-tips"
+          wx:if="{{showSidebarTips && sidebarActiveAnchor === item.anchorId}}"
+        >{{ indexSidebarCharMode === 'hard4' ? cmbSide.max4(item.label) : item.label }}</view>
+      </view>
+    </view>
+  </view>
+  <club-index-focus-panel
+    hidden="{{bulkMode}}"
+    visible="{{!!selectedMemberId}}"
+    bind:close="onCloseFocusPanel"
+    bind:scrolltolower="onFocusPanelScrollToLower"
+  >
+      <block wx:for="{{groups}}" wx:key="anchorId" wx:for-item="grp">
+        <block wx:for="{{grp.children}}" wx:key="member_id" wx:for-item="member">
+          <view wx:if="{{selectedMemberId === ('' + member.member_id)}}" class="am-user-detail cmb-focus-panel__detail">
+            <view class="am-detail-head">
+              <image
+                class="am-detail-avatar"
+                src="{{member.avatar || defaultAvatar}}"
+                mode="aspectFill"
+                lazy-load="{{true}}"
+              />
+              <view class="am-detail-main">
+                <view class="am-detail-name">{{member.user_name}}</view>
+                <view class="am-detail-tags">
+                  <text class="am-tag am-tag-role {{member.role}}">{{roleNames[member.role]}}</text>
+                  <text wx:if="{{member.department}}" class="am-tag am-tag-dept">{{member.department}}</text>
+                  <text wx:if="{{member.position}}" class="am-tag am-tag-pos">{{member.position}}</text>
+                </view>
+              </view>
+            </view>
+
+            <view class="am-detail-kv">
+              <view class="am-kv" wx:if="{{member.phone}}">
+                <text class="am-k">电话</text>
+                <text class="am-v">{{member.phone}}</text>
+              </view>
+              <view class="am-kv" wx:if="{{member.join_date}}">
+                <text class="am-k">入会时间</text>
+                <text class="am-v">{{member.join_date}}</text>
+              </view>
+              <view class="am-kv">
+                <text class="am-k">活动参与</text>
+                <text class="am-v">已参与 {{member.participation_count || 0}} 次</text>
+              </view>
+            </view>
+
+            <view class="am-detail-actions">
+              <view wx:if="{{member.is_current_user}}" class="am-added">
+                <t-icon name="check-circle-filled" size="18" color="#52c41a" />
+                <text>这是您的账户</text>
+              </view>
+              <view wx:elif="{{!member.is_current_user && isPresident && roleOptions[member.role]}}" class="am-admin-actions">
+                <view
+                  class="am-btn am-btn-ghost"
+                  wx:for="{{roleOptions[member.role].availableRoles}}"
+                  wx:for-item="role"
+                  wx:key="role"
+                  hover-class="am-btn-hover"
+                  bindtap="onChangeRole"
+                  data-memberid="{{member.member_id}}"
+                  data-newrole="{{role}}"
+                  data-username="{{member.user_name}}"
+                >
+                  改为{{roleDisplayMap[role]}}
+                </view>
+                <view
+                  class="am-btn am-btn-danger"
+                  hover-class="am-btn-danger-hover"
+                  bindtap="onRemoveMember"
+                  data-userid="{{member.user_id}}"
+                  data-username="{{member.user_name}}"
+                >
+                  移除
+                </view>
+              </view>
+            </view>
+
+            <view class="cmb-member-activity">
+              <view class="cmb-member-activity__head">
+                <view class="cmb-member-activity__head-main">
+                  <text class="cmb-member-activity__title">个人活动统计</text>
+                  <text wx:if="{{memberActivitySummary}}" class="cmb-member-activity__summary">
+                    活动{{memberActivitySummary.event_count || 0}} / 打卡{{memberActivitySummary.clockin_count || 0}} / 动态{{memberActivitySummary.moment_count || 0}}
+                  </text>
+                </view>
+                <view
+                  class="cmb-member-activity__export {{detailExporting ? 'cmb-member-activity__export--loading' : ''}}"
+                  hover-class="cmb-member-activity__export--hover"
+                  bindtap="onExportMemberDetail"
+                  data-userid="{{member.user_id}}"
+                >
+                  <t-icon name="send" size="24" color="#667eea" />
+                </view>
+              </view>
+              <view wx:if="{{memberActivityLoading}}" class="cmb-member-activity__loading">加载中...</view>
+              <view wx:elif="{{!memberActivityItems.length}}" class="cmb-member-activity__empty">暂无活动记录</view>
+              <view wx:else class="cmb-member-activity__list">
+                <view wx:for="{{memberActivityItems}}" wx:key="event_id" class="cmb-member-activity__item">
+                  <view class="cmb-member-activity__event">{{item.event_title || '未命名活动'}}</view>
+                  <view class="cmb-member-activity__line">
+                    <text class="cmb-member-activity__label">参加时间：</text>
+                    <text class="cmb-member-activity__value">{{item.join_time_display || '—'}}</text>
+                  </view>
+                  <view class="cmb-member-activity__line">
+                    <text class="cmb-member-activity__label">打卡时间：</text>
+                    <text class="cmb-member-activity__value">{{item.clockin_time_display || '未打卡'}}</text>
+                  </view>
+                  <view wx:if="{{item.moments && item.moments.length}}" class="cmb-member-activity__moments-wrap">
+                    <text class="cmb-member-activity__label">发布动态（{{item.moment_count || 0}}条）：</text>
+                    <view
+                      wx:for="{{item.moments}}"
+                      wx:for-item="mom"
+                      wx:key="moment_id"
+                      class="cmb-member-activity__moment-block"
+                    >
+                      <view class="cmb-member-activity__line cmb-member-activity__line--wrap">
+                        <text class="cmb-member-activity__value">{{mom.description}}（{{mom.create_time_display || '--'}}）</text>
+                      </view>
+                      <view wx:if="{{mom.image_urls && mom.image_urls.length}}" class="cmb-member-activity__imgs">
+                        <image
+                          wx:for="{{mom.image_urls}}"
+                          wx:for-item="imgUrl"
+                          wx:key="*this"
+                          class="cmb-member-activity__img"
+                          src="{{imgUrl}}"
+                          mode="aspectFill"
+                          lazy-load="{{true}}"
+                        />
+                      </view>
+                    </view>
+                  </view>
+                  <view wx:else class="cmb-member-activity__line">
+                    <text class="cmb-member-activity__label">发布动态：</text>
+                    <text class="cmb-member-activity__value">无</text>
+                  </view>
+                </view>
+                <view wx:if="{{memberActivityLoadingMore}}" class="cmb-member-activity__footer">加载更多...</view>
+                <view wx:elif="{{memberActivityListEnd && memberActivityItems.length}}" class="cmb-member-activity__footer">已加载全部</view>
+              </view>
+            </view>
+          </view>
+        </block>
+      </block>
+  </club-index-focus-panel>
+</view>

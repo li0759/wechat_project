@@ -19,6 +19,15 @@
 
   <!-- 主内容 -->
   <block wx:else>
+    <block wx:if="{{contentSuspended && contentSuspendMode === 'blank'}}">
+      <view style="height: 100%;"></view>
+    </block>
+
+    <block wx:elif="{{contentSuspended}}">
+      <event-detail-skeleton />
+    </block>
+
+    <block wx:else>
     <!-- 分段导航 -->
     <view class="section-nav">
       <scroll-view class="nav-scroll" scroll-x="{{true}}" show-scrollbar="{{false}}">
@@ -238,6 +247,7 @@
         bindtap="joinEvent"
       >加入活动</t-button>
     </view>
+    </block>
 
     <!-- 协会详情（嵌套全屏弹窗）：点击协会卡片弹出 -->
     <expandable-container_fullscreen
@@ -251,6 +261,7 @@
       bind:collapse="onNestedClubDetailCollapse"
       bind:collapsed="onNestedClubDetailCollapsed"
       bind:contentReady="onNestedClubDetailContentReady"
+      bind:expandsettled="onNestedClubDetailExpandSettled"
     >
       <view slot="trigger"></view>
       <view slot="content" class="nested-popup-shell">

@@ -8,9 +8,20 @@
   box-sizing: border-box;
 }
 
+.expandable-wrapper--stretch {
+  display: block;
+  box-sizing: border-box;
+}
+
 .trigger-content {
   display: inline-block;
   position: relative;
+}
+
+.trigger-content--stretch {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* 全屏灰暗遮罩层 */

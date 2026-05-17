@@ -1,35 +1,163 @@
 <!--pages/profile/club-members/index.wxml-->
 
-<view class="container">
+<view class="cmp-panel-root {{(loading || (!loading && members.length > 0)) ? 'cmp-panel-root--member-list' : ''}}">
 
   <!-- 加载骨架屏（参考现有 club-members-skeleton） -->
   <club-members-skeleton wx:if="{{loading}}" />
 
-  <!-- 空状态 -->
+  <!-- 空状态：仅协会真实无成员；搜索无匹配不要用 filteredMembers，否则会盖住搜索框 -->
   <t-empty 
-    wx:elif="{{filteredMembers.length === 0 && !loading}}"
+    wx:elif="{{!loading && members.length === 0}}"
     icon="member"
     description="暂无成员"
   />
 
-  <!-- 成员列表 -->
-  <view wx:elif="{{!loading}}" style="margin-top: 16rpx; height: calc(100vh - 16rpx);">
-    <member-index-list
-      groups="{{showIndexList}}"
-      index-list="{{indexList}}"
-      default-avatar="{{default_avatar}}"
-      role-names="{{roleNames}}"
-      role-options="{{roleOptions}}"
-      role-display-map="{{roleDisplayMap}}"
-      is-president="{{isPresident}}"
-      bind:changeRole="changeRole"
-      bind:removeMember="removeMember"
-    />
+  <!-- 成员列表：搜索与 t-indexes 同列定位；Tab 下为「仿 t-indexes」单 scroll 索引列表 -->
+  <view wx:elif="{{!loading && members.length > 0}}" class="members-main cm-indexes-shell">
+    <view class="cm-member-toolbar">
+      <view wx:if="{{bulkMode}}" class="cm-bulk-send-bar">
+        <view class="cm-bulk-icon-btn" hover-class="cm-bulk-icon-btn--hover" bindtap="onExitBulkMode">
+          <t-icon name="rollback" size="24" color="#df76b0" />
+        </view>
+        <view
+          class="cm-bulk-icon-btn {{bulkTotalVisible > 0 ? '' : 'cm-bulk-icon-btn--disabled'}}"
+          hover-class="cm-bulk-icon-btn--hover"
+          bindtap="onSelectAllBulk"
+        >
+          <t-icon wx:if="{{bulkAllSelected}}" name="data-error" size="24" color="#df76b0" />
+          <t-icon wx:else name="data-checked" size="24" color="#df76b0" />
+        </view>
+        <text class="cm-bulk-send-text">
+          {{bulkSelectedCount > 0 ? ('已选' + bulkSelectedCount + '人，点击下载活动信息') : '请选择至少一名成员'}}
+        </text>
+        <view
+          class="cm-bulk-icon-btn cm-bulk-icon-btn--send {{bulkSending ? 'cm-bulk-icon-btn--loading' : ''}} {{bulkSelectedCount > 0 ? '' : 'cm-bulk-icon-btn--disabled'}}"
+          hover-class="cm-bulk-icon-btn--hover"
+          bindtap="onSendBulkMemberActivity"
+        >
+          <t-icon name="send" size="24" color="#df76b0" />
+        </view>
+      </view>
+      <t-search
+        wx:else
+        value="{{searchKeyword}}"
+        shape="round"
+        placeholder="搜索姓名、部门、手机"
+        bind:change="onMemberListSearchChange"
+        bind:clear="onMemberListSearchClear"
+      />
+    </view>
+    <!-- 有成员但当前筛选结果为空（一般为搜索无匹配）：保留搜索栏，仅在列表区域提示 -->
+    <view wx:if="{{filteredMembers.length === 0}}" class="cm-filter-empty">
+      <t-empty icon="user-search" description="未找到相关成员" />
+    </view>
+    <view wx:else class="cm-member-list-root">
+      <swiper
+        class="cm-member-swiper"
+        current="{{memberListTabIndex}}"
+        bindchange="onMemberListSwiperChange"
+        duration="{{280}}"
+        easing-function="easeOutCubic"
+      >
+        <swiper-item class="cm-member-swiper-item">
+          <view class="cm-member-swiper-tab-body">
+            <view class="cm-tab-body-fill">
+              <club-member-indexes
+                id="member-indexes-name"
+                expandable-id-suffix="name"
+                club-id="{{clubId}}"
+                index-sidebar-char-mode="lines2"
+                groups="{{nameMemberGroups}}"
+                index-sidebar="{{nameIndexSidebar}}"
+                default-avatar="{{default_avatar}}"
+                role-names="{{roleNames}}"
+                role-options="{{roleOptions}}"
+                role-display-map="{{roleDisplayMap}}"
+                is-president="{{isPresident}}"
+                overlay-use-root-portal="{{true}}"
+                bind:changeRole="changeRole"
+                bind:removeMember="removeMember"
+                bind:bulkselectchange="onBulkSelectChange"
+              />
+            </view>
+          </view>
+        </swiper-item>
+        <swiper-item class="cm-member-swiper-item">
+          <view class="cm-member-swiper-tab-body">
+            <view class="cm-tab-body-fill">
+              <club-member-indexes
+                id="member-indexes-dept"
+                expandable-id-suffix="dept"
+                club-id="{{clubId}}"
+                index-sidebar-char-mode="hard4"
+                groups="{{deptMemberGroups}}"
+                index-sidebar="{{deptIndexSidebar}}"
+                default-avatar="{{default_avatar}}"
+                role-names="{{roleNames}}"
+                role-options="{{roleOptions}}"
+                role-display-map="{{roleDisplayMap}}"
+                is-president="{{isPresident}}"
+                overlay-use-root-portal="{{true}}"
+                bind:changeRole="changeRole"
+                bind:removeMember="removeMember"
+                bind:bulkselectchange="onBulkSelectChange"
+              />
+            </view>
+          </view>
+        </swiper-item>
+        <swiper-item class="cm-member-swiper-item">
+          <view class="cm-member-swiper-tab-body">
+            <view class="cm-tab-body-fill">
+              <club-member-indexes
+                id="member-indexes-month"
+                expandable-id-suffix="month"
+                club-id="{{clubId}}"
+                index-sidebar-char-mode="lines2"
+                groups="{{monthMemberGroups}}"
+                index-sidebar="{{monthIndexSidebar}}"
+                default-avatar="{{default_avatar}}"
+                role-names="{{roleNames}}"
+                role-options="{{roleOptions}}"
+                role-display-map="{{roleDisplayMap}}"
+                is-president="{{isPresident}}"
+                overlay-use-root-portal="{{true}}"
+                bind:changeRole="changeRole"
+                bind:removeMember="removeMember"
+                bind:bulkselectchange="onBulkSelectChange"
+              />
+            </view>
+          </view>
+        </swiper-item>
+      </swiper>
+      <view class="cm-member-page-dots">
+        <view
+          class="cm-member-page-dot-hit"
+          data-index="{{0}}"
+          bindtap="onMemberListDotTap"
+        >
+          <view class="cm-member-page-dot {{memberListTabIndex === 0 ? 'cm-member-page-dot--active' : ''}}" />
+        </view>
+        <view
+          class="cm-member-page-dot-hit"
+          data-index="{{1}}"
+          bindtap="onMemberListDotTap"
+        >
+          <view class="cm-member-page-dot {{memberListTabIndex === 1 ? 'cm-member-page-dot--active' : ''}}" />
+        </view>
+        <view
+          class="cm-member-page-dot-hit"
+          data-index="{{2}}"
+          bindtap="onMemberListDotTap"
+        >
+          <view class="cm-member-page-dot {{memberListTabIndex === 2 ? 'cm-member-page-dot--active' : ''}}" />
+        </view>
+      </view>
+    </view>
   </view>
 
 
-  <!-- 添加会员悬浮按钮 -->
-  <view class="fab-container">
+  <!-- 添加会员悬浮按钮（加载中由骨架屏展示，避免双 FAB） -->
+  <view class="fab-container" wx:if="{{!loading}}">
     <expandable-container_fullscreen
       id="add-member-sheet"
       expanded-width="750"

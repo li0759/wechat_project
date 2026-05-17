@@ -10,6 +10,8 @@ Component({
 
   data: {
     loading: true,
+    contentSuspended: false,
+    contentSuspendMode: '',
     event: null,
     membersList: [],
     clubInfo: null,
@@ -139,6 +141,20 @@ Component({
         this.triggerEvent('loaded');
         wx.showToast({ title: '加载失败', icon: 'none' });
       }
+    },
+
+    suspendContentToBlank() {
+      this.setData({ contentSuspended: true, contentSuspendMode: 'blank' });
+    },
+
+    async resumeContentWithSkeletonReload() {
+      this.setData({ contentSuspended: true, contentSuspendMode: 'skeleton' });
+      if (this.data.eventId && this.loadEventData) {
+        try {
+          await this.loadEventData();
+        } catch (e) {}
+      }
+      this.setData({ contentSuspended: false, contentSuspendMode: '' });
     },
 
     async processEventData(event) {
@@ -373,6 +389,10 @@ Component({
       });
     },
 
+    onNestedClubDetailExpandSettled() {
+      this.suspendContentToBlank();
+    },
+
     closeNestedClubDetail() {
       const popup = this.selectComponent('#nestedClubDetailPopup');
       if (popup && popup.collapse) popup.collapse();
@@ -383,6 +403,7 @@ Component({
     },
 
     onNestedClubDetailCollapsed() {
+      this.resumeContentWithSkeletonReload();
       setTimeout(() => {
         this.setData({
           nestedClubDetail: {

@@ -1,179 +1,221 @@
-.container {
-  padding: 24rpx;
-  padding-top: 24rpx;
-  background-color: #f7f8fa;
-  min-height: 100vh;
+/* 入会审批：与 event-manage-panel 活动时间线弹窗同一套 tl-modal-* 结构/样式 */
+
+.cap-tl-root {
+  --md-sys-color-primary: #df76b0;
+  --md-sys-color-on-surface: rgba(0, 0, 0, 0.88);
+  --md-sys-color-on-surface-variant: rgba(0, 0, 0, 0.55);
+  --md-sys-color-surface-variant: #eceef2;
 }
 
-/* 主题色定义 */
-:root {
-  --primary-color: rgb(223, 118, 176);
-}
-
-.applications-list {
-  padding-bottom: 30rpx;
-}
-
-.application-item {
-  margin-bottom: 16rpx;
-  border-radius: 12rpx;
-  overflow: hidden;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
-  background-color: #fff;
-}
-
-/* 折叠状态的摘要信息 */
-.application-summary {
+.tl-modal-root {
+  position: relative;
+  padding: 0 !important;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20rpx 24rpx;
-  background-color: #fff;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.application-summary:hover {
-  background-color: #fafbfc;
-}
-
-.summary-left {
-  display: flex;
-  align-items: center;
+  flex-direction: column;
   flex: 1;
+  min-height: 0;
+  background: #fff;
 }
 
-.user-avatar-small {
-  width: 50rpx;
-  height: 50rpx;
-  border-radius: 50%;
-  margin-right: 16rpx;
-  border: 2rpx solid #fff;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
-  flex-shrink: 0;
-}
-
-.user-name {
-  font-size: 30rpx;
-  font-weight: 500;
-  color: #333;
-}
-
-.summary-right {
+.tl-modal-header {
   display: flex;
-  align-items: center;
-  gap: 12rpx;
-}
-
-.summary-actions {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-}
-
-/* 摘要状态样式 */
-.summary-status {
-  font-size: 26rpx;
-  font-weight: bold;
-  padding: 8rpx 16rpx;
-  border-radius: 20rpx;
-  background-color: rgba(255, 255, 255, 0.8);
-}
-
-/* 摘要按钮样式 */
-.summary-btn {
-  width: 80rpx !important;
-  height: 48rpx !important;
-  font-size: 22rpx !important;
-  flex-shrink: 0;
-}
-
-/* 展开箭头 */
-.expand-arrow {
-  font-size: 32rpx !important;
-  color: #999 !important;
-  margin-left: 12rpx;
-  transition: transform 0.3s ease;
-}
-
-/* 详细信息区域 */
-.application-details {
-  border-top: 1rpx solid #f0f0f0;
-  background-color: #fafbfc;
-  animation: slideDown 0.3s ease;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    max-height: 0;
-  }
-  to {
-    opacity: 1;
-    max-height: 500rpx;
-  }
-}
-
-/* 统一cell样式 */
-.detail-row {
-  display: flex;
-  align-items: flex-start;
+  align-items: baseline;
   justify-content: space-between;
-  gap: 24rpx;
-  padding: 12rpx 24rpx;
-  font-size: 28rpx;
-  background-color: transparent;
+  padding: 20rpx 24rpx 12rpx;
+  border-bottom: 1rpx solid #eceef2;
 }
 
-.detail-title {
-  color: #666;
-  font-size: 26rpx;
-  min-width: 120rpx;
+.tl-modal-h-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+}
+
+.tl-modal-h-count {
+  font-size: 24rpx;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.tl-modal-scroll {
+  flex: 1;
+  min-height: 0;
+  height: 0;
+  padding: 16rpx 8rpx 0 20rpx;
+  box-sizing: border-box;
+  background: #f7f8fa;
+}
+
+.tl-modal-row {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.tl-modal-left {
+  width: 112rpx;
   flex-shrink: 0;
+  padding-right: 8rpx;
+  box-sizing: border-box;
+  text-align: right;
 }
 
-.detail-value {
-  color: #333;
+.tl-axis-date {
+  display: block;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface-variant);
+  line-height: 1.25;
+}
+
+.tl-axis-time {
+  display: block;
+  font-size: 20rpx;
+  color: #9ca3af;
+  margin-top: 4rpx;
+}
+
+.tl-modal-rail {
+  width: 36rpx;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tl-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  background: var(--md-sys-color-primary);
+  border: 3rpx solid #fff;
+  box-shadow: 0 0 0 1rpx rgba(223, 118, 176, 0.35);
+  flex-shrink: 0;
+  margin-top: 6rpx;
+}
+
+.tl-vline {
+  width: 2rpx;
+  flex: 1;
+  min-height: 36rpx;
+  margin-top: 4rpx;
+  background: linear-gradient(180deg, rgba(223, 118, 176, 0.45) 0%, rgba(223, 118, 176, 0.08) 100%);
+  border-radius: 1rpx;
+}
+
+.tl-modal-main {
+  flex: 1;
+  min-width: 0;
+  padding: 0 12rpx 28rpx 4rpx;
+  box-sizing: border-box;
+}
+
+.tl-modal-main--milestone-start {
+  background: linear-gradient(90deg, rgba(223, 118, 176, 0.22) 0%, rgba(223, 118, 176, 0.08) 50%, rgba(255, 255, 255, 0) 100%);
+  border-left: 6rpx solid var(--md-sys-color-primary);
+  border-right: 2rpx dashed rgba(223, 118, 176, 0.45);
+  border-radius: 14rpx;
+  padding: 18rpx 20rpx 22rpx 16rpx;
+  margin-bottom: 8rpx;
+}
+
+.tl-modal-main--milestone-end {
+  background: linear-gradient(90deg, rgba(107, 114, 128, 0.2) 0%, rgba(107, 114, 128, 0.07) 52%, rgba(255, 255, 255, 0) 100%);
+  border-left: 6rpx solid #6b7280;
+  border-right: 2rpx dashed rgba(107, 114, 128, 0.42);
+  border-radius: 14rpx;
+  padding: 18rpx 20rpx 22rpx 16rpx;
+  margin-bottom: 8rpx;
+}
+
+.tl-milestone-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--md-sys-color-on-surface);
+  margin-bottom: 12rpx;
+}
+
+.tl-modal-main--milestone-start .tl-op-row,
+.tl-modal-main--milestone-end .tl-op-row {
+  align-items: flex-start;
+}
+
+.tl-op-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.tl-op-avatar {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--md-sys-color-surface-variant);
+}
+
+.tl-op-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.tl-op-name {
   font-size: 28rpx;
-  font-weight: 500;
-  text-align: right;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+}
+
+.tl-op-sub {
+  font-size: 24rpx;
+  color: var(--md-sys-color-on-surface-variant);
+  line-height: 1.35;
   word-break: break-all;
+}
+
+.tl-modal-empty {
+  padding: 48rpx 0;
+}
+
+.tl-modal-loading,
+.tl-modal-end {
+  text-align: center;
+  font-size: 24rpx;
+  color: #9ca3af;
+  padding: 20rpx 0 32rpx;
+}
+
+.tl-modal-footer-space {
+  height: 200rpx;
+}
+
+/* 待审批：主内容非里程碑卡片，操作按钮与时间线里「一行多列」并排 */
+.cap-app-pending-row {
+  align-items: flex-start;
+}
+
+.cap-app-pending-actions {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  width: 132rpx;
+  padding-top: 2rpx;
+}
+
+.cap-btn {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.cap-btn-approve {
+  background-color: rgb(223, 118, 176) !important;
+  border-color: rgb(223, 118, 176) !important;
 }
 
 .dialog-body {
   padding: 16rpx 0 0;
 }
-
-.status-pending {
-  color: #faad14 !important;
-  font-weight: bold;
-}
-
-.status-approved {
-  color: rgb(223, 118, 176) !important;
-  font-weight: bold;
-}
-
-.status-rejected {
-  color: #f5222d !important;
-  font-weight: bold;
-}
-
-/* 添加按钮主题色 */
-.primary-btn {
-  background-color: rgb(223, 118, 176) !important;
-  border-color: rgb(223, 118, 176) !important;
-}
-
-/* 圆角按钮样式 */
-.summary-btn {
-  border-radius: 999rpx;
-  font-weight: 500;
-}
-
-/* 增强视觉层次 */
-.application-item:hover {
-  transform: translateY(-2rpx);
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.12);
-  transition: all 0.3s ease;
-} 

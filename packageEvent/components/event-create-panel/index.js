@@ -618,34 +618,23 @@ Component({
       
       if (selectedTemplate) {
         // 应用模板数据到表单
-    const updateData = {
-          'formData.title': selectedTemplate.title || '',
-          'formData.content': selectedTemplate.content || '',
-          'formData.location': selectedTemplate.location || '',
-          selectedTemplateName: selectedTemplate.title,
-          swiperSelectedTemplateCover: selectedTemplate.cover_thumb || selectedTemplate.cover || ''
-        };
-        
-        // 应用地点相关字段并生成地图预览
-    if (selectedTemplate.location_data) {
+        let locationName = '';
+        let locationAddress = '';
+        let latitude = '';
+        let longitude = '';
+
+        if (selectedTemplate.location_data) {
           try {
-            const locationData = typeof selectedTemplate.location_data === 'string' 
-              ? JSON.parse(selectedTemplate.location_data) 
+            const locationData = typeof selectedTemplate.location_data === 'string'
+              ? JSON.parse(selectedTemplate.location_data)
               : selectedTemplate.location_data;
-            
-            // 确保数据类型正确
-    const locationName = String(locationData.name || '');
-            const locationAddress = String(locationData.address || '');
-            const latitude = locationData.latitude ? String(locationData.latitude) : '';
-            const longitude = locationData.longitude ? String(locationData.longitude) : '';
-            
-            updateData['formData.locationName'] = locationName;
-            updateData['formData.locationAddress'] = locationAddress;
-            updateData['formData.latitude'] = latitude;
-            updateData['formData.longitude'] = longitude;
-            
-            // 如果有经纬度，生成地图预览
-    if (latitude && longitude) {
+
+            locationName = String(locationData.name || '');
+            locationAddress = String(locationData.address || '');
+            latitude = locationData.latitude ? String(locationData.latitude) : '';
+            longitude = locationData.longitude ? String(locationData.longitude) : '';
+
+            if (latitude && longitude) {
               buildGeoapifyStaticMapUrl({
                 longitude: parseFloat(longitude),
                 latitude: parseFloat(latitude),
@@ -656,15 +645,25 @@ Component({
                 if (mapUrl) {
                   this.setData({ locationMapSmallUrl: mapUrl });
                 }
-              }).catch(err => {
-                });
+              }).catch(() => {});
             }
-          } catch (e) {
-            }
+          } catch (e) {}
         }
-        
-        // 统一设置所有数据
-    this.setData(updateData);
+
+        const updateData = {
+          'formData.title': selectedTemplate.title || '',
+          'formData.content': selectedTemplate.content || '',
+          'formData.location': selectedTemplate.location || locationName || locationAddress || '',
+          'formData.locationName': locationName,
+          'formData.locationAddress': locationAddress,
+          selectedTemplateName: selectedTemplate.title,
+          swiperSelectedTemplateCover: selectedTemplate.cover_thumb || selectedTemplate.cover || ''
+        };
+
+        if (latitude) updateData['formData.latitude'] = latitude;
+        if (longitude) updateData['formData.longitude'] = longitude;
+
+        this.setData(updateData);
         
         // 应用封面（先显示远程 URL，提交时再下载）
     if (selectedTemplate.cover) {
@@ -2004,29 +2003,31 @@ Component({
 
   // 应用模板数据
   async applyTemplate(eventDetail) {
-    // 应用基本信息
+    const locData = eventDetail.location_data;
+    const locationName = locData?.name || '';
+    const locationAddress = locData?.address || '';
+
     this.setData({
       'formData.title': eventDetail.title,
       'formData.content': eventDetail.content,
-      'formData.location': eventDetail.location,
+      'formData.location': eventDetail.location || locationName || locationAddress || '',
       'formData.budget': eventDetail.budget?.toString() || ''
     });
 
     // 应用地址信息
-    if (eventDetail.location_data) {
+    if (locData) {
       this.setData({
-        'formData.locationName': eventDetail.location_data.name,
-        'formData.locationAddress': eventDetail.location_data.address,
-        'formData.latitude': eventDetail.location_data.latitude,
-        'formData.longitude': eventDetail.location_data.longitude
+        'formData.locationName': locationName,
+        'formData.locationAddress': locationAddress,
+        'formData.latitude': locData.latitude,
+        'formData.longitude': locData.longitude
       });
 
-      // 创建地图标记
-    const markers = [{
+      const markers = [{
         id: 1,
-        latitude: eventDetail.location_data.latitude,
-        longitude: eventDetail.location_data.longitude,
-        title: eventDetail.location_data.name,
+        latitude: locData.latitude,
+        longitude: locData.longitude,
+        title: locationName,
         width: 20,
         height: 30
       }];

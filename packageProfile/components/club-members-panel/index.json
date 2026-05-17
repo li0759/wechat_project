@@ -5,7 +5,7 @@
     "t-toast": "tdesign-miniprogram/toast/toast",
     "t-loading": "tdesign-miniprogram/loading/loading",
     "t-empty": "tdesign-miniprogram/empty/empty",
-    "member-index-list": "/components/member-index-list/index",
+    "club-member-indexes": "/components/club-member-indexes/index",
     "t-tabs": "tdesign-miniprogram/tabs/tabs",
     "t-tab-panel": "tdesign-miniprogram/tab-panel/tab-panel",
     "t-icon": "tdesign-miniprogram/icon/icon",

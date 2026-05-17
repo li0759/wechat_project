@@ -1,0 +1,42 @@
+.cif-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 12;
+  background: #ffffff;
+  border-radius: 18rpx 0 0 18rpx;
+  box-shadow: -12rpx 0 28rpx rgba(15, 23, 42, 0.08);
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 320ms ease, opacity 220ms ease;
+  box-sizing: border-box;
+}
+
+.cif-panel--active {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.cif-panel--dragging {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.cif-panel__gesture {
+  width: 100%;
+  height: 100%;
+}
+
+.cif-panel__scroll {
+  width: 100%;
+  height: 100%;
+}
+
+.cif-panel__body {
+  min-height: 100%;
+  box-sizing: border-box;
+  padding-bottom: 48rpx;
+}

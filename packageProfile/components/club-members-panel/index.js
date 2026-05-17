@@ -6,7 +6,7 @@ const AB_ENTER_LEAVE_MS = 180
 
 Component({
   options: {
-    // 让本组件 wxss 下发到子组件（member-index-list），否则会出现“列表/详情弹窗像没样式”的情况
+    // 让本组件 wxss 下发到子组件（club-member-indexes），否则会出现「列表/详情弹窗像没样式」的情况
     styleIsolation: 'shared'
   },
   properties: {
@@ -20,10 +20,17 @@ Component({
     clubId: null,
     members: [],
     filteredMembers: [],
-    indexList: [], // t-indexes 需要的数据结构
+    memberListTab: '0',
+    /** 与 t-tabs 同步；wx:if 用数字比较，避免 change 返回 number 时三个列表都不挂载 */
+    memberListTabIndex: 0,
+    nameMemberGroups: [],
+    nameIndexSidebar: [],
+    deptMemberGroups: [],
+    deptIndexSidebar: [],
+    monthMemberGroups: [],
+    monthIndexSidebar: [],
     searchKeyword: '',
     loading: true,
-    current: 'A',
     default_avatar: app.globalData.static_url+'/assets/default_avatar.webp',
     // 角色相关
     roleNames: {
@@ -115,6 +122,14 @@ Component({
     addMemberInnerScrollTop: 0,
     // 添加成员弹窗：用 scroll-view 下拉刷新触发“到顶继续下拉收回”
     amRefresherTriggered: false
+    ,
+    bulkSelectionBySource: {},
+    bulkMode: false,
+    bulkSelectedUsers: [],
+    bulkSelectedCount: 0,
+    bulkTotalVisible: 0,
+    bulkAllSelected: false,
+    bulkSending: false
   },
 
   lifetimes: {
@@ -131,7 +146,17 @@ Component({
       if (!clubId || clubId.startsWith('placeholder')) {
         this._lastClubId = null
         this._loaded = false
-        this.setData({ loading: false, members: [] })
+        this.setData({
+          loading: false,
+          members: [],
+          filteredMembers: [],
+          nameMemberGroups: [],
+          nameIndexSidebar: [],
+          deptMemberGroups: [],
+          deptIndexSidebar: [],
+          monthMemberGroups: [],
+          monthIndexSidebar: [],
+        })
         return
       }
       if (this._hasExpanded && String(clubId) !== String(this._lastClubId)) {
@@ -143,7 +168,7 @@ Component({
   },
 
   methods: {
-  onAddMemberInnerScroll(e) {
+    onAddMemberInnerScroll(e) {
       const top = Number(e?.detail?.scrollTop || 0)
       if (top !== this.data.addMemberInnerScrollTop) {
         this.setData({ addMemberInnerScrollTop: top })
@@ -184,9 +209,13 @@ Component({
     },
 
     // 获取协会成员列表
-    async fetchClubMembers(clubId) {
+    // opts.silent：后台刷新（不置 loading，避免盖住「添加会员」全屏层、不出现骨架屏闪烁）
+    async fetchClubMembers(clubId, opts = {}) {
       if (!clubId) clubId = this.properties.clubId
-    this.setData({ loading: true })
+      const silent = !!(opts && opts.silent)
+      if (!silent) {
+        this.setData({ loading: true })
+      }
     return new Promise((resolve, reject) => {
       const prevExisting = (this.data.existingUserIds || []).map((x) => String(x))
       wx.request({
@@ -215,6 +244,7 @@ Component({
                 role_display: member.role_display,
                 avatar: member.avatar,
                 join_date: this.formatDate(member.join_date),
+                join_date_raw: member.join_date,
                 is_current_user: member.is_current_user,
                 participation_count: member.participation_count || 0
               }
@@ -253,8 +283,7 @@ Component({
     this.updateMemberIsotope()
             })
             
-            // 构建索引列表
-    this.buildIndexList(processedMembers)
+            this.filterMembers()
             // 现有成员变化会影响通讯录“已添加”态
     if ((this.data.abDeptTree || []).length) this.abRefreshExistingStatus()
             resolve()
@@ -365,36 +394,6 @@ Component({
     await this.abEnsureLoaded()
   },
 
-  // 记录全屏弹窗内部 scroll-view 的 scrollTop，用于“到顶继续下拉才收回”
-  onAddMemberInnerScroll(e) {
-    const st = e?.detail?.scrollTop
-    this.setData({ addMemberInnerScrollTop: Number(st || 0) })
-  },
-
-  // 构建 t-indexes 索引列表
-  buildIndexList(members) {
-    const indexMap = {}
-    
-    members.forEach(member => {
-      const firstLetter = member.wecom_user_id.substring(0, 1).toLowerCase()
-      if (!indexMap[firstLetter]) {
-        indexMap[firstLetter] = []
-      }
-      indexMap[firstLetter].push(member)
-    })
-    
-    // 转换为 t-indexes 需要的格式
-    const showIndexList = Object.keys(indexMap).sort().map(key => ({
-      index: key,
-      children: indexMap[key] // 保持对象数组
-  }))
-    const indexList = Object.keys(indexMap).sort().map(key => ({
-      index: key,
-      children: indexMap[key].map(member => member.user_name) // 转换为字符串数组
-  }))
-    this.setData({ showIndexList: showIndexList, indexList: indexList.map((item) => item.index) })
-  },
-
   // 格式化日期
   formatDate(dateString) {
     if (!dateString) return '未知'
@@ -407,38 +406,305 @@ Component({
     return `${year}-${month}-${day}`
   },
 
-  // 搜索处理
-  onSearchChange(e) {
-    const keyword = e.detail.value.trim()
-    this.setData({ searchKeyword: keyword })
-    this.filterMembers()
+  onMemberListSearchChange(e) {
+    const raw = e.detail && e.detail.value != null ? String(e.detail.value) : ''
+    const keyword = raw.trim()
+    this.setData({ searchKeyword: keyword }, () => this.filterMembers())
   },
 
-  // 清除搜索
-  onSearchClear() {
-    this.setData({ searchKeyword: '' })
-    this.filterMembers()
+  onMemberListSearchClear() {
+    this.setData({ searchKeyword: '' }, () => this.filterMembers())
   },
 
-  // 过滤成员
+  onMemberListSwiperChange(e) {
+    const idx = Math.min(2, Math.max(0, Math.floor(Number(e.detail && e.detail.current != null ? e.detail.current : 0))))
+    if (idx === this.data.memberListTabIndex) return
+    this.setData({ memberListTabIndex: idx, memberListTab: String(idx) }, () => {
+      this.syncBulkStateFromActiveTab()
+    })
+  },
+
+  onMemberListDotTap(e) {
+    const idx = Math.min(2, Math.max(0, Math.floor(Number(e.currentTarget.dataset.index))))
+    if (idx === this.data.memberListTabIndex) return
+    this.setData({ memberListTabIndex: idx, memberListTab: String(idx) }, () => {
+      this.syncBulkStateFromActiveTab()
+    })
+  },
+
+  getActiveTabSource() {
+    const idx = Number(this.data.memberListTabIndex || 0)
+    if (idx === 1) return 'dept'
+    if (idx === 2) return 'month'
+    return 'name'
+  },
+
+  getActiveMemberIndexesId() {
+    const source = this.getActiveTabSource()
+    if (source === 'dept') return '#member-indexes-dept'
+    if (source === 'month') return '#member-indexes-month'
+    return '#member-indexes-name'
+  },
+
+  syncBulkStateFromActiveTab() {
+    const source = this.getActiveTabSource()
+    const bySource = this.data.bulkSelectionBySource || {}
+    const cur = bySource[source] || { active: false, selectedUsers: [] }
+    const selectedUsers = Array.isArray(cur.selectedUsers) ? cur.selectedUsers : []
+    this.setData({
+      bulkMode: !!cur.active,
+      bulkSelectedUsers: selectedUsers,
+      bulkSelectedCount: selectedUsers.length,
+      bulkTotalVisible: Number(cur.totalVisible || 0),
+      bulkAllSelected: !!cur.allSelected,
+    })
+  },
+
+  onBulkSelectChange(e) {
+    const detail = e.detail || {}
+    const source = String(detail.source || '')
+    if (!source) return
+    const selectedUsers = Array.isArray(detail.selectedUsers) ? detail.selectedUsers : []
+    const nextBySource = {
+      ...(this.data.bulkSelectionBySource || {}),
+      [source]: {
+        active: !!detail.active,
+        selectedUsers,
+        totalVisible: Number(detail.totalVisible || 0),
+        allSelected: !!detail.allSelected,
+      },
+    }
+    this.setData({ bulkSelectionBySource: nextBySource }, () => this.syncBulkStateFromActiveTab())
+  },
+
+  onSelectAllBulk() {
+    if (this.data.bulkSending) return
+    const comp = this.selectComponent(this.getActiveMemberIndexesId())
+    if (comp && comp.selectAllBulk) {
+      comp.selectAllBulk()
+    }
+  },
+
+  clearAllBulkModes() {
+    const ids = ['#member-indexes-name', '#member-indexes-dept', '#member-indexes-month']
+    ids.forEach((id) => {
+      const comp = this.selectComponent(id)
+      if (comp && comp.clearBulkMode) {
+        comp.clearBulkMode()
+      }
+    })
+    this.setData({
+      bulkSelectionBySource: {},
+      bulkMode: false,
+      bulkSelectedUsers: [],
+      bulkSelectedCount: 0,
+      bulkTotalVisible: 0,
+      bulkAllSelected: false,
+      bulkSending: false,
+    })
+  },
+
+  onExitBulkMode() {
+    if (this.data.bulkSending) return
+    this.clearAllBulkModes()
+  },
+
+  async onSendBulkMemberActivity() {
+    const users = Array.isArray(this.data.bulkSelectedUsers) ? this.data.bulkSelectedUsers : []
+    if (!users.length) return
+    const clubId = String(this.properties.clubId || '')
+    if (!clubId) return
+    const userIds = users.map((u) => String(u.user_id)).filter(Boolean)
+    if (!userIds.length) return
+
+    this.setData({ bulkSending: true })
+    wx.showLoading({ title: '生成文件中...' })
+    try {
+      const exportRes = await this.request({
+        url: `/statistics/export/club/${clubId}/member_activity/wecom_media?user_ids=${encodeURIComponent(userIds.join(','))}`,
+        method: 'GET'
+      })
+      if (!exportRes || Number(exportRes.code) !== 200 || !exportRes.data || !exportRes.data.media_id) {
+        throw new Error(exportRes?.message || '生成文件失败')
+      }
+      wx.showLoading({ title: '发送到企业微信...' })
+      const sendRes = await this.request({
+        url: '/statistics/wecom/send_media_to_self',
+        method: 'POST',
+        data: { media_id: exportRes.data.media_id }
+      })
+      if (!sendRes || Number(sendRes.code) !== 200) {
+        throw new Error(sendRes?.message || '发送失败')
+      }
+      Toast({
+        context: this,
+        selector: '#t-toast',
+        message: '已发送到你本人的企业微信',
+        theme: 'success',
+      })
+      this.clearAllBulkModes()
+    } catch (error) {
+      Toast({
+        context: this,
+        selector: '#t-toast',
+        message: error.message || '发送失败',
+        theme: 'error',
+      })
+    } finally {
+      wx.hideLoading()
+      this.setData({ bulkSending: false })
+    }
+  },
+
   filterMembers() {
-    const { members, searchKeyword } = this.data
-    
+    const members = this.data.members || []
+    const searchKeyword = this.data.searchKeyword || ''
     let filtered = members
-    
-    // 关键词搜索
     if (searchKeyword) {
       const keyword = searchKeyword.toLowerCase()
-      filtered = filtered.filter(member => 
-        member.user_name.toLowerCase().includes(keyword) ||
-        (member.department && member.department.toLowerCase().includes(keyword)) ||
-        (member.position && member.position.toLowerCase().includes(keyword)) ||
-        (member.phone && member.phone.includes(keyword))
-      )
+      filtered = members.filter((member) => {
+        const name = (member.user_name || '').toLowerCase()
+        return (
+          name.includes(keyword) ||
+          (member.department && member.department.toLowerCase().includes(keyword)) ||
+          (member.position && member.position.toLowerCase().includes(keyword)) ||
+          (member.phone && member.phone.includes(keyword))
+        )
+      })
     }
-    
     this.setData({ filteredMembers: filtered })
-    this.buildIndexList(filtered)
+    this.rebuildMemberListViews(filtered)
+  },
+
+  rebuildMemberListViews(members) {
+    const list = Array.isArray(members) ? members : []
+    const name = this.buildMemberNameView(list)
+    const dept = this.buildMemberDeptView(list)
+    const month = this.buildMemberMonthView(list)
+    this.setData({
+      nameMemberGroups: name.groups,
+      nameIndexSidebar: name.sidebar,
+      deptMemberGroups: dept.groups,
+      deptIndexSidebar: dept.sidebar,
+      monthMemberGroups: month.groups,
+      monthIndexSidebar: month.sidebar,
+    })
+  },
+
+  getNameInitialKey(member) {
+    const name = (member.user_name || '').trim()
+    const wid = String(member.wecom_user_id || '')
+    const pickLetter = (s) => {
+      if (!s) return ''
+      const ch = s[0]
+      return /[a-zA-Z]/.test(ch) ? ch.toUpperCase() : ''
+    }
+    const k = pickLetter(name) || pickLetter(wid)
+    if (!k) return '#'
+    return k
+  },
+
+  buildMemberNameView(members) {
+    const list = [...members]
+    list.sort((a, b) => (a.user_name || '').localeCompare(b.user_name || '', 'zh-Hans-CN'))
+    const map = {}
+    list.forEach((m) => {
+      const k = this.getNameInitialKey(m)
+      if (!map[k]) map[k] = []
+      map[k].push(m)
+    })
+    const sortKeys = (a, b) => {
+      if (a === '#') return 1
+      if (b === '#') return -1
+      return a.localeCompare(b)
+    }
+    const keys = Object.keys(map).sort(sortKeys)
+    const groups = []
+    const sidebar = []
+    keys.forEach((key, idx) => {
+      const anchorId = `milg${idx}`
+      const sectionTitle = key === '#' ? '其他' : key
+      sidebar.push({ label: key === '#' ? '#' : key, anchorId })
+      groups.push({ anchorId, sectionTitle, children: map[key] })
+    })
+    return { groups, sidebar }
+  },
+
+  buildMemberDeptView(members) {
+    const map = {}
+    ;[...members].forEach((m) => {
+      const dept = (m.department && String(m.department).trim()) || '未填写部门'
+      if (!map[dept]) map[dept] = []
+      map[dept].push(m)
+    })
+    const deptNames = Object.keys(map).sort((a, b) => a.localeCompare(b, 'zh-Hans-CN'))
+    const groups = []
+    const sidebar = []
+    deptNames.forEach((deptName, idx) => {
+      const children = map[deptName]
+        .slice()
+        .sort((a, b) => (a.user_name || '').localeCompare(b.user_name || '', 'zh-Hans-CN'))
+      const anchorId = `mild${idx}`
+      const s = String(deptName == null ? '' : deptName)
+      let label = ''
+      for (const ch of s) {
+        if (label.length >= 4) break
+        label += ch
+      }
+      sidebar.push({ label, anchorId })
+      groups.push({ anchorId, sectionTitle: deptName, children })
+    })
+    return { groups, sidebar }
+  },
+
+  extractJoinMonthMeta(member) {
+    const raw = member.join_date_raw != null ? member.join_date_raw : member.join_date
+    if (!raw || raw === '未知') {
+      return { key: 'unknown', title: '未知年月', barLabel: '?' }
+    }
+    let d = new Date(raw)
+    if (Number.isNaN(d.getTime()) && typeof raw === 'string') {
+      d = new Date(raw.replace(/-/g, '/'))
+    }
+    if (Number.isNaN(d.getTime())) {
+      return { key: 'unknown', title: '未知年月', barLabel: '?' }
+    }
+    const y = d.getFullYear()
+    const m = d.getMonth() + 1
+    const key = `${y}-${String(m).padStart(2, '0')}`
+    return {
+      key,
+      title: `${y}年${m}月`,
+      barLabel: `${m}月`,
+    }
+  },
+
+  buildMemberMonthView(members) {
+    const map = {}
+    ;[...members].forEach((m) => {
+      const meta = this.extractJoinMonthMeta(m)
+      if (!map[meta.key]) {
+        map[meta.key] = { title: meta.title, barLabel: meta.barLabel, users: [] }
+      }
+      map[meta.key].users.push(m)
+    })
+    const keys = Object.keys(map).sort((a, b) => {
+      if (a === 'unknown') return 1
+      if (b === 'unknown') return -1
+      return b.localeCompare(a)
+    })
+    const groups = []
+    const sidebar = []
+    keys.forEach((key, idx) => {
+      const bucket = map[key]
+      const children = bucket.users
+        .slice()
+        .sort((a, b) => (a.user_name || '').localeCompare(b.user_name || '', 'zh-Hans-CN'))
+      const anchorId = `milm${idx}`
+      sidebar.push({ label: bucket.title, anchorId })
+      groups.push({ anchorId, sectionTitle: bucket.title, children })
+    })
+    return { groups, sidebar }
   },
 
   // 角色变更 (参考club-manage)
@@ -488,7 +754,7 @@ Component({
             })
           }, 1000)
         } else {
-          await this.fetchClubMembers(this.properties.clubId)
+          await this.fetchClubMembers(this.properties.clubId, { silent: true })
           this.closeMemberDetailPopup()
         }
       } else {
@@ -558,7 +824,7 @@ Component({
               }
               
               // 更新成员列表和搜索结果状态（updateMemberIsotope 会检测到只是删除一个，不会触发重新初始化）
-              await this.fetchClubMembers(this.properties.clubId)
+              await this.fetchClubMembers(this.properties.clubId, { silent: true })
               this.updateSearchResultsStatus()
               
               // 如果组件未加载，兜底更新整个数组
@@ -973,8 +1239,8 @@ Component({
           theme: 'success',
         })
         
-        // 先更新成员列表，获取最新数据
-        await this.fetchClubMembers(this.properties.clubId)
+        // 先更新成员列表，获取最新数据（静默刷新，避免 loading 骨架盖住添加弹窗）
+        await this.fetchClubMembers(this.properties.clubId, { silent: true })
         this.updateSearchResultsStatus()
         
         // 动态添加到 isotope，而不是更新整个数组

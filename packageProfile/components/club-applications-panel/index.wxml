@@ -1,72 +1,92 @@
-<view class="container">
-  <view class="applications-list">
-    <block wx:if="{{allApplications.length > 0}}">
-      <view wx:for="{{allApplications}}" wx:key="index" class="application-item">
-        <!-- 折叠状态的基础信息 -->
-        <view class="application-summary" bind:tap="toggleExpand" data-index="{{index}}">
-          <view class="summary-left">
-            <image class="user-avatar-small" src="{{item.appliced_user_avartor || '/assets/images/default-avatar.png'}}" mode="aspectFill"></image>
-            <view class="user-name">{{item.appliced_user_name}}</view>
-          </view>
-          <view class="summary-right">
-            <!-- 待审批：用 catchtap 包住按钮，阻止冒泡到整行 toggleExpand；勿在 t-button 上同时 bindtap+catchtap（会吞掉打开弹窗） -->
-            <view wx:if="{{!item.processedDate}}" class="summary-actions" catchtap="stopBubble">
-              <t-button
-                size="small"
-                theme="primary"
-                class="summary-btn primary-btn"
-                data-application-id="{{item.applicationID}}"
-                bind:tap="showApproveDialog"
-              >批准</t-button>
-              <t-button
-                size="small"
-                theme="default"
-                variant="outline"
-                class="summary-btn"
-                data-application-id="{{item.applicationID}}"
-                bind:tap="showRejectDialog"
-              >拒绝</t-button>
-            </view>
-            <!-- 已处理状态显示状态 -->
-            <view wx:else class="summary-status {{item.approved ? 'status-approved' : 'status-rejected'}}">
-              {{item.approved ? '已批准' : '已拒绝'}}
-            </view>
-            <!-- 展开箭头 -->
-            <t-icon name="{{item.expanded ? 'chevron-up' : 'chevron-down'}}" class="expand-arrow" />
-          </view>
+<view class="tl-modal-root cap-tl-root">
+  <view class="tl-modal-header">
+    <text class="tl-modal-h-title">入会审批</text>
+    <text class="tl-modal-h-count" wx:if="{{applicationsTotalRecords > 0}}">共 {{applicationsTotalRecords}} 条</text>
+  </view>
+
+  <scroll-view
+    class="tl-modal-scroll"
+    scroll-y="{{true}}"
+    show-scrollbar="{{false}}"
+    enable-flex="{{true}}"
+    lower-threshold="{{120}}"
+    bindscrolltolower="onApplicationsScrollToLower"
+  >
+    <view wx:if="{{applicationsListLoading && allApplications.length === 0}}" class="tl-modal-loading">加载中…</view>
+    <block wx:elif="{{allApplications.length > 0}}">
+      <view
+        wx:for="{{allApplications}}"
+        wx:key="applicationID"
+        wx:for-index="idx"
+        class="tl-modal-row"
+      >
+        <view class="tl-modal-left">
+          <text class="tl-axis-date">{{item.axis_date}}</text>
+          <text class="tl-axis-time">{{item.axis_time}}</text>
         </view>
-        
-        <!-- 展开状态的详细信息 -->
-        <view class="application-details" wx:if="{{item.expanded}}">
-          <view class="detail-row">
-            <view class="detail-title">申请时间</view>
-            <view class="detail-value">{{item.applicatedDate}}</view>
-          </view>
-          <view class="detail-row">
-            <view class="detail-title">协会名称</view>
-            <view class="detail-value">{{item.club_name}}</view>
-          </view>
+        <view class="tl-modal-rail">
+          <view class="tl-dot"></view>
+          <view class="tl-vline" wx:if="{{idx < allApplications.length - 1}}"></view>
+        </view>
+        <view class="tl-modal-main {{item.mainClass}}">
           <block wx:if="{{item.processedDate}}">
-            <view class="detail-row">
-              <view class="detail-title">处理人</view>
-              <view class="detail-value">{{item.processed_user_name}}</view>
+            <text class="tl-milestone-title">{{item.approved ? '已批准' : '已拒绝'}}</text>
+            <view class="tl-op-row">
+              <image
+                class="tl-op-avatar"
+                src="{{item.appliced_user_avartor || defaultAvatarUrl}}"
+                mode="aspectFill"
+              />
+              <view class="tl-op-meta">
+                <text class="tl-op-name">{{item.appliced_user_name}}</text>
+                <text class="tl-op-sub">{{item.club_name || '协会'}} · 申请加入</text>
+                <text class="tl-op-sub">处理人 {{item.processed_user_name || '—'}} · {{item.processedDate}}</text>
+                <text wx:if="{{item.opinion}}" class="tl-op-sub">意见：{{item.opinion}}</text>
+              </view>
             </view>
-            <view class="detail-row">
-              <view class="detail-title">处理时间</view>
-              <view class="detail-value">{{item.processedDate}}</view>
-            </view>
-            <view class="detail-row" wx:if="{{item.opinion}}">
-              <view class="detail-title">处理意见</view>
-              <view class="detail-value">{{item.opinion}}</view>
+          </block>
+          <block wx:else>
+            <view class="tl-op-row cap-app-pending-row">
+              <image
+                class="tl-op-avatar"
+                src="{{item.appliced_user_avartor || defaultAvatarUrl}}"
+                mode="aspectFill"
+              />
+              <view class="tl-op-meta">
+                <text class="tl-op-name">{{item.appliced_user_name}}</text>
+                <text class="tl-op-sub">{{item.club_name || '协会'}} · 申请加入</text>
+              </view>
+              <view class="cap-app-pending-actions" catchtap="stopBubble">
+                <t-button
+                  size="small"
+                  theme="primary"
+                  class="cap-btn cap-btn-approve"
+                  data-application-id="{{item.applicationID}}"
+                  bind:tap="showApproveDialog"
+                >批准</t-button>
+                <t-button
+                  size="small"
+                  theme="default"
+                  variant="outline"
+                  class="cap-btn"
+                  data-application-id="{{item.applicationID}}"
+                  bind:tap="showRejectDialog"
+                >拒绝</t-button>
+              </view>
             </view>
           </block>
         </view>
       </view>
     </block>
-    <t-empty wx:else description="暂无申请记录" />
-  </view>
+    <view wx:else class="tl-modal-empty">
+      <t-empty wx:if="{{!applicationsListLoading}}" description="暂无申请记录" />
+    </view>
+    <view wx:if="{{applicationsListLoadingMore}}" class="tl-modal-loading">加载中…</view>
+    <view wx:elif="{{applicationsListEnd && allApplications.length > 0}}" class="tl-modal-end">没有更多了</view>
+    <view class="tl-modal-footer-space" />
+  </scroll-view>
+</view>
 
-<!-- 批准对话框 -->
 <t-dialog
   visible="{{ showApproveDialog }}"
   title="批准申请"
@@ -85,7 +105,6 @@
   </view>
 </t-dialog>
 
-<!-- 拒绝对话框 -->
 <t-dialog
   visible="{{ showRejectDialog }}"
   title="拒绝申请"
@@ -103,4 +122,3 @@
     />
   </view>
 </t-dialog>
-</view> 

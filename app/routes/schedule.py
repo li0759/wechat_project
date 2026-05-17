@@ -248,14 +248,28 @@ def create_event_from_schedule(schedule):
         # 图片复制失败不影响活动创建，继续执行
 
     # 自动将订阅者加入新活动
+    subscribed_user_ids = set()
     for schedule_join in schedule.scheduleJoins:
+        subscribed_user_ids.add(schedule_join.userID)
         event_join = EventJoin(
             eventID=new_event.eventID,
             userID=schedule_join.userID,
-            joinDate=datetime.utcnow()
+            joinDate=datetime.utcnow(),
+            isDelete=False,
         )
         db.session.add(event_join)
-    
+
+    # 原型活动作者未在订阅者列表中时，为其补充参与记录
+    if prototype.authorID not in subscribed_user_ids:
+        db.session.add(
+            EventJoin(
+                eventID=new_event.eventID,
+                userID=prototype.authorID,
+                joinDate=datetime.utcnow(),
+                isDelete=False,
+            )
+        )
+
     # 为所有订阅日程的用户生成消息
     for schedule_join in schedule.scheduleJoins:
         message = Message(

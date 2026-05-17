@@ -234,11 +234,14 @@
   margin: 0 auto 16rpx;
 }
 
-/* ===== 人员管理（对齐 club-create：700x800 + 头像条） ===== */
-.panel-people {
-  width: 700rpx;
-  height: 800rpx;
-  margin: 0 auto 16rpx;
+/* 人员管理：与封面/活动管理同宽（350rpx 单栏 panel），九宫格紧凑对齐 */
+.panel.panel-people {
+  width: 350rpx;
+  max-width: 100%;
+  height: auto;
+  min-height: 300rpx;
+  margin: 0 0 16rpx;
+  box-sizing: border-box;
 }
 
 /* 移除人员管理面板的 active 效果 */
@@ -248,38 +251,92 @@
   transform: none;
 }
 
-/* 成员排序选择器 */
-.member-sort-bar {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-  padding: 12rpx 0;
-  margin-bottom: 16rpx;
+/* 入会审批并排卡片：不触发整卡 scale */
+.panel.panel-people.panel-pending-grid:active {
+  border-color: #E5E7EB;
+  box-shadow: var(--md-sys-elevation-1);
+  transform: none;
 }
 
-.sort-option {
-  font-size: 24rpx; 
+.people-manage-split {
+  align-items: flex-start;
+}
+
+.am-tag-pending {
+  background: rgba(250, 140, 22, 0.12);
+  color: #d46b08;
+}
+
+.am-pending-detail-actions.am-pending-detail-stack {
+  align-items: stretch;
+}
+
+.am-pending-form-block {
+  margin: 8rpx 0 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.am-pending-form-block-reject {
+  margin-top: 20rpx;
+}
+
+.am-pending-field-label {
+  font-size: 24rpx;
   color: #666;
-  padding: 8rpx 20rpx; 
-  border-radius: 24rpx; 
-  background: #f5f5f5;
-  transition: all 0.2s ease;
-}
-
-.sort-option.active {
-  color: #fff;
-  background: var(--md-sys-color-primary);
+  margin-bottom: 8rpx;
   font-weight: 600;
 }
 
-/* 成员 Isotope 容器 */
-.member-isotope-container {
+.am-pending-action-btn {
   width: 100%;
-  min-height: 150rpx;
-  margin-bottom: 16rpx;
+  margin-top: 8rpx;
+  box-sizing: border-box;
 }
 
-/* 隐藏的弹窗容器 */
+/* 3×3：列宽与原先 people-item（96rpx）一致，间隙与头像条 strip 接近 */
+.people-grid-3x3 {
+  display: grid;
+  grid-template-columns: repeat(3, 96rpx);
+  column-gap: 13rpx;
+  row-gap: 8rpx;
+  justify-content: center;
+  width: 100%;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.people-grid-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  box-sizing: border-box;
+}
+
+.people-grid-cell--empty {
+  pointer-events: none;
+  opacity: 0.35;
+}
+
+.people-grid-cell--empty::before {
+  content: '';
+  display: block;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: #eceef1;
+}
+
+.people-grid-cell--hover:active {
+  opacity: 0.92;
+}
+
+/* 添加格：仅保留与头像列对齐，样式由 .people-plus / .people-label 承担 */
+.people-grid-cell--add {
+  justify-content: flex-start;
+}
+
 .hidden-popups {
   position: absolute;
   left: -9999rpx;

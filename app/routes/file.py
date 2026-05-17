@@ -219,9 +219,8 @@ def upload_file():
             content_type=content_type
         )
         
-        # 生成完整的访问URL
-        # 格式：https://www.vhhg.top/api/v1/file/download/年/月/日/时间戳_uuid.ext
-        base_url = current_app.config.get('BASE_URL', 'https://www.vhhg.top')
+        # 生成完整的访问URL（BASE_URL 见 app.config.Config.BASE_URL / 环境变量 BASE_URL）
+        base_url = (current_app.config.get('BASE_URL') or 'https://www.vhhg.top').rstrip('/')
         file_url = f"{base_url}/api/v1/file/download/{safe_filename}"
         
         # 设置content type

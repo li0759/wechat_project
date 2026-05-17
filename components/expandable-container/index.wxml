@@ -1,40 +1,69 @@
 <!--components/expandable-container/index.wxml-->
 <!-- 新版：遮罩层 + 弹窗(clip-path控制) + 涟漪遮罩层 -->
-<!-- 注意：不使用 root-portal，因为真机上可能被禁用 -->
+<!-- overlayUseRootPortal 时用 root-portal，避免 swiper 等 transform 祖先导致 fixed 错位 -->
 
 <!-- 触发器 -->
-<view class="expandable-wrapper" catchtap="handleTriggerTap">
-  <view class="trigger-content">
+<view
+  class="expandable-wrapper {{triggerStretch ? 'expandable-wrapper--stretch' : ''}}"
+  style="{{triggerHostStyle}}"
+  catchtap="handleTriggerTap"
+>
+  <view class="trigger-content {{triggerStretch ? 'trigger-content--stretch' : ''}}">
     <slot name="trigger"></slot>
   </view>
 </view>
 
-<!-- 1. 全屏灰暗遮罩层 -->
-<view 
-  wx:if="{{isExpanded || isExpanding}}"
-  class="expandable-overlay expandable-overlay-fixed"
-  style="z-index: {{effectiveZIndex}};"
-  catchtap="handleOverlayTap"
-></view>
+<block wx:if="{{!overlayUseRootPortal}}">
+  <!-- 1. 全屏灰暗遮罩层 -->
+  <view
+    wx:if="{{isExpanded || isExpanding}}"
+    class="expandable-overlay expandable-overlay-fixed"
+    style="z-index: {{effectiveZIndex}};"
+    catchtap="handleOverlayTap"
+  ></view>
 
-<!-- 系统返回：与 fullscreen 一致，由宿主页根级唯一 page-container + app.__fullscreenBackTarget 转发，勿在 slot 内再挂 page-container -->
-
-<!-- 2. 弹窗：外层仅 fixed/尺寸/圆角；clip-path 单独内层，避免改 clip 时 WebView 重算导致子节点 rippleReveal 动画被整段重启（看起来像播两次） -->
-<view 
-  wx:if="{{clipVisible}}"
-  class="popup-container popup-container-fixed"
-  style="{{popupFrameStyle}}"
-  catchtap="handleContentTap"
->
-  <view class="popup-clip-inner" style="{{popupClipStyle}}">
-    <!-- 3. 涟漪遮罩层（挡住弹窗内容，从中心向四边挖空） -->
-    <view 
-      class="ripple-mask {{rippleMaskClass}}"
-      style="--mask-color: {{maskColor}}; --ripple-dur: {{rippleDur}}ms;"
-    ></view>
-    <!-- 4. 弹窗实际内容 -->
-    <view class="popup-content">
-      <slot name="content"></slot>
+  <!-- 2. 弹窗 -->
+  <view
+    wx:if="{{clipVisible}}"
+    class="popup-container popup-container-fixed"
+    style="{{popupFrameStyle}}"
+    catchtap="handleContentTap"
+  >
+    <view class="popup-clip-inner" style="{{popupClipStyle}}">
+      <view
+        class="ripple-mask {{rippleMaskClass}}"
+        style="--mask-color: {{maskColor}}; --ripple-dur: {{rippleDur}}ms;"
+      ></view>
+      <view class="popup-content">
+        <slot name="content"></slot>
+      </view>
     </view>
   </view>
-</view>
+</block>
+
+<root-portal wx:elif="{{overlayUseRootPortal}}">
+  <view class="ec-expand-portal-host">
+    <view
+      wx:if="{{isExpanded || isExpanding}}"
+      class="expandable-overlay expandable-overlay-fixed"
+      style="z-index: {{effectiveZIndex}};"
+      catchtap="handleOverlayTap"
+    ></view>
+    <view
+      wx:if="{{clipVisible}}"
+      class="popup-container popup-container-fixed"
+      style="{{popupFrameStyle}}"
+      catchtap="handleContentTap"
+    >
+      <view class="popup-clip-inner" style="{{popupClipStyle}}">
+        <view
+          class="ripple-mask {{rippleMaskClass}}"
+          style="--mask-color: {{maskColor}}; --ripple-dur: {{rippleDur}}ms;"
+        ></view>
+        <view class="popup-content">
+          <slot name="content"></slot>
+        </view>
+      </view>
+    </view>
+  </view>
+</root-portal>

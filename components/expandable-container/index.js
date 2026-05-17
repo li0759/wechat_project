@@ -7,18 +7,45 @@
   },
 
   properties: {
+    /** 非空时触发区按该宽度铺满（如 100%），用于双列栅格内避免 inline-block 被内容撑破 */
+    triggerWidth: { type: String, value: '' },
     expandedWidth: { type: Number, value: 700 },
     expandedHeight: { type: Number, value: 800 },
     bgColor: { type: String, value: 'rgba(223, 118, 176, 0.8)' },
     // 展开/收起的主要节奏（clip 扩展 + 涟漪遮罩）
     animationDuration: { type: Number, value: 200 },
-    zIndex: { type: Number, value: 1000 }
+    zIndex: { type: Number, value: 1000 },
+    /**
+     * 为 true 时遮罩与弹窗经 root-portal 挂到页面根，避免祖先带 transform（如原生 swiper）时
+     * position:fixed 相对错位。仅在确有需要时开启（部分环境可能对 root-portal 有限制）。
+     */
+    overlayUseRootPortal: { type: Boolean, value: false },
+  },
+
+  observers: {
+    triggerWidth(w) {
+      const raw = w == null ? '' : String(w).trim()
+      if (!raw) {
+        this.setData({ triggerHostStyle: '', triggerStretch: false })
+        return
+      }
+      let style = ''
+      if (/^\d+(\.\d+)?$/.test(raw)) {
+        style = `width:${raw}rpx;box-sizing:border-box;`
+      } else {
+        style = `width:${raw};box-sizing:border-box;`
+      }
+      this.setData({ triggerHostStyle: style, triggerStretch: true })
+    },
   },
 
   data: {
     isExpanded: false,
     isExpanding: false,
     effectiveZIndex: 1000,
+    /** 由 triggerWidth 解析：触发区外包宽度 + 是否 block 铺满 */
+    triggerHostStyle: '',
+    triggerStretch: false,
     // 弹窗 fixed 外框（不含 clip-path，避免与涟漪层同节点改 style 触发整段动画重启）
     popupFrameStyle: '',
     // 仅 clip-path + transition，挂在内层

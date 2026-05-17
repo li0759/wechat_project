@@ -29,7 +29,9 @@
     shellScene: { type: String, value: '' },
     /** 超限时一并传递的 id（与下面哪个 panel 对应由 shellScene 决定） */
     shellEventId: { type: String, value: '' },
-    shellClubId: { type: String, value: '' }
+    shellClubId: { type: String, value: '' },
+    /** 是否显示左上角全屏返回（嵌套全屏时可由宿主关掉，避免与内层返回叠在一起） */
+    showFullscreenBack: { type: Boolean, value: true }
   },
 
   data: {
@@ -464,6 +466,7 @@
           this.__expandTo3 = setTimeout(() => {
             if (runId !== this.__expandRunId) return
             this.setData({ fsContentClass: 'fs-entered' })
+            this.triggerEvent('expandsettled', {})
           }, slideDur + 30)
         }, Math.floor(dur * 0.7))
       }, 20)
@@ -550,7 +553,10 @@
         this.setData({ fsContentClass: 'fs-hidden', isExpanded: false })
 
         const animDur = this.playCollapseRippleShrink(dur)
-        setTimeout(() => this.setData({ rippleVisible: false, rippleStyle: '' }), animDur + 20)
+        setTimeout(() => {
+          this.setData({ rippleVisible: false, rippleStyle: '' })
+          this.triggerEvent('collapsed', {})
+        }, animDur + 20)
       }, Math.floor(slideDur * 0.7))
 
       this.triggerEvent('collapse', {})
@@ -686,7 +692,10 @@
       setTimeout(() => {
         this.setData({ isExpanded: false })
         const animDur = this.playCollapseRippleShrink(dur)
-        setTimeout(() => this.setData({ fsGestureDismissing: false, fsDragY: 0, fsDragTransition: '', fsDragTransform: 'none', rippleVisible: false, rippleStyle: '' }), animDur + 20)
+        setTimeout(() => {
+          this.setData({ fsGestureDismissing: false, fsDragY: 0, fsDragTransition: '', fsDragTransform: 'none', rippleVisible: false, rippleStyle: '' })
+          this.triggerEvent('collapsed', {})
+        }, animDur + 20)
       }, Math.floor(slideDur * 0.7))
 
       this.triggerEvent('collapse', { by: 'gesture' })

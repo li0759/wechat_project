@@ -44,7 +44,12 @@ Page({
       tapX: 0,
       tapY: 0
     },
-    
+    /** 全屏详情栈：同层 expandable 内切换 type/id，返回时 pop */
+    globalPopupStack: [],
+    globalPopupDeferBack: false,
+    globalPopupStackAnim: '',
+    globalPopupOverlay: null,
+
     // 触摸追踪变量
     touchStartX: 0,
     touchStartY: 0,
@@ -55,6 +60,9 @@ Page({
 
     /** 与 app.notifyFullscreenBackIntercept 同步：根级唯一 page-container 拦截系统返回 */
     fsBackInterceptShow: false,
+
+    /** 全局全屏左上角返回：添加成员嵌套全屏时由 club-manage-panel 关闭 */
+    hostExpandableBackShow: true,
 
     bd: {
       joined_clubs: { count: 0, seen: true },
@@ -366,6 +374,14 @@ Page({
   onNavigateEventFromTimelinePanel(e) {
     const eventId = e?.detail?.eventId;
     if (!eventId) return;
+    const detail = e.detail || {};
+    if (this.data.globalPopup && this.data.globalPopup.visible) {
+      const backPt = this._getGlobalPopupBackRipplePoint();
+      const tapX = detail.tapX != null ? detail.tapX : backPt.tapX;
+      const tapY = detail.tapY != null ? detail.tapY : backPt.tapY;
+      this._pushGlobalPopupStack('event-detail', String(eventId), tapX, tapY);
+      return;
+    }
     this.autoOpenEventPanel(eventId);
   },
 
@@ -1080,29 +1096,8 @@ Page({
    * @param {Object} config - 弹窗配置
    */
   _openGlobalPopup(e, config) {
-    const popupConfig = {
-      visible: true,
-      loading: true,
-      renderPanel: false,
-      bgColor: '#f3e3f3ff',
-      sheetBgColor: '#f3e3f3ff',
-      ...config
-    };
-    
-    this.setData({ globalPopup: popupConfig }, () => {
-      this.syncProfileTabBarWithOverlay()
-      setTimeout(() => {
-        const popup = this.selectComponent('#globalFullscreenPopup');
-        if (popup && popup.handleTriggerTap) {
-          if (e) {
-            popup.handleTriggerTap(e);
-          } else {
-            const sys = wx.getSystemInfoSync();
-            popup.expand(sys.windowWidth / 2, sys.windowHeight / 2);
-          }
-        } else {}
-      }, 50);
-    });
+    const { tapX, tapY } = this._extractTapPoint(e);
+    this._openGlobalPopupRoot(config, tapX, tapY);
   },
 
   /**
@@ -1398,6 +1393,367 @@ Page({
     }
   },
 
+  _extractTapPoint(e) {
+    let tapX;
+    let tapY;
+    if (e && e.detail && e.detail.changedTouches && e.detail.changedTouches[0]) {
+      tapX = e.detail.changedTouches[0].clientX;
+      tapY = e.detail.changedTouches[0].clientY;
+    } else if (e && e.detail && e.detail.touches && e.detail.touches[0]) {
+      tapX = e.detail.touches[0].clientX;
+      tapY = e.detail.touches[0].clientY;
+    } else if (e && e.changedTouches && e.changedTouches[0]) {
+      tapX = e.changedTouches[0].clientX;
+      tapY = e.changedTouches[0].clientY;
+    } else if (e && e.touches && e.touches[0]) {
+      tapX = e.touches[0].clientX;
+      tapY = e.touches[0].clientY;
+    } else {
+      const sys = wx.getSystemInfoSync();
+      tapX = sys.windowWidth / 2;
+      tapY = sys.windowHeight / 2;
+    }
+    return { tapX, tapY };
+  },
+
+  _panelIdForGlobalPopupType(type) {
+    const map = {
+      'club-create': '#clubCreatePanel',
+      'event-create': '#eventCreatePanel',
+      'event-manage': '#profileEventManagePanel',
+      'event-joined': '#profileEventJoinedPanel',
+      'event-detail': '#profileEventDetailPanel',
+      'club-manage': '#profileClubManagePanel',
+      'club-detail': '#profileClubDetailPanel',
+      'club-joined': '#profileClubJoinedPanel',
+      'club-members': '#clubMembersPanel',
+      events: '#eventsPanel',
+      clubs: '#clubsPanel',
+      'club-applications': '#clubApplicationsPanel',
+      'my-applications': '#myApplicationsPanel',
+      'all-club-events': '#allClubEventsPanel',
+      'all-club-users': '#allClubUsersPanel',
+      'club-events': '#clubEventsPanel',
+      'club-timeline': '#clubTimelinePanel',
+      'club-financial': '#clubFinancialPanel',
+      paypersonal: '#paypersonalPanel',
+      'user-info': '#userInfoPanel'
+    };
+    return map[type] || '';
+  },
+
+  _stackEntryFromPopupConfig(config, tapX, tapY) {
+    const entry = {
+      type: config.type,
+      id: config.id != null ? String(config.id) : '',
+      data: config.data || null,
+      clubId: config.clubId != null ? String(config.clubId) : ''
+    };
+    if (typeof tapX === 'number' && !isNaN(tapX)) entry.tapX = tapX;
+    if (typeof tapY === 'number' && !isNaN(tapY)) entry.tapY = tapY;
+    return entry;
+  },
+
+  _renderGlobalPopupPanel() {
+    this.setData({ 'globalPopup.renderPanel': true }, () => {
+      setTimeout(() => {
+        const panelId = this._panelIdForGlobalPopupType(this.data.globalPopup.type);
+        if (!panelId) return;
+        const panel = this.selectComponent(panelId);
+        if (panel && panel.loadData) panel.loadData();
+      }, 100);
+    });
+  },
+
+  _clearGlobalPopupStackAnimLater() {
+    if (this.__gpStackAnimTimer) clearTimeout(this.__gpStackAnimTimer);
+    this.__gpStackAnimTimer = setTimeout(() => {
+      this.setData({ globalPopupStackAnim: '' });
+    }, 380);
+  },
+
+  _getGlobalPopupBackRipplePoint() {
+    const popup = this.selectComponent('#globalFullscreenPopup');
+    const sys = wx.getSystemInfoSync();
+    let tapY = Number(sys.statusBarHeight || 0) + 44;
+    try {
+      const nav = popup && popup.data && popup.data.fsNav;
+      if (nav && nav.totalHeight) tapY = Math.max(tapY, Number(nav.totalHeight) - 16);
+    } catch (e) {}
+    return { tapX: 28, tapY };
+  },
+
+  _overlayPanelIdForType(type) {
+    const map = {
+      'event-detail': '#overlayEventDetailPanel',
+      'event-joined': '#overlayEventJoinedPanel',
+      'event-manage': '#overlayEventManagePanel',
+      'club-detail': '#overlayClubDetailPanel',
+      'club-joined': '#overlayClubJoinedPanel',
+      'club-manage': '#overlayClubManagePanel'
+    };
+    return map[type] || '';
+  },
+
+  _renderGlobalPopupOverlayPanel() {
+    const ov = this.data.globalPopupOverlay;
+    if (!ov) return;
+    this.setData({ 'globalPopupOverlay.renderPanel': true }, () => {
+      setTimeout(() => {
+        const panelId = this._overlayPanelIdForType(ov.type);
+        if (!panelId) return;
+        const panel = this.selectComponent(panelId);
+        if (panel && panel.loadData) panel.loadData();
+      }, 50);
+    });
+  },
+
+  onGlobalPopupStackPushMid() {
+    const ov = this.data.globalPopupOverlay;
+    if (!ov) return;
+    this.setData({ 'globalPopupOverlay.enterActive': true }, () => {
+      this._renderGlobalPopupOverlayPanel();
+    });
+  },
+
+  onGlobalPopupStackPushComplete() {
+    const ov = this.data.globalPopupOverlay;
+    if (!ov) return;
+    const stack = this.data.globalPopupStack || [];
+    const pending = stack[stack.length - 1];
+    if (!pending) return;
+    const patch = {
+      globalPopupOverlay: null,
+      'globalPopup.type': pending.type,
+      'globalPopup.id': pending.id || '',
+      'globalPopup.loading': ov.loading !== false,
+      'globalPopup.renderPanel': !!ov.renderPanel
+    };
+    if (pending.data != null) patch['globalPopup.data'] = pending.data;
+    if (pending.clubId != null && pending.clubId !== '') patch['globalPopup.clubId'] = pending.clubId;
+    this.setData(patch, () => {
+      if (this.data.globalPopup.renderPanel && !this.data.globalPopup.loading) return;
+      if (this.data.globalPopup.renderPanel) {
+        const panelId = this._panelIdForGlobalPopupType(pending.type);
+        const panel = panelId ? this.selectComponent(panelId) : null;
+        if (panel && panel.loadData) panel.loadData();
+      } else {
+        this._renderGlobalPopupPanel();
+      }
+    });
+  },
+
+  onGlobalPopupOverlayLoaded() {
+    if (!this.data.globalPopupOverlay) return;
+    this.setData({ 'globalPopupOverlay.loading': false });
+  },
+
+  _playGlobalPopupStackPushRipple(tapX, tapY) {
+    const popup = this.selectComponent('#globalFullscreenPopup');
+    if (popup && typeof popup.playStackPushRipple === 'function') {
+      return popup.playStackPushRipple(tapX, tapY);
+    }
+    return Promise.resolve();
+  },
+
+  _playGlobalPopupStackPopRipple(tapX, tapY) {
+    const popup = this.selectComponent('#globalFullscreenPopup');
+    if (popup && typeof popup.playStackPopRipple === 'function') {
+      return popup.playStackPopRipple(tapX, tapY);
+    }
+    return Promise.resolve();
+  },
+
+  _applyGlobalPopupStackEntry(entry, anim) {
+    const patch = {
+      globalPopupStackAnim: anim || '',
+      'globalPopup.type': entry.type,
+      'globalPopup.id': entry.id || '',
+      'globalPopup.loading': true,
+      'globalPopup.renderPanel': false
+    };
+    if (entry.data != null) patch['globalPopup.data'] = entry.data;
+    if (entry.clubId != null && entry.clubId !== '') patch['globalPopup.clubId'] = entry.clubId;
+    this.setData(patch, () => {
+      this._renderGlobalPopupPanel();
+      if (anim) this._clearGlobalPopupStackAnimLater();
+    });
+  },
+
+  _openGlobalPopupRoot(config, tapX, tapY) {
+    const entry = this._stackEntryFromPopupConfig(config, tapX, tapY);
+    this.setData({
+      globalPopupStack: [entry],
+      globalPopupDeferBack: false,
+      globalPopup: {
+        visible: true,
+        loading: true,
+        renderPanel: false,
+        bgColor: config.bgColor || '#f3e3f3ff',
+        sheetBgColor: config.sheetBgColor || '#f3e3f3ff',
+        tapX,
+        tapY,
+        ...config
+      }
+    }, () => {
+      this.syncProfileTabBarWithOverlay();
+      setTimeout(() => {
+        const popup = this.selectComponent('#globalFullscreenPopup');
+        if (popup && popup.expand) popup.expand(tapX, tapY);
+        else if (popup && popup.handleTriggerTap) popup.handleTriggerTap({ changedTouches: [{ clientX: tapX, clientY: tapY }] });
+      }, 50);
+    });
+  },
+
+  _pushGlobalPopupStack(type, id, tapX, tapY, extra) {
+    const sys = wx.getSystemInfoSync();
+    const safeX = (typeof tapX === 'number' && !isNaN(tapX)) ? tapX : sys.windowWidth / 2;
+    const safeY = (typeof tapY === 'number' && !isNaN(tapY)) ? tapY : sys.windowHeight / 2;
+    const entry = {
+      type,
+      id: String(id || ''),
+      tapX: safeX,
+      tapY: safeY,
+      ...(extra || {})
+    };
+    const stack = [...(this.data.globalPopupStack || []), entry];
+
+    this.setData({
+      globalPopupStack: stack,
+      globalPopupDeferBack: stack.length > 1,
+      'globalPopup.renderPanel': false,
+      'globalPopup.loading': true,
+      globalPopupOverlay: {
+        type,
+        id: String(id || ''),
+        loading: true,
+        renderPanel: false,
+        enterActive: false,
+        leaveActive: false
+      }
+    }, () => {
+      this._playGlobalPopupStackPushRipple(safeX, safeY);
+    });
+  },
+
+  _popGlobalPopupStack() {
+    const stack = this.data.globalPopupStack || [];
+    if (stack.length <= 1) {
+      this.closeGlobalPopup();
+      return;
+    }
+    const newStack = stack.slice(0, -1);
+    const prev = newStack[newStack.length - 1];
+    const backPt = this._getGlobalPopupBackRipplePoint();
+    const leavingType = this.data.globalPopup.type;
+    const leavingId = this.data.globalPopup.id;
+
+    const patch = {
+      globalPopupOverlay: {
+        type: leavingType,
+        id: leavingId,
+        loading: false,
+        renderPanel: true,
+        enterActive: false,
+        leaveActive: true
+      },
+      globalPopupStack: newStack,
+      globalPopupDeferBack: newStack.length > 1,
+      globalPopupStackAnim: '',
+      'globalPopup.type': prev.type,
+      'globalPopup.id': prev.id || '',
+      'globalPopup.loading': true,
+      'globalPopup.renderPanel': false
+    };
+    if (prev.data != null) patch['globalPopup.data'] = prev.data;
+    if (prev.clubId != null && prev.clubId !== '') patch['globalPopup.clubId'] = prev.clubId;
+
+    this.setData(patch, () => {
+      this._renderGlobalPopupPanel();
+      const overlayDur = 380;
+      this._playGlobalPopupStackPopRipple(backPt.tapX, backPt.tapY);
+      setTimeout(() => {
+        this.setData({ globalPopupOverlay: null });
+      }, overlayDur);
+    });
+  },
+
+  onGlobalPopupCovered() {
+    const type = this.data.globalPopup && this.data.globalPopup.type;
+    const panelId = this._panelIdForGlobalPopupType(type);
+    const panel = panelId ? this.selectComponent(panelId) : null;
+    if (panel && panel.suspendContent) panel.suspendContent();
+  },
+
+  onGlobalPopupUncovered() {
+    const type = this.data.globalPopup && this.data.globalPopup.type;
+    const panelId = this._panelIdForGlobalPopupType(type);
+    const panel = panelId ? this.selectComponent(panelId) : null;
+    if (panel && panel.resumeContent) {
+      panel.resumeContent();
+      return;
+    }
+    if (!this.data.globalPopup.renderPanel) {
+      this._renderGlobalPopupPanel();
+    }
+  },
+
+  onNavigateClubFromEventsPanel(e) {
+    const detail = e.detail || {};
+    const clubId = detail.clubId;
+    if (!clubId) return;
+    const type = detail.popupType || 'club-detail';
+    this._pushGlobalPopupStack(type, String(clubId), detail.tapX, detail.tapY);
+  },
+
+  onNavigateEventFromEventsPanel(e) {
+    const detail = e.detail || {};
+    const eventId = detail.eventId;
+    if (!eventId) return;
+    const type = detail.popupType || 'event-detail';
+    this._pushGlobalPopupStack(type, String(eventId), detail.tapX, detail.tapY);
+  },
+
+  onGlobalPopupFullscreenBack() {
+    const stack = this.data.globalPopupStack || [];
+    if (stack.length > 1) {
+      this._popGlobalPopupStack();
+      return;
+    }
+    this._collapseGlobalPopupToRootTap();
+  },
+
+  _collapseGlobalPopupToRootTap() {
+    const gp = this.data.globalPopup || {};
+    const popup = this.selectComponent('#globalFullscreenPopup');
+    if (popup && typeof popup.setCollapseRippleOrigin === 'function') {
+      const tx = gp.tapX;
+      const ty = gp.tapY;
+      if (typeof tx === 'number' && typeof ty === 'number') {
+        popup.setCollapseRippleOrigin(tx, ty);
+      }
+    }
+    if (popup && typeof popup.collapse === 'function') {
+      popup.collapse();
+    }
+  },
+
+  onNavigateEventFromPanel(e) {
+    const detail = e.detail || {};
+    const eventId = detail.eventId;
+    if (!eventId) return;
+    const type = detail.popupType || 'event-detail';
+    this._pushGlobalPopupStack(type, String(eventId), detail.tapX, detail.tapY);
+  },
+
+  onNavigateClubFromPanel(e) {
+    const detail = e.detail || {};
+    const clubId = detail.clubId;
+    if (!clubId) return;
+    const type = detail.popupType || 'club-detail';
+    this._pushGlobalPopupStack(type, String(clubId), detail.tapX, detail.tapY);
+  },
+
   // ========== 统一的弹窗管理函?==========
   
   /**
@@ -1434,10 +1790,17 @@ Page({
    * 关闭全局弹窗
    */
   closeGlobalPopup() {
-    const popup = this.selectComponent('#globalFullscreenPopup');
-    if (popup && typeof popup.collapse === 'function') {
-      popup.collapse();
+    const stack = this.data.globalPopupStack || [];
+    if (stack.length > 1) {
+      this._popGlobalPopupStack();
+      return;
     }
+    this._collapseGlobalPopupToRootTap();
+  },
+
+  onClubManageHostFullscreenBack(e) {
+    const show = !!(e.detail && e.detail.show)
+    this.setData({ hostExpandableBackShow: show })
   },
 
   /**
@@ -1473,7 +1836,12 @@ Page({
         'globalPopup.renderPanel': false,
         'globalPopup.type': '',
         'globalPopup.id': '',
-        'globalPopup.clubId': ''
+        'globalPopup.clubId': '',
+        globalPopupStack: [],
+        globalPopupDeferBack: false,
+        globalPopupStackAnim: '',
+        globalPopupOverlay: null,
+        hostExpandableBackShow: true
       }, () => {
         this.syncProfileTabBarWithOverlay()
       });
@@ -1483,57 +1851,8 @@ Page({
   /**
    * 全局弹窗内容准备完成
    */
-  onGlobalPopupContentReady() {    // 弹窗动画完成，现在可以渲?panel 数
-      this.setData({
-      'globalPopup.renderPanel': true
-    }, () => {
-      // 等待 panel 渲染后，调用 loadData
-      setTimeout(() => {
-        const { type } = this.data.globalPopup;
-        let panelId = '';
-        
-        if (type === 'club-create') {
-          panelId = '#clubCreatePanel';
-        } else if (type === 'event-create') {
-          panelId = '#eventCreatePanel';
-        } else if (type === 'event-manage') {
-          panelId = '#profileEventManagePanel';
-        } else if (type === 'club-manage') {
-          panelId = '#profileClubManagePanel';
-        } else if (type === 'club-members') {
-          panelId = '#clubMembersPanel';
-        } else if (type === 'events') {
-          panelId = '#eventsPanel';
-        } else if (type === 'clubs') {
-          panelId = '#clubsPanel';
-        } else if (type === 'club-applications') {
-          panelId = '#clubApplicationsPanel';
-        } else if (type === 'my-applications') {
-          panelId = '#myApplicationsPanel';
-        } else if (type === 'all-club-events') {
-          panelId = '#allClubEventsPanel';
-        } else if (type === 'all-club-users') {
-          panelId = '#allClubUsersPanel';
-        } else if (type === 'club-events') {
-          panelId = '#clubEventsPanel';
-        } else if (type === 'club-timeline') {
-          panelId = '#clubTimelinePanel';
-        } else if (type === 'club-financial') {
-          panelId = '#clubFinancialPanel';
-        } else if (type === 'paypersonal') {
-          panelId = '#paypersonalPanel';
-        } else if (type === 'user-info') {
-          panelId = '#userInfoPanel';
-        }
-        
-        if (panelId) {
-          const panel = this.selectComponent(panelId);
-          if (panel && panel.loadData) {
-            panel.loadData();
-          }
-        }
-      }, 100);
-    });
+  onGlobalPopupContentReady() {
+    this._renderGlobalPopupPanel();
   },
 
   /**

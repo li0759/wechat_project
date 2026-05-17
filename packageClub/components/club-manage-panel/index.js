@@ -39,19 +39,20 @@ Component({
     defaultCover: '/assets/images/president/activity-default.png',
     defaultAvatarUrl: '',
     pendingApplications: [],
+    /** 入会审批九宫格：最近待处理申请，最多 9 格 */
+    pendingGridCells: [],
     membersList: [],
-    peoplePresident: null,
-    peoplePending: [],
-    peopleMembers: [],
+    /** 人员管理九宫格：会长→副会长→理事→最近入会，最多 8 人 */
+    peopleShowcase: [],
+    peopleGridCells: [],
     // 待审批用户详情弹窗
     currentPendingApplication: null,
-    pendingApprovalOpinion: '',
+    pendingPopupApproveOpinion: '',
+    pendingPopupRejectReason: '',
     // 当前选中的成员（用于共享弹窗）
     currentMember: null,
     // 搜索结果中待审批用户的审批意见
     searchUserApprovalOpinion: '',
-    presidentTab: 'allUsers',
-    presidentSearchResults: [],
     isPresident: false,
     clubActivities: [],
     featuredActivity: null,
@@ -71,26 +72,10 @@ Component({
     abLoading: false,
     abThemeColor: '#ff6b9d',
     memberAvatarItems: [],
-    memberIsoHeight: '150rpx',
     memberAvatarIsoHeight: '150rpx', // 添加成员弹窗内的头像墙高度
     recentAddedUserIds: [],
     // 成员管理弹窗内部滚动位置（用于“到顶继续下拉才收回”）
     cmMemberPickerInnerScrollTop: 0,
-    // 成员 Isotope 排序相关
-    memberSortMode: 'roleFirst', // 'roleFirst' | 'joinDate' | 'name'
-    sortOptions: [
-      { value: 'roleFirst', label: '会长在前' },
-      { value: 'joinDate', label: '入会日期' },
-      { value: 'name', label: '姓名字母' }
-    ],
-    memberIsotopeItems: [], // Isotope 使用的 items 数组
-    memberSortBy: ['_sortPriority', 'join_date'], // 当前排序字段
-    memberSortAscending: [true, true], // 当前排序方向
-    memberLabelStyle: {
-      fontSize: '22rpx',
-      color: '#333',
-      textAlign: 'center'
-    },
     memberImageStyle: { borderRadius: '50%' },
     roleDisplayMap: {
       all: '全部',
@@ -101,9 +86,7 @@ Component({
     },
     uploadAPI: '',
     isUploading: false,
-    // isotope 布局就绪状态（用于控制骨架屏）
-    memberIsotopeReady: false,
-    
+
     // 嵌套的event-create弹窗状态
     nestedEventCreate: {
       loading: true,
@@ -206,7 +189,7 @@ Component({
 
     async reloadAll() {
 
-      this.setData({ loading: true, memberIsotopeReady: false })
+      this.setData({ loading: true })
       this._earlyLoadedTriggered = false; // Reset flag
       try {
         await Promise.all([
@@ -215,22 +198,19 @@ Component({
           this.fetchPendingApplications(),
           this.fetchClubActivities()
         ])
-        // If early loaded was triggered (for deleted club), skip isotope wait
-    if (this._earlyLoadedTriggered) {
+        if (this._earlyLoadedTriggered) {
           return;
         }
-        
-        // 更新分享信息
-    this.updateShareInfo();
+
+        this.updateShareInfo()
+        this.setData({ loading: false })
+        this.triggerEvent('loaded')
       } catch(e) {
         console.error('[club-manage-panel] reloadAll error:', e)
-        // 出错时直接隐藏骨架屏并触发 loaded 事件
-    this.setData({ loading: false, memberIsotopeReady: true })
+        this.setData({ loading: false })
         this.triggerEvent('loaded')
       }
-      // 注意：正常情况下，loaded 事件由 isotope 的 layoutReady 事件触发
-      // 这样可以确保骨架屏在 isotope 占位完成后才隐藏
-  },
+    },
 
     // 更新分享信息到 app.globalData
   updateShareInfo() {
@@ -278,7 +258,7 @@ Component({
           // 如果协会已删除，立即隐藏骨架屏并触发loaded事件
           // 因为遮罩层会阻止用户交互，不需要等待isotope布局完成
     if (clubDetail.isDelete) {
-            this.setData({ loading: false, memberIsotopeReady: true })
+            this.setData({ loading: false })
             this.triggerEvent('loaded')
             this._earlyLoadedTriggered = true; // Set flag to prevent duplicate events
   }
@@ -302,15 +282,78 @@ Component({
     },
 
     async fetchPendingApplications() {
-      const res = await this.request({ url: `/club/application/${this.data.clubId}/list`, method: 'GET' })
-      if (res.Flag == 4000 && res.data) {
-        const pendingApps = (res.data || []).filter((a) => !a.processedDate)
-        this.setData({ pendingApplications: pendingApps }, () => this.updatePeoplePanel())
+      try {
+        const res = await this.request({ url: `/club/application/${this.data.clubId}/pending/list`, method: 'GET' })
+        if (res.Flag == 4000 && res.data) {
+          const pendingApps = Array.isArray(res.data) ? res.data : []
+          this.setData({ pendingApplications: pendingApps }, () => {
+            this.rebuildPendingApplicationsGrid()
+            this.refreshSearchResultsPendingStatus()
+          })
+        } else {
+          this.setData({ pendingApplications: [] }, () => this.rebuildPendingApplicationsGrid())
+        }
+      } catch (e) {
+        console.error('fetchPendingApplications', e)
+        this.setData({ pendingApplications: [] }, () => this.rebuildPendingApplicationsGrid())
+      }
+    },
+
+    rebuildPendingApplicationsGrid() {
+      const raw = (this.data.pendingApplications || []).filter((a) => !a.processedDate)
+      raw.sort((a, b) => {
+        const ta = new Date(a.applicatedDate || 0).getTime()
+        const tb = new Date(b.applicatedDate || 0).getTime()
+        return tb - ta
+      })
+      const top = raw.slice(0, 9)
+      const defAv = this.data.defaultAvatarUrl || '/assets/images/default-avatar.png'
+      const cells = []
+      for (let i = 0; i < 9; i++) {
+        const a = top[i]
+        if (a) {
+          cells.push({
+            slot: i,
+            type: 'pending',
+            applicationID: a.applicationID,
+            displayName: a.appliced_user_name || '未知',
+            displayAvatar: a.appliced_user_avartor || defAv
+          })
+        } else {
+          cells.push({ slot: i, type: 'empty' })
+        }
+      }
+      this.setData({ pendingGridCells: cells })
+    },
+
+    normalizePendingApplicationForDetail(src) {
+      if (!src) return null
+      const defAv = this.data.defaultAvatarUrl || '/assets/images/default-avatar.png'
+      if (src.appliced_user_name != null || src.appliced_user_id != null) {
+        return {
+          applicationID: src.applicationID,
+          user_id: src.appliced_user_id,
+          user_name: src.appliced_user_name || '未知',
+          avatar: src.appliced_user_avartor || defAv,
+          phone: src.appliced_user_phone || '',
+          department: src.appliced_user_department || '',
+          position: src.appliced_user_position || ''
+        }
+      }
+      return {
+        applicationID: src.applicationID,
+        user_id: src.user_id,
+        user_name: src.user_name,
+        avatar: src.avatar || defAv,
+        phone: src.phone || '',
+        department: src.department || '',
+        position: src.position || ''
       }
     },
 
     async fetchClubActivities() {
-      const res = await this.request({ url: `/event/club_public/${this.data.clubId}/list/all?mode=page&page=1`, method: 'GET' })
+      // list/going：未结束且未取消（预计开始 + 进行中），不含已结束/已取消
+      const res = await this.request({ url: `/event/club_public/${this.data.clubId}/list/going?mode=page&page=1`, method: 'GET' })
       if (res.Flag == 4000 && res.data && res.data.records) {
         const activities = res.data.records
         this.setData({ clubActivities: activities, featuredActivity: activities.length > 0 ? activities[0] : null })
@@ -445,19 +488,12 @@ Component({
           wx.showToast({ title: '移除成功', icon: 'success' })
           
           const itemId = `club-member-${String(userId)}`
-          
-          // 1. 从人员管理区域的 isotope 中删除
-    const mainIso = this.selectComponent('#clubMemberIsotope')
-          if (mainIso && mainIso.removeItem) {
-            mainIso.removeItem(itemId)
-          }
-          
-          // 2. 从弹窗内头像墙的 isotope 中删除
-    const avatarIso = this.selectComponent('#memberAvatarIsotope')
+
+          const avatarIso = this.selectComponent('#memberAvatarIsotope')
           if (avatarIso && avatarIso.removeItem) {
             avatarIso.removeItem(itemId)
           }
-          
+
           // 从 recentAddedUserIds 中移除
     const recent = (this.data.recentAddedUserIds || []).filter(id => String(id) !== String(userId))
           this.setData({ recentAddedUserIds: recent })
@@ -469,10 +505,6 @@ Component({
           wx.showToast({ title: res.message || '移除失败', icon: 'none' })
         }
       } finally { wx.hideLoading() }
-    },
-
-    goApplications() {
-      wx.navigateTo({ url: `/packageClub/club-applications/index?clubId=${this.data.clubId}` })
     },
 
     /**
@@ -709,212 +741,125 @@ Component({
 
     updatePeoplePanel() {
       const members = this.data.membersList || []
-      const pending = this.data.pendingApplications || []
-      const president = members.find((m) => String(m.role) === 'president') || null
-      const peoplePresident = president ? {
-        user_id: president.user_id, user_name: president.user_name, avatar: president.avatar,
-        phone: president.phone, department: president.department, position: president.position,
-        role: president.role, role_display: president.role_display, member_id: president.member_id
-      } : null
-      const peoplePending = pending.map((a) => ({
-        applicationID: a.applicationID, user_id: a.appliced_user_id,
-        user_name: a.appliced_user_name, avatar: a.appliced_user_avartor,
-        phone: a.appliced_user_phone || a.phone,
-        department: a.appliced_user_department || a.department,
-        position: a.appliced_user_position || a.position
-      }))
-      const peopleMembers = members.filter((m) => String(m.role) !== 'president').map((m) => ({
-        user_id: m.user_id, user_name: m.user_name, avatar: m.avatar, phone: m.phone,
-        department: m.department, position: m.position, role: m.role, role_display: m.role_display, member_id: m.member_id
-      }))
-      this.setData({ peoplePresident, peoplePending, peopleMembers }, () => {
-        // 更新 Isotope 成员列表
-    this.updateMemberIsotope()
-      })
+      const peopleShowcase = this.buildPeopleShowcase(members)
+      const peopleGridCells = this.rebuildPeopleGridCells(peopleShowcase)
+      this.setData({ peopleShowcase, peopleGridCells }, () => this.updateMemberAvatarIsotope())
     },
 
-    onPresidentPickerExpand() { this.setData({ presidentTab: 'allUsers', presidentSearchResults: [] }) },
-    onPresidentTabChange(e) { this.setData({ presidentTab: e.detail.value }) },
-
-    async onFetchPresidentSuggestions(e) {
-      const { keyword, callback } = e.detail
-      if (!keyword || keyword.length < 1) { callback([]); return }
-      try {
-        const res = await this.request({ url: `/search/user/suggestions?keyword=${encodeURIComponent(keyword)}&limit=8`, method: 'GET' })
-        callback(res.code === 200 ? res.data.suggestions : [])
-      } catch (err) { callback([]) }
+    _memberJoinTimeMs(m) {
+      const raw = m.join_date || m.joinDate || ''
+      if (!raw) return 0
+      const t = Date.parse(raw)
+      return Number.isFinite(t) ? t : 0
     },
 
-    async onPresidentSearch(e) { await this.performPresidentSearch(e.detail?.value) },
-    onSelectPresidentSuggestion(e) { this.performPresidentSearch(e.detail?.value) },
-    onPresidentHistorySelect(e) { this.performPresidentSearch(e.detail?.value) },
-
-    async performPresidentSearch(keyword) {
-      const k = String(keyword || '').trim()
-      if (!k) { this.setData({ presidentSearchResults: [] }); return }
-      try {
-        const res = await this.request({ url: `/search/user?q=${encodeURIComponent(k)}&page=1&per_page=20`, method: 'GET' })
-        this.setData({ presidentSearchResults: (res.Flag == 4000 && res.data?.users) ? res.data.users : [] })
-      } catch (e) { this.setData({ presidentSearchResults: [] }) }
+    normalizeShowcaseMember(m) {
+      const cur = this.data.currentUserId
+      const isCurrent = !!m.is_current_user || String(m.user_id) === String(cur)
+      return {
+        user_id: m.user_id,
+        user_name: m.user_name,
+        avatar: m.avatar,
+        phone: m.phone,
+        department: m.department,
+        position: m.position,
+        role: m.role,
+        role_display: m.role_display,
+        member_id: m.member_id,
+        join_date: m.join_date,
+        is_current_user: isCurrent
+      }
     },
 
-    async onAddressbookPresidentAction(e) { if (e.detail?.user) await this.setPresident(e.detail.user) },
-    async selectPresidentFromSearch(e) { if (e.currentTarget.dataset.user) await this.setPresident(e.currentTarget.dataset.user) },
+    buildPeopleShowcase(members) {
+      const list = Array.isArray(members) ? members : []
+      const president = list.filter((x) => x.role === 'president')
+      const vice = list.filter((x) => x.role === 'vice_president')
+      const dir = list.filter((x) => x.role === 'director')
+      const plain = list
+        .filter((x) => !['president', 'vice_president', 'director'].includes(x.role))
+        .sort((a, b) => this._memberJoinTimeMs(b) - this._memberJoinTimeMs(a))
+      const ordered = [...president, ...vice, ...dir, ...plain]
+      const out = []
+      const seen = new Set()
+      for (const m of ordered) {
+        const id = String(m.user_id)
+        if (seen.has(id)) continue
+        seen.add(id)
+        out.push(this.normalizeShowcaseMember(m))
+        if (out.length >= 8) break
+      }
+      return out
+    },
 
+    rebuildPeopleGridCells(showcase) {
+      const s = Array.isArray(showcase) ? showcase : []
+      const cells = []
+      for (let i = 0; i < 8; i++) {
+        const m = s[i]
+        cells.push({ slot: i, type: m ? 'member' : 'empty', member: m || null })
+      }
+      cells.push({ slot: 8, type: 'add' })
+      return cells
+    },
 
-    async setPresident(user) {
-      const userId = user.user_id
-      if (!userId) return
-      try {
-        wx.showLoading({ title: '设置会长中...' })
-        let member = (this.data.membersList || []).find((m) => String(m.user_id) === String(userId))
-        if (!member) {
-          const resAdd = await this.request({ url: `/club/${this.data.clubId}/addmember/${userId}`, method: 'GET' })
-          if (!(resAdd.Flag == 4000 || resAdd.Flag == '4000')) throw new Error(resAdd.message || '添加为会员失败')
-          await this.fetchMemberList()
-          member = (this.data.membersList || []).find((m) => String(m.user_id) === String(userId))
+    onPeopleGridCellTap(e) {
+      const type = e.currentTarget.dataset.type
+      if (type === 'add') {
+        const { tapX, tapY } = resolveTapClientXY(e)
+        this.showAddMemberPopup(tapX, tapY)
+        return
+      }
+      if (type !== 'member') return
+      const slot = Number(e.currentTarget.dataset.slot)
+      const cell = (this.data.peopleGridCells || []).find((c) => c.slot === slot)
+      const m = cell && cell.member
+      if (!m) return
+      const { tapX, tapY } = resolveTapClientXY(e)
+      this.showMemberDetailPopup({ _memberData: m }, tapX, tapY)
+    },
+
+    onPendingGridCellTap(e) {
+      const type = e.currentTarget.dataset.type
+      if (type !== 'pending') return
+      const slot = Number(e.currentTarget.dataset.slot)
+      const cell = (this.data.pendingGridCells || []).find((c) => c.slot === slot)
+      if (!cell || !cell.applicationID) return
+      const raw = (this.data.pendingApplications || []).find(
+        (a) => String(a.applicationID) === String(cell.applicationID)
+      )
+      if (!raw) {
+        wx.showToast({ title: '申请已更新', icon: 'none' })
+        this.fetchPendingApplications()
+        return
+      }
+      const detail = this.normalizePendingApplicationForDetail(raw)
+      const { tapX, tapY } = resolveTapClientXY(e)
+      this.setData(
+        {
+          currentPendingApplication: detail,
+          pendingPopupApproveOpinion: '',
+          pendingPopupRejectReason: ''
+        },
+        () => {
+          setTimeout(() => {
+            const popup = this.selectComponent('#cm-shared-pending-detail')
+            if (popup && popup.expand) popup.expand(tapX, tapY)
+          }, 50)
         }
-        if (!member || !member.member_id) throw new Error('找不到该会员信息')
-        const res = await this.request({ url: `/club/${member.member_id}/change_role/president`, method: 'GET' })
-        if (!(res.Flag === '4000' || res.Flag === 4000)) throw new Error(res.message || '设置会长失败')
-        wx.showToast({ title: '已设置会长', icon: 'success' })
-        await Promise.all([this.loadClubData(), this.fetchMemberList()])
-        this.selectComponent('#cm-president-picker-plus')?.collapse?.()
-        this.selectComponent('#cm-president-picker-star')?.collapse?.()
-      } catch (e) {
-        console.error(e)
-        wx.showToast({ title: e.message || '设置失败', icon: 'none' })
-      } finally { wx.hideLoading() }
+      )
     },
 
     onMemberPickerExpand() {
+      this.triggerEvent('host-fullscreen-back', { show: false })
       this.setData({ addMemberTab: 0, searchResults: [] })
-      this.updateMemberIsotope()
+      this.updateMemberAvatarIsotope()
       this.abEnsureLoaded()
     },
 
     onAddMemberCollapse() {
+      this.triggerEvent('host-fullscreen-back', { show: true })
       // 收起时不清空数据，保持状态
-  },
-
-    // ===== 头像墙相关 =====
-    
-    /**
-     * 计算成员的排序优先级
-     * @param {Object} member - 成员对象
-     * @param {Boolean} isPending - 是否为待审批成员
-     * @returns {Number} 排序优先级
-     */
-    getMemberSortPriority(member, isPending = false) {
-      if (isPending) return 1.5 // 待审批成员（在副会长和理事之间）
-    const role = member.role || 'member'
-      const priorityMap = {
-        president: 0,
-        vice_president: 1,
-        director: 2,
-        member: 3
-      }
-      return priorityMap[role] !== undefined ? priorityMap[role] : 3
-    },
-
-    /**
-     * 构建 Isotope items 数组
-     * 将 membersList、peoplePending 转换为 Isotope items
-     * 注意：添加按钮现在是独立的触发器，不在 Isotope 中
-     */
-    buildMemberIsotopeItems() {
-      const members = Array.isArray(this.data.membersList) ? this.data.membersList : []
-      const pending = Array.isArray(this.data.peoplePending) ? this.data.peoplePending : []
-      const avatarSize = 85 
-
-      const items = []
-
-      // 添加正式成员
-    for (const m of members) {
-        const sortPriority = this.getMemberSortPriority(m, false)
-        items.push({
-          id: `club-member-${String(m.user_id)}`,
-          image: m.avatar || '/assets/images/default-avatar.png',
-          ini_width: avatarSize,
-          ini_height: avatarSize,
-          label: m.user_name || '',
-          user_id: String(m.user_id),
-          user_name: m.user_name,
-          role: m.role,
-          role_display: m.role_display,
-          member_id: m.member_id,
-          phone: m.phone,
-          department: m.department,
-          position: m.position,
-          join_date: m.join_date || '',
-          is_current_user: m.is_current_user,
-          _sortPriority: sortPriority,
-          _isAddButton: false,
-          _isPending: false,
-          _memberData: m // 保存原始数据用于弹窗
-  })
-      }
-
-      // 添加待审批成员
-    for (const p of pending) {
-        items.push({
-          id: `club-pending-${String(p.applicationID)}`,
-          image: p.avatar || '/assets/images/default-avatar.png',
-          ini_width: avatarSize,
-          ini_height: avatarSize,
-          label: p.user_name || '',
-          user_id: String(p.user_id),
-          user_name: p.user_name,
-          applicationID: p.applicationID,
-          phone: p.phone,
-          department: p.department,
-          position: p.position,
-          join_date: '9999-12-31', // 使用未来日期，确保在加入时间模式下排在最前面
-          _sortPriority: 1.5, // 待审批优先级（在副会长和理事之间）
-          _isAddButton: false,
-          _isPending: true,
-          _pendingData: p // 保存原始数据用于弹窗
-  })
-      }
-
-      // 注意：添加按钮现在是独立的触发器，不在 Isotope 中
-      return items
-    },
-
-    /**
-     * 更新成员 Isotope 显示（人员管理区域）
-     */
-    updateMemberIsotope() {
-      const items = this.buildMemberIsotopeItems()
-      
-      // 检查 isotope 组件是否已经加载且有 items
-    const iso = this.selectComponent('#clubMemberIsotope')
-      const currentItems = iso && iso.data && iso.data.itemsWithPosition || []
-      
-      // 如果组件已经加载且有 items，且新 items 只是数量变化（可能是动态操作），
-      // 就不更新，避免触发 onItemsChange 导致全部重新初始化
-    if (currentItems.length > 0 && items.length > 0) {
-        const currentIds = new Set(currentItems.map(i => String(i.id || '')))
-        const newIds = new Set(items.map(i => String(i.id)))
-        
-        // 如果只是新增一个或删除一个，就不更新，让动态接口处理
-    const diff = Math.abs(items.length - currentItems.length)
-        if (diff <= 1) {
-          const allCurrentInNew = Array.from(currentIds).every(id => newIds.has(id))
-          const allNewInCurrent = Array.from(newIds).every(id => currentIds.has(id))
-          
-          if (allCurrentInNew || allNewInCurrent) {
-            // 同时更新添加成员弹窗内的头像墙
-    this.updateMemberAvatarIsotope()
-            return
-          }
-        }
-      }
-
-      this.setData({ memberIsotopeItems: items }, () => {
-        // 同时更新添加成员弹窗内的头像墙
-    this.updateMemberAvatarIsotope()
-      })
     },
 
     /**
@@ -977,214 +922,54 @@ Component({
       this.setData({ memberAvatarItems: items })
     },
 
-    /**
-     * 根据当前排序模式计算插入位置
-     * @param {Object} newItem - 新成员 item
-     * @returns {Number} 插入位置索引
-     */
-    calculateInsertIndex(newItem) {
-      const { memberSortMode, memberIsotopeItems } = this.data
-      
-      // 如果没有现有 items，插入到开头
-    if (!memberIsotopeItems || memberIsotopeItems.length === 0) {
-        return 0
-      }
-      
-      switch (memberSortMode) {
-        case 'roleFirst':
-          // 按角色优先级 + 加入日期排序
-          // 第一优先级：_sortPriority（升序）
-          // 第二优先级：join_date（升序）
-    const roleIndex = memberIsotopeItems.findIndex(item => {
-            // 先比较角色优先级
-    if (item._sortPriority !== newItem._sortPriority) {
-              return item._sortPriority > newItem._sortPriority
-            }
-            // 角色相同，比较加入日期
-    const itemDate = item.join_date || ''
-            const newDate = newItem.join_date || ''
-            // 如果新成员没有日期，排在最后
-    if (!newDate) return false
-            // 如果现有成员没有日期，新成员排在它前面
-    if (!itemDate) return true
-            // 都有日期，比较大小（升序：早的在前）
-            return itemDate > newDate
-          })
-          return roleIndex === -1 ? memberIsotopeItems.length : roleIndex
-          
-        case 'joinDate':
-          // 按加入日期排序
-          // 需要检查当前的排序方向（第二个字段 join_date 的方向）
-    const isAscending = this.data.memberSortAscending?.[1] !== false
-          
-          const dateIndex = memberIsotopeItems.findIndex(item => {
-            const itemDate = item.join_date || ''
-            const newDate = newItem.join_date || ''
-            
-            // 如果新成员没有日期，排在最后
-    if (!newDate) return false
-            // 如果现有成员没有日期，新成员排在它前面
-    if (!itemDate) return true
-            
-            // 根据排序方向比较
-    if (isAscending) {
-              // 升序：找到第一个比新成员晚的位置
-              return itemDate > newDate
-            } else {
-              // 降序：找到第一个比新成员早的位置
-              return itemDate < newDate
-            }
-          })
-          return dateIndex === -1 ? memberIsotopeItems.length : dateIndex
-          
-        case 'name':
-          // 按姓名字母排序
-    const nameIndex = memberIsotopeItems.findIndex(item => {
-            const itemName = (item.user_name || '').toLowerCase()
-            const newName = (newItem.user_name || '').toLowerCase()
-            return itemName > newName
-          })
-          return nameIndex === -1 ? memberIsotopeItems.length : nameIndex
-          
-        default:
-          return 0
-      }
-    },
-
-    /**
-     * 动态添加成员到 isotope（带动画）
-     * @param {Object} member - 成员对象
-     */
-    addMemberToIsotope(member) {
-      const avatarSize = 85
-      
-      // 构建新 item
-    const newItem = {
-        id: `club-member-${String(member.user_id)}`,
-        image: member.avatar || '/assets/images/default-avatar.png',
-        ini_width: avatarSize,
-        ini_height: avatarSize,
-        label: member.user_name || '',
-        user_id: String(member.user_id),
-        user_name: member.user_name,
-        role: member.role || 'member',
-        role_display: member.role_display || '会员',
-        phone: member.phone,
-        department: member.department,
-        position: member.position,
-        join_date: member.join_date || new Date().toISOString().split('T')[0],
-        _sortPriority: this.getMemberSortPriority(member, false),
-        _isAddButton: false,
-        _isPending: false,
-        _memberData: member
-      }
-      
-      // 计算正确的插入位置（根据当前排序模式）
-    const insertIndex = this.calculateInsertIndex(newItem)
-      
-      // 添加到人员管理区域的 isotope
-    const mainIso = this.selectComponent('#clubMemberIsotope')
-      if (mainIso && mainIso.addItem) {
-        mainIso.addItem(newItem, { index: insertIndex })
-      }
-      
-      // 添加到弹窗内头像墙的 isotope（始终插入到开头）
-    const avatarIso = this.selectComponent('#memberAvatarIsotope')
+    /** 添加成员弹窗内头像墙：新成员插到最前 */
+    pushMemberAvatarWall(member) {
+      const avatarIso = this.selectComponent('#memberAvatarIsotope')
       if (avatarIso && avatarIso.addItem) {
-        const avatarItem = {
+        avatarIso.addItem({
           id: `club-member-${String(member.user_id)}`,
           image: member.avatar || '/assets/images/default-avatar.png',
           ini_width: 50,
           ini_height: 50,
           user_id: String(member.user_id),
           user_name: member.user_name
-        }
-        avatarIso.addItem(avatarItem, { index: 0 })
-        
-        // 更新 recentAddedUserIds
-    const recent = [String(member.user_id), ...(this.data.recentAddedUserIds || [])]
+        }, { index: 0 })
+        const recent = [String(member.user_id), ...(this.data.recentAddedUserIds || [])]
         this.setData({ recentAddedUserIds: recent })
       }
     },
 
     /**
-     * 成员排序模式切换
+     * 显示添加成员弹窗（与 events-panel 打开 event-manage 一致：从点击处 ripple 展开）
+     * @param {number} [tapX] 屏幕坐标 clientX
+     * @param {number} [tapY] 屏幕坐标 clientY
      */
-    onMemberSortChange(e) {
-      const mode = e.currentTarget.dataset.mode || e.detail?.value
-      if (!mode || mode === this.data.memberSortMode) return
-      
-      let sortBy, sortAscending
-      
-      switch (mode) {
-        case 'roleFirst':
-          sortBy = ['_sortPriority', 'join_date']
-          sortAscending = [true, true]
-          break
-        case 'joinDate':
-          sortBy = ['_isAddButton', 'join_date']
-          sortAscending = [true, false] // join_date 降序：新入会的在前面
-          break
-        case 'name':
-          sortBy = ['_isAddButton', 'user_name']
-          sortAscending = [true, true]
-          break
-        default:
-          sortBy = ['_sortPriority', 'join_date']
-          sortAscending = [true, true]
+    showAddMemberPopup(tapX, tapY) {
+      let x = tapX
+      let y = tapY
+      if (typeof x !== 'number' || typeof y !== 'number') {
+        const sys = wx.getSystemInfoSync()
+        x = sys.windowWidth / 2
+        y = sys.windowHeight / 2
       }
-      
-      this.setData({
-        memberSortMode: mode,
-        memberSortBy: sortBy,
-        memberSortAscending: sortAscending
-      }, () => {
-        // 调用 isotope 的 sort 方法
-    const iso = this.selectComponent('#clubMemberIsotope')
-        if (iso && iso.sort) {
-          iso.sort(sortBy, sortAscending)
+      setTimeout(() => {
+        const popup = this.selectComponent('#cm-member-picker')
+        if (popup && popup.expand) {
+          popup.expand(x, y)
         }
-      })
-    },
-
-    /**
-     * 成员 Isotope item 点击事件
-     */
-    onMemberItemTap(e) {
-      const { item, tapX, tapY } = e.detail
-      if (!item) return
-      
-      if (item._isPending) {
-        // 点击待审批成员：显示审批弹窗
-    this.showPendingApprovalPopup(item, tapX, tapY)
-      } else {
-        // 点击普通成员：显示成员详情弹窗
-    this.showMemberDetailPopup(item, tapX, tapY)
-      }
-    },
-
-    /**
-     * 显示添加成员弹窗
-     */
-    showAddMemberPopup() {
-      const popup = this.selectComponent('#cm-member-picker')
-      if (popup && popup.expand) {
-        // 获取屏幕中心坐标作为涟漪起点
-    const sys = wx.getSystemInfoSync()
-        const tapX = sys.windowWidth / 2
-        const tapY = sys.windowHeight / 2
-        popup.expand(tapX, tapY)
-      }
+      }, 50)
     },
 
     /**
      * 显示待审批成员弹窗
      */
     showPendingApprovalPopup(item, tapX, tapY) {
-      // 设置当前待审批用户数据
-    this.setData({
-        currentPendingApplication: item._pendingData || item,
-        pendingApprovalOpinion: ''
+      const raw = item._pendingData || item
+      const detail = this.normalizePendingApplicationForDetail(raw)
+      this.setData({
+        currentPendingApplication: detail,
+        pendingPopupApproveOpinion: '',
+        pendingPopupRejectReason: ''
       }, () => {
         // 使用共享弹窗
         setTimeout(() => {
@@ -1247,7 +1032,11 @@ Component({
     onSharedPendingPopupCollapse() {
       // 延迟清空数据，等待收回动画完成（动画时长约 200ms + 涟漪动画 + 缓冲）
       setTimeout(() => {
-        this.setData({ currentPendingApplication: null, pendingApprovalOpinion: '' })
+        this.setData({
+          currentPendingApplication: null,
+          pendingPopupApproveOpinion: '',
+          pendingPopupRejectReason: ''
+        })
       }, 600)
     },
 
@@ -1270,13 +1059,9 @@ Component({
      */
     async approveApplicationFromSharedPopup(e) {
       const applicationId = e.currentTarget.dataset.applicationid
-      // 先收起弹窗
-    const popup = this.selectComponent('#cm-shared-pending-detail')
-      if (popup && popup.collapse) {
-        popup.collapse()
-      }
-      // 调用原有的批准逻辑
-      await this.approveApplication(e)
+      if (!applicationId) return
+      const opinion = String(this.data.pendingPopupApproveOpinion || '').trim()
+      await this.processApplication(applicationId, 'approved', opinion)
     },
 
     /**
@@ -1284,31 +1069,23 @@ Component({
      */
     async rejectApplicationFromSharedPopup(e) {
       const applicationId = e.currentTarget.dataset.applicationid
-      // 先收起弹窗
-    const popup = this.selectComponent('#cm-shared-pending-detail')
-      if (popup && popup.collapse) {
-        popup.collapse()
+      if (!applicationId) return
+      const reason = String(this.data.pendingPopupRejectReason || '').trim()
+      if (!reason) {
+        wx.showToast({ title: '请填写拒绝理由', icon: 'none' })
+        return
       }
-      // 调用原有的拒绝逻辑
-      await this.rejectApplication(e)
+      await this.processApplication(applicationId, 'rejected', reason)
     },
 
-    onIsoHeightChange(e) {
-      const { heightStr } = e.detail
-      this.setData({ memberIsoHeight: heightStr })
+    onPendingPopupApproveOpinionChange(e) {
+      this.setData({ pendingPopupApproveOpinion: e.detail?.value ?? e.detail ?? '' })
     },
-    
-    /**
-     * isotope 布局就绪事件处理
-     * 当 isotope 完成占位布局后触发，此时可以隐藏骨架屏
-     */
-    onMemberIsotopeReady(e) {
 
-      this.setData({ loading: false, memberIsotopeReady: true })
-      // 触发 loaded 事件，通知外部（home 页面）隐藏骨架屏
-    this.triggerEvent('loaded')
+    onPendingPopupRejectReasonChange(e) {
+      this.setData({ pendingPopupRejectReason: e.detail?.value ?? e.detail ?? '' })
     },
-    
+
     onMemberAvatarIsoHeightChange(e) {
       const { heightStr } = e.detail
       this.setData({ memberAvatarIsoHeight: heightStr })
@@ -1405,8 +1182,8 @@ Component({
               join_date: new Date().toISOString().split('T')[0]
             }
             
-            // 动态添加到 isotope（会自动计算正确位置）
-    this.addMemberToIsotope(member)
+            // 动态更新添加成员弹窗内头像墙
+            this.pushMemberAvatarWall(member)
           }
           
           // 异步更新成员列表（不阻塞动画和 UI 状态更新）
@@ -1711,46 +1488,9 @@ Component({
       return
     },
 
-    collapsePopup(e) {
-      const id = e.currentTarget.dataset.id
-      const comp = this.selectComponent(`#${id}`)
-      if (comp && comp.collapse) comp.collapse()
-    },
-
     // ===== 待审批用户相关方法 =====
-    
-    // 待审批用户弹窗展开
-  onPendingApplicationExpand(e) {
-      const application = e.currentTarget.dataset.application
-      if (application) {
-        this.setData({
-          currentPendingApplication: application,
-          pendingApprovalOpinion: ''
-        })
-      }
-    },
-
-    // 审批意见变更
-  onApprovalOpinionChange(e) {
-      this.setData({ pendingApprovalOpinion: e.detail?.value ?? e.detail })
-    },
-
     onSearchUserApprovalOpinionChange(e) {
       this.setData({ searchUserApprovalOpinion: e.detail?.value ?? e.detail })
-    },
-
-    // 批准申请（带审批意见）
-    async approveApplication(e) {
-      const applicationId = e.currentTarget.dataset.applicationid
-      if (!applicationId) return
-      await this.processApplication(applicationId, 'approved', this.data.pendingApprovalOpinion)
-    },
-
-    // 拒绝申请（带审批意见）
-    async rejectApplication(e) {
-      const applicationId = e.currentTarget.dataset.applicationid
-      if (!applicationId) return
-      await this.processApplication(applicationId, 'rejected', this.data.pendingApprovalOpinion)
     },
 
     // 快速拒绝（在添加成员弹窗中，审批意见为空）
@@ -1786,11 +1526,7 @@ Component({
     // 处理申请
     async processApplication(applicationId, operation, opinion) {
       wx.showLoading({ title: '处理中...' })
-      
-      // 先获取待审批用户信息，用于后续操作
-    const pendingApp = (this.data.pendingApplications || []).find(a => String(a.applicationID) === String(applicationId))
-      const pendingUserId = pendingApp ? String(pendingApp.appliced_user_id) : null
-      
+
       try {
         const res = await this.request({
           url: `/club/application/${applicationId}/processed/${operation}`,
@@ -1799,22 +1535,7 @@ Component({
         })
         if (res.Flag === '4000' || res.Flag === 4000) {
           wx.showToast({ title: operation === 'approved' ? '已批准' : '已拒绝', icon: 'success' })
-          
-          // 如果是拒绝，从 isotope 中删除待审批 item
-    if (operation === 'rejected') {
-            const pendingItemId = `club-pending-${applicationId}`
-            
-            const mainIso = this.selectComponent('#clubMemberIsotope')
-            if (mainIso && mainIso.removeItem) {
-              mainIso.removeItem(pendingItemId)
-            }
-            
-            const avatarIso = this.selectComponent('#memberAvatarIsotope')
-            if (avatarIso && avatarIso.removeItem) {
-              avatarIso.removeItem(pendingItemId)
-            }
-          }
-          
+
           // 发送通知消息
     if (res.data) {
             const message_data = {
@@ -1840,24 +1561,18 @@ Component({
           if (currentPendingApp) {
             this.selectComponent(`#cm-shared-pending-detail`)?.collapse?.()
           }
-          this.setData({ currentPendingApplication: null, pendingApprovalOpinion: '', searchUserApprovalOpinion: '' })
+          this.setData({
+            currentPendingApplication: null,
+            pendingPopupApproveOpinion: '',
+            pendingPopupRejectReason: '',
+            searchUserApprovalOpinion: ''
+          })
           
           // 重新获取数据
           await Promise.all([this.fetchPendingApplications(), this.fetchMemberList()])
-          
-          // 重新构建 isotope items（会更新待审批成员的属性）
-    this.updatePeoplePanel()
-          
-          // 如果是批准，触发排序动画（让批准的成员移动到新位置）
-    if (operation === 'approved') {
-            setTimeout(() => {
-              const iso = this.selectComponent('#clubMemberIsotope')
-              if (iso && iso.sort) {
-                iso.sort(this.data.memberSortBy, this.data.memberSortAscending)
-              }
-            }, 100)
-          }
-          
+
+          this.updatePeoplePanel()
+
           // 刷新搜索结果和通讯录状态
     this.refreshSearchResultsPendingStatus()
           this.abRefreshExistingStatus()
@@ -1866,7 +1581,7 @@ Component({
         }
       } catch (error) {
         wx.showToast({ title: '网络错误，请重试', icon: 'none' })
-        .error('处理申请失败:', error)
+        console.error('处理申请失败:', error)
       } finally {
         wx.hideLoading()
       }

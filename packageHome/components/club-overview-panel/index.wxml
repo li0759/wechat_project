@@ -117,6 +117,7 @@
     bg-color="rgba(223, 118, 176, 0.8)"
     fullscreen-sheet-bg-color="#f7f8fa"
     fullscreen-top-padding="{{0}}"
+    show-fullscreen-back="{{nestedManageFullscreenBackShow}}"
     bind:collapse="onNestedClubManageCollapse"
     bind:contentReady="onNestedClubManageContentReady"
   >
@@ -134,6 +135,7 @@
           club-id="{{nestedClubManage.clubId}}"
           bind:loaded="onNestedClubManageLoaded"
           bind:close="closeNestedClubManage"
+          bind:host-fullscreen-back="onClubManageHostFullscreenBack"
         />
       </block>
     </view>

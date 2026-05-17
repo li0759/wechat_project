@@ -4,6 +4,14 @@ function pad2(n) {
   return String(n).padStart(2, '0');
 }
 
+/** 打卡时间展示：14时30分 */
+function formatClockinTimeZh(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${d.getHours()}时${pad2(d.getMinutes())}分`;
+}
+
 function formatTimeDisplay(iso) {
   if (!iso) return '';
   const d = new Date(iso);
@@ -20,6 +28,14 @@ function pickerValueToIso(v) {
   const s = String(v).trim().replace('T', ' ');
     if (s.length < 16) return null;
   return `${s.slice(0, 10)}T${s.slice(11, 16)}:00`;
+}
+
+/** 时间线左侧时间（月-日 时:分） */
+function formatTimelineTimeShort(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return String(iso).replace('T', ' ').slice(5, 16);
+  return `${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
 
 Component({
@@ -44,6 +60,19 @@ Component({
     locationMapSmallUrl: '',
     locationMapLargeUrl: '',
     membersClockinCount: 0,
+    statusPanelMembers: [],
+    topTimelineItems: [],
+
+    timelineModalOpen: false,
+    /** 全屏弹窗当前页：timeline | members（与 swiper 同步） */
+    timelineModalTab: 'timeline',
+    /** 0 时间线 / 1 成员 */
+    timelineModalSwiperIndex: 0,
+    timelineModalItems: [],
+    timelineModalPage: 1,
+    timelineModalTotalPages: 1,
+    timelineModalTotalRecords: 0,
+    timelineModalLoading: false,
 
     timeEdit: { preStart: '', preEnd: '' },
     timeEditRaw: { preStartParts: null, preEndParts: null, preStartPick: null, preEndPick: null },
@@ -269,6 +298,7 @@ Component({
         }
         await Promise.all([
           this.loadEventMembers(this.data.eventId),
+          this.loadEventTimeline(this.data.eventId),
           this.loadClubMembers(event.club_info.club_id),
         ]);
         await this.loadMoments(1);
@@ -368,10 +398,153 @@ Component({
     async loadEventMembers(eventId) {      const res = await this.request({ url: `/event/${eventId}/members`, method: 'GET' });      if (res.Flag == 4000) {
         const members = res.data.members || [];
         const membersClockinCount = members.filter((m) => !!m.clockin_date).length;        this.setData({ members, membersClockinCount, selectedMemberIds: [] });
+        this.prepareStatusPanelMembers();
         this.prepareIsotopeMembers();
         return;
       }
       throw new Error(res.message || '获取成员失败');
+    },
+
+    async loadEventTimeline(eventId) {
+      if (!eventId) return;
+      try {
+        const res = await this.request({
+          url: `/event/${eventId}/timeline?page=1&page_size=10`,
+          method: 'GET',
+        });
+        if (String(res.Flag) !== '4000' || !res.data) return;
+        const all = (res.data.items || []).map((it) => this.decorateTimelineItem(it));
+        this.setData({
+          topTimelineItems: all,
+        });
+      } catch (_) {
+        /* 时间线失败不阻断面板 */
+      }
+    },
+
+    decorateTimelineItem(it) {
+      const at = it.at;
+      const d = at ? new Date(at) : null;
+      let time_axis_date = '';
+      let time_axis_time = '';
+      if (d && !Number.isNaN(d.getTime())) {
+        time_axis_date = `${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+        time_axis_time = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+      }
+      const moment = it.moment
+        ? {
+            moment_id: it.moment.moment_id,
+            description: it.moment.description || '',
+            image_files: it.moment.image_files || [],
+          }
+        : null;
+      return {
+        ...it,
+        time_short: formatTimelineTimeShort(at),
+        time_axis_date,
+        time_axis_time,
+        moment,
+        milestone: !!it.milestone,
+      };
+    },
+
+    async _fetchTimelinePage(eventId, page, pageSize) {
+      const res = await this.request({
+        url: `/event/${eventId}/timeline?page=${page}&page_size=${pageSize}`,
+        method: 'GET',
+      });
+      if (String(res.Flag) !== '4000' || !res.data) {
+        throw new Error(res.message || '加载失败');
+      }
+      const items = (res.data.items || []).map((it) => this.decorateTimelineItem(it));
+      return { items, pagination: res.data.pagination || {} };
+    },
+
+    onTimelineModalExpand() {
+      this.setData({
+        timelineModalOpen: true,
+        timelineModalTab: 'timeline',
+        timelineModalSwiperIndex: 0,
+        timelineModalItems: [],
+        timelineModalPage: 1,
+        timelineModalTotalPages: 1,
+        timelineModalTotalRecords: 0,
+      });
+      this._loadTimelineModalPage(1, false);
+    },
+
+    onTimelineModalSwiperChange(e) {
+      const idx = Number(e?.detail?.current);
+      if (idx !== 0 && idx !== 1) return;
+      const tab = idx === 1 ? 'members' : 'timeline';
+      if (tab === this.data.timelineModalTab && idx === this.data.timelineModalSwiperIndex) return;
+      this.setData({ timelineModalTab: tab, timelineModalSwiperIndex: idx });
+    },
+
+    onTimelineModalDotTap(e) {
+      const idx = Number(e?.currentTarget?.dataset?.index);
+      if (idx !== 0 && idx !== 1) return;
+      if (idx === this.data.timelineModalSwiperIndex) return;
+      const tab = idx === 1 ? 'members' : 'timeline';
+      this.setData({ timelineModalTab: tab, timelineModalSwiperIndex: idx });
+    },
+
+    onTimelineModalCollapse() {
+      this.setData({ timelineModalOpen: false });
+    },
+
+    async _loadTimelineModalPage(page, append) {
+      const id = this.data.eventId;
+      if (!id) return;
+      if (this._timelineModalReqLock) return;
+      this._timelineModalReqLock = true;
+      this.setData({ timelineModalLoading: true });
+      try {
+        const { items, pagination } = await this._fetchTimelinePage(id, page, 10);
+        const prev = append ? (this.data.timelineModalItems || []) : [];
+        const totalRec =
+          pagination.total_records != null ? pagination.total_records : this.data.timelineModalTotalRecords;
+        this.setData({
+          timelineModalItems: append ? [...prev, ...items] : items,
+          timelineModalPage: pagination.current_page || page,
+          timelineModalTotalPages: pagination.total_pages || 1,
+          timelineModalTotalRecords: totalRec,
+        });
+      } catch (_) {
+        if (!append) {
+          this.setData({ timelineModalItems: [] });
+        }
+      } finally {
+        this._timelineModalReqLock = false;
+        this.setData({ timelineModalLoading: false });
+      }
+    },
+
+    onTimelineModalScrollToLower() {
+      const { timelineModalPage, timelineModalTotalPages, timelineModalLoading } = this.data;
+      if (timelineModalLoading) return;
+      if (timelineModalPage >= timelineModalTotalPages) return;
+      this._loadTimelineModalPage(timelineModalPage + 1, true);
+    },
+
+    async refreshTimelineModalIfOpen() {
+      if (!this.data.timelineModalOpen) return;
+      await this._loadTimelineModalPage(1, false);
+    },
+
+    /** 状态卡片右侧头像：按参加时间升序，展示全部成员 */
+    prepareStatusPanelMembers() {
+      const raw = [...(this.data.members || [])];
+      raw.sort((a, b) => {
+        const ta = a.join_date ? Date.parse(a.join_date) || 0 : 0;
+        const tb = b.join_date ? Date.parse(b.join_date) || 0 : 0;
+        return ta - tb;
+      });
+      const statusPanelMembers = raw.map((m) => ({
+        ...m,
+        clockin_time_display: m.clockin_date ? formatClockinTimeZh(m.clockin_date) : '',
+      }));
+      this.setData({ statusPanelMembers });
     },
 
     async loadClubMembers(clubId) {
@@ -678,6 +851,19 @@ Component({
           event.actual_startTime = actualStartTime;
           event.actual_startTime_display = formatTimeDisplay(actualStartTime);
           this.setData({ event });
+
+          // 开始活动后为当前用户调用打卡接口（需已参加活动；失败不阻断已开始）
+          try {
+            await this.request({
+              url: `/event/clockin/${this.data.eventId}`,
+              method: 'GET',
+            });
+          } catch (_) {
+            /* ignore */
+          }
+          await this.loadEventMembers(this.data.eventId);
+          await this.loadEventTimeline(this.data.eventId);
+          await this.refreshTimelineModalIfOpen();
           return;
         }
         throw new Error(res.message || '开始失');
@@ -704,9 +890,13 @@ Component({
           // 本地更新，不刷新整个面板
     const event = { ...(this.data.event || {}) };
           const actualEndTime = res.data?.actual_endTime || new Date().toISOString();
+          event.actual_endTime = actualEndTime;
           event.actual_endtime = actualEndTime;
           event.actual_endTime_display = formatTimeDisplay(actualEndTime);
           this.setData({ event });
+          await this.loadEventTimeline(this.data.eventId);
+          await this.refreshTimelineModalIfOpen();
+          await this.loadEventMembers(this.data.eventId);
           return;
         }
         throw new Error(res.message || '结束失败');
@@ -730,16 +920,23 @@ Component({
           loadingText: '取消息..',
         });
         if (res.Flag == 4000) {
-          wx.showToast({ title: '活动已取', icon: 'success' });
+          wx.showToast({ title: '活动已取', icon: 'success', duration: 2000 });
           // 本地更新活动状数
       const event = { ...(this.data.event || {}) };
           event.is_cancelled = true;
           this.setData({ event });
-          
-          // 记录删除变更（自动触摸triggerEvent数
+          try {
+            await this.loadEventTimeline(this.data.eventId);
+            await this.refreshTimelineModalIfOpen();
+          } catch (_) {}
+
+          // 记录删除变更（自动触发 update，与 club 删除协会后一致由父级 bind:close 收起全屏）
       app.recordChange(this.data.eventId, 'delete', {
             type: 'event'
           }, this);
+          setTimeout(() => {
+            this.triggerEvent('close');
+          }, 2000);
           return;
         }
         throw new Error(res.message || '取消失败');
@@ -1286,7 +1483,9 @@ Component({
         }
         
         // 重新加载成员数据（获取最新的 join_date数
-      await this.loadEventMembers(this.data.eventId);        
+      await this.loadEventMembers(this.data.eventId);
+        await this.loadEventTimeline(this.data.eventId);
+        await this.refreshTimelineModalIfOpen();
         wx.hideLoading();
         wx.showToast({
           title: isJoined ? '已退出活动' : '已加入活动',
@@ -1542,6 +1741,8 @@ Component({
       const addMomentBox = this.selectComponent('#add-moment');
         if (addMomentBox && addMomentBox.collapse) addMomentBox.collapse();
         await this.loadMoments(1);
+        await this.loadEventTimeline(this.data.eventId);
+        await this.refreshTimelineModalIfOpen();
       } catch (e) {        wx.showToast({ title: e.message || '发布失败', icon: 'none' });
         this.setData({ 'addMomentForm.isUploading': false });
       }
@@ -1587,6 +1788,8 @@ Component({
         if (resp.data?.Flag === 2000 || resp.data?.Flag === '2000') {
           wx.showToast({ title: '删除成功', icon: 'success' });
           await this.loadMoments(1);
+          await this.loadEventTimeline(this.data.eventId);
+          await this.refreshTimelineModalIfOpen();
         } else {
           throw new Error(resp.data?.message || '删除失败');
         }

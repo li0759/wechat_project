@@ -1,96 +1,177 @@
-/* 成员管理骨架屏样式 */
-.skeleton-container {
+.sk-root {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #f7f8fa;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #f7f8fa;
   z-index: 999;
   overflow: hidden;
-  padding-top: 24rpx;
+  box-sizing: border-box;
 }
 
-.skeleton-list {
-  margin-top: 50rpx;
-  padding: 0 24rpx 120rpx;
+.sk-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin-top: 16rpx;
+  overflow: hidden;
 }
 
-.skeleton-index-anchor {
-  padding: 16rpx 0 12rpx;
-  margin-bottom: 8rpx;
+.sk-toolbar {
+  flex-shrink: 0;
+  padding: 0 24rpx 8rpx;
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.06);
 }
 
-.skeleton-index-text {
+.sk-search {
+  width: 100%;
+}
+
+.sk-list-root {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.sk-cmb {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  --sk-brand: #667eea;
+}
+
+.sk-cmb__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.sk-cmb__scroll {
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 24rpx;
+  box-sizing: border-box;
+}
+
+.sk-anchor {
+  width: 100%;
+}
+
+.sk-anchor__header {
+  margin: 0 24rpx;
+  padding: 12rpx 16rpx 10rpx;
   font-size: 28rpx;
-  color: #666;
   font-weight: 600;
+  line-height: 44rpx;
+  color: rgba(0, 0, 0, 0.45);
+  background: #f3f3f3;
+  border-radius: 12rpx 12rpx 0 0;
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
 }
 
-.skeleton-member-card {
-  background: white;
+.sk-card {
+  margin: 0 24rpx 24rpx;
+  background: #ffffff;
   border-radius: 16rpx;
   padding: 24rpx;
-  margin-bottom: 16rpx;
+  box-sizing: border-box;
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
-  display: flex;
-  align-items: center;
-  gap: 24rpx;
-  position: relative;
+  min-height: 152rpx;
 }
 
-.skeleton-delete-btn {
-  position: absolute;
-  left: 8rpx;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 40rpx;
-  height: 40rpx;
+.sk-card__row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 32rpx;
-  color: #ccc;
-  font-weight: 300;
+  gap: 20rpx;
 }
 
-.skeleton-member-info {
+.sk-card__info {
   flex: 1;
+  min-width: 0;
+}
+
+.sk-card__name-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sk-card__meta-row {
+  display: flex;
+  align-items: center;
+  margin-top: 10rpx;
+}
+
+.sk-cmb__sidebar {
+  flex-shrink: 0;
+  width: 64rpx;
+  padding: 9rpx 2rpx;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  margin-left: 24rpx;
-}
-
-.skeleton-name-row {
-  display: flex;
   align-items: center;
 }
 
-/* 右侧字母索引条骨架 */
-.skeleton-index-bar {
-  position: fixed;
-  right: 8rpx;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6rpx;
-  z-index: 1000;
-  padding: 8rpx 4rpx;
+.sk-cmb__sidebar-item {
+  width: 100%;
+  padding: 7rpx 0;
+  border-radius: 10rpx;
+  text-align: center;
 }
 
-.skeleton-index-letter {
-  width: 32rpx;
-  height: 28rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.sk-cmb__sidebar-item + .sk-cmb__sidebar-item {
+  margin-top: 2rpx;
 }
 
-.skeleton-add-button {
+.sk-cmb__sidebar-item--active {
+  background: var(--sk-brand);
+}
+
+.sk-cmb__sidebar-item--active .sk-cmb__sidebar-char {
+  color: #ffffff;
+}
+
+.sk-cmb__sidebar-char {
+  font-size: 20rpx;
+  font-weight: 600;
+  line-height: 1.25;
+  color: rgba(0, 0, 0, 0.9);
+}
+
+.sk-fab {
   position: fixed;
   right: 32rpx;
-  bottom: 100rpx;
-  z-index: 1000;
+  bottom: 200rpx;
+  z-index: 1001;
+  pointer-events: none;
+}
+
+.sk-fab-btn {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 50%;
+  background: rgb(211, 211, 211);
+  box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sk-fab-icon {
+  font-size: 56rpx;
+  font-weight: 300;
+  line-height: 1;
+  color: #1a1a1a;
+  margin-top: -4rpx;
 }

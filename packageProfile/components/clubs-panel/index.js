@@ -13,10 +13,16 @@ Component({
     requestUrl: {
       type: String,
       value: '/club/user_joined/list'
+    },
+    /** 为 true 时由宿主页 globalPopup 栈打开详情，不再在组件内嵌套全屏 */
+    delegateNestedToHost: {
+      type: Boolean,
+      value: false
     }
   },
 
   data: {
+    contentSuspended: false,
     clubList: [],
     isClubLoading: false,
     clubPage: 1,
@@ -32,6 +38,7 @@ Component({
       tapX: 0,
       tapY: 0
     },
+    nestedManageFullscreenBackShow: true,
     
     nestedClubDetail: {
       visible: false,
@@ -173,6 +180,14 @@ Component({
       this.loadClubList(this.data.clubPage + 1);
     },
 
+    suspendContent() {
+      this.setData({ contentSuspended: true });
+    },
+
+    resumeContent() {
+      this.setData({ contentSuspended: false });
+    },
+
     onClubTap(e) {
       const clubId = e.currentTarget.dataset.clubId;
       const club = this.data.clubList.find(c => c.club_id === clubId);
@@ -193,9 +208,18 @@ Component({
         tapX = sys.windowWidth / 2;
         tapY = sys.windowHeight / 2;
       }      
+      if (this.properties.delegateNestedToHost) {
+        let popupType = 'club-detail';
+        if (club.cur_user_managed) popupType = 'club-manage';
+        else if (club.cur_user_is_member) popupType = 'club-joined';
+        this.triggerEvent('navigateClub', { clubId, popupType, tapX, tapY });
+        return;
+      }
+
       // 根据用户与协会的关系决定弹出的panel类型
     if (club.cur_user_managed) {        // 用户管理该协?-> 弹出协会管理panel
     this.setData({
+          nestedManageFullscreenBackShow: true,
           nestedClubManage: {
             visible: true,
             loading: true,
@@ -311,6 +335,11 @@ Component({
       }
     },
 
+    onClubManageHostFullscreenBack(e) {
+      const show = !!(e.detail && e.detail.show)
+      this.setData({ nestedManageFullscreenBackShow: show })
+    },
+
     onNestedClubManageCollapse() {
       // 收起时不做任何操作，等待collapsed事件
   },
@@ -318,6 +347,7 @@ Component({
     onNestedClubManageCollapsed() {
       setTimeout(() => {
         this.setData({
+          nestedManageFullscreenBackShow: true,
           'nestedClubManage.visible': false,
           'nestedClubManage.loading': true,
           'nestedClubManage.renderPanel': false,

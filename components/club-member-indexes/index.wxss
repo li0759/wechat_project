@@ -1,0 +1,451 @@
+/* 对齐 t-indexes 侧栏视觉；单滚动区域 + 宿主内绝对定位侧栏 */
+.cmb {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  --cmb-brand: #0052d9;
+  --cmb-brand-light: #f2f3ff;
+}
+
+/* 加高 scroll-view 时略超出宿主，避免底部被 overflow:hidden 裁掉 */
+.cmb.cmb--list-boost {
+  overflow: visible;
+}
+
+.cmb.cmb--list-boost .cmb__scroll-host {
+  overflow: visible;
+}
+
+.cmb__body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.cmb__scroll-host {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  align-self: stretch;
+  overflow: hidden;
+  position: relative;
+}
+
+/* 高度由 JS 写入 scrollAreaPx（px），勿依赖 % / absolute 与原生 scroll-view 组合 */
+.cmb__scroll {
+  width: 100%;
+  box-sizing: border-box;
+  padding-bottom: 24rpx;
+}
+
+.cmb-anchor {
+  width: 100%;
+}
+
+.cmb-anchor__header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: 0 24rpx;
+  padding: 12rpx 16rpx 10rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  line-height: 44rpx;
+  color: rgba(0, 0, 0, 0.9);
+  background: var(--td-bg-color-secondarycontainer, #f3f3f3);
+  border-radius: 12rpx 12rpx 0 0;
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.06);
+}
+
+/* 侧栏：与 scroll-view 同排；约 2 字宽 + 换行，整体紧凑 */
+.cmb__sidebar {
+  flex-shrink: 0;
+  width: 64rpx;
+  padding: 9rpx 2rpx;
+  box-sizing: border-box;
+  max-height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  color: var(--td-text-color-primary, rgba(0, 0, 0, 0.9));
+  font-size: 20rpx;
+  line-height: 1.25;
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.cmb__sidebar-item {
+  box-sizing: border-box;
+  width: 100%;
+  border-radius: 10rpx;
+  position: relative;
+  text-align: center;
+  min-height: 0;
+  padding: 7rpx 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cmb__sidebar-item + .cmb__sidebar-item {
+  margin-top: 2rpx;
+}
+
+.cmb__sidebar-item--active {
+  background-color: var(--td-brand-color, var(--cmb-brand));
+  color: var(--td-text-color-anti, #fff);
+}
+
+/* 基础：约 2 字宽；line-clamp 仅用于 --lines2，避免与 --hard4 叠加出 … */
+.cmb__sidebar-char {
+  box-sizing: border-box;
+  width: 52rpx;
+  max-width: 52rpx;
+  min-height: 24rpx;
+  line-height: 1.25;
+  font-size: 20rpx;
+  font-weight: 600;
+  text-align: center;
+}
+
+.cmb__sidebar-char--lines2 {
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  max-height: 52rpx;
+}
+
+/* 部门：数据层已截 4 字；禁止 -webkit-line-clamp，裁切不出现省略号 */
+.cmb__sidebar-char--hard4 {
+  display: block;
+  overflow: hidden;
+  max-height: 56rpx;
+  white-space: normal;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+}
+
+.cmb__sidebar-tips {
+  min-width: 72rpx;
+  max-width: 240rpx;
+  padding: 6rpx 12rpx;
+  box-sizing: border-box;
+  white-space: normal;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  min-height: 48rpx;
+  line-height: 1.25;
+  text-align: center;
+  font-size: 26rpx;
+  font-weight: 700;
+  color: var(--td-brand-color, var(--cmb-brand));
+  background-color: var(--td-brand-color-light, var(--cmb-brand-light));
+  border-radius: 12rpx;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: calc(100% + 12rpx);
+  z-index: 20;
+  pointer-events: none;
+}
+
+.member-item-wrapper {
+  position: relative;
+  transition: opacity 260ms ease, filter 260ms ease;
+}
+
+.member-item-wrapper--focus {
+  margin-bottom: 16rpx;
+}
+
+.member-item-wrapper--muted {
+  opacity: 0.55;
+  filter: grayscale(0.25);
+}
+
+.member-item {
+  height: 152rpx;
+  box-sizing: border-box;
+  transition: background-color 260ms ease, box-shadow 260ms ease;
+}
+
+.member-item--bulk {
+  border: 2rpx solid rgba(102, 126, 234, 0.08);
+}
+
+.member-item--selected {
+  background: #ffffff;
+  box-shadow: 0 8rpx 22rpx rgba(0, 0, 0, 0.08);
+}
+
+.member-trigger-header {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  height: 100%;
+}
+
+.member-multi-check {
+  width: 38rpx;
+  height: 38rpx;
+  border-radius: 50%;
+  border: 2rpx solid #c9ced8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: auto;
+  background: #ffffff;
+}
+
+.member-multi-check--on {
+  border-color: #667eea;
+  background: #667eea;
+}
+
+.member-trigger-header--focus {
+  align-items: center;
+}
+
+.member-avatar-expandable {
+  flex-shrink: 0;
+}
+
+.member-avatar-trigger {
+  width: 84rpx;
+  height: 84rpx;
+  border-radius: 50%;
+  overflow: visible;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  transition: transform 180ms ease;
+}
+
+.member-avatar-trigger:active {
+  transform: scale(0.95);
+}
+
+.member-avatar-trigger--focus {
+  width: 84rpx;
+  height: 84rpx;
+  transform: translate3d(-30rpx, 20rpx, 0);
+}
+
+.member-avatar-image {
+  width: 84rpx;
+  height: 84rpx;
+  border-radius: 50%;
+  background: #f2f3f5;
+  transition: width 260ms ease, height 260ms ease;
+}
+
+.member-avatar-trigger--focus .member-avatar-image {
+  width: 84rpx;
+  height: 84rpx;
+}
+
+.member-trigger-info {
+  min-width: 0;
+  flex: 1;
+  transform: none;
+  transition: none;
+}
+
+.member-trigger-info--focus {
+  flex: 1;
+  width: auto;
+  transform: none;
+}
+
+.member-trigger-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.member-name {
+  transition: font-size 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.member-trigger-name-row--focus {
+  transform: translate3d(-134rpx, 0, 0);
+}
+
+.member-trigger-name-row--focus .member-name {
+  font-size: 24rpx;
+}
+
+.member-extra {
+  transition: none;
+}
+
+.member-extra--hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.cmb-focus-panel__detail {
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.cmb-member-activity {
+  margin-top: 12rpx;
+  padding-top: 14rpx;
+  border-top: 2rpx solid rgba(0, 0, 0, 0.06);
+}
+
+.cmb-member-activity__head {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
+}
+
+.cmb-member-activity__head-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.cmb-member-activity__export {
+  flex-shrink: 0;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 14rpx;
+  background: #eef0ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cmb-member-activity__export--hover {
+  opacity: 0.78;
+}
+
+.cmb-member-activity__export--loading {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.cmb-member-activity__title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #222;
+}
+
+.cmb-member-activity__summary {
+  font-size: 22rpx;
+  color: #666;
+}
+
+.cmb-member-activity__loading,
+.cmb-member-activity__empty {
+  font-size: 24rpx;
+  color: #999;
+  padding: 8rpx 0 4rpx;
+}
+
+.cmb-member-activity__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.cmb-member-activity__item {
+  background: #f7f8fa;
+  border-radius: 12rpx;
+  padding: 12rpx 14rpx;
+}
+
+.cmb-member-activity__event {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 8rpx;
+}
+
+.cmb-member-activity__line {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 4rpx;
+}
+
+.cmb-member-activity__line:last-child {
+  margin-bottom: 0;
+}
+
+.cmb-member-activity__line--wrap {
+  white-space: normal;
+}
+
+.cmb-member-activity__label {
+  font-size: 22rpx;
+  color: #888;
+  flex-shrink: 0;
+}
+
+.cmb-member-activity__value {
+  font-size: 22rpx;
+  color: #333;
+  line-height: 1.4;
+}
+
+.cmb-member-activity__moments-wrap {
+  margin-top: 6rpx;
+}
+
+.cmb-member-activity__moment-block {
+  margin-top: 8rpx;
+  padding-top: 6rpx;
+  border-top: 2rpx solid rgba(0, 0, 0, 0.04);
+}
+
+.cmb-member-activity__moment-block:first-child {
+  margin-top: 4rpx;
+  padding-top: 0;
+  border-top: none;
+}
+
+.cmb-member-activity__imgs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 8rpx;
+}
+
+.cmb-member-activity__img {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 8rpx;
+  background: #eee;
+}
+
+.cmb-member-activity__footer {
+  font-size: 22rpx;
+  color: #999;
+  text-align: center;
+  padding: 12rpx 0 4rpx;
+}

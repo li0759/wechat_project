@@ -1,0 +1,10 @@
+/** 部门索引条：最多 4 个字符（BMP 中文与 substring 一致） */
+function max4(s) {
+  s = '' + (s == null ? '' : s)
+  if (s.length <= 4) return s
+  return s.substring(0, 4)
+}
+
+module.exports = {
+  max4: max4,
+}

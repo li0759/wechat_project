@@ -1,18 +1,17 @@
-.skeleton-container {
-  padding-top: 24rpx;
-  background-color: #f5f5f5;
+@import '../club-members-skeleton/index.wxss';
+
+.sk-root--events {
+  --sk-brand: #df76b0;
 }
 
-.skeleton-stats {
-  padding: 20rpx 20rpx;
-  display: flex;
-  justify-content: space-around;
-  gap: 15rpx;
+.sk-card--event {
+  min-height: 152rpx;
 }
 
-.skeleton-chart {
-  margin: 20rpx;
-  padding: 30rpx 20rpx;
-  background: #fff;
-  border-radius: 20rpx;
+.sk-card__meta-row--loc {
+  margin-top: 8rpx;
+}
+
+.sk-cmb__sidebar--events .sk-cmb__sidebar-item--active {
+  background: #df76b0;
 }

@@ -1,103 +1,104 @@
-<!--packageProfile/components/club-events-panel/index.wxml-->
-<view class="container">
-  <scroll-view class="panel-scroll" scroll-y="{{true}}" show-scrollbar="{{false}}">
-    <view class="page-header">
-      <view class="title-group">
-        <view class="title">活动统计</view>
-        <view class="subtitle" wx:if="{{clubInfo.club_name}}">{{clubInfo.club_name}}</view>
+<view class="cmp-panel-root {{(loading || (!loading && events.length > 0)) ? 'cmp-panel-root--member-list' : ''}}">
+
+  <club-events-skeleton wx:if="{{loading}}" />
+
+  <t-empty
+    wx:elif="{{!loading && events.length === 0}}"
+    icon="calendar"
+    description="暂无活动"
+  />
+
+  <view wx:elif="{{!loading && events.length > 0}}" class="members-main cm-indexes-shell">
+    <view class="cm-member-toolbar">
+      <view wx:if="{{bulkMode}}" class="cm-bulk-send-bar">
+        <view class="cm-bulk-icon-btn" hover-class="cm-bulk-icon-btn--hover" bindtap="onExitBulkMode">
+          <t-icon name="rollback" size="24" color="#df76b0" />
+        </view>
+        <view
+          class="cm-bulk-icon-btn {{bulkTotalVisible > 0 ? '' : 'cm-bulk-icon-btn--disabled'}}"
+          hover-class="cm-bulk-icon-btn--hover"
+          bindtap="onSelectAllBulk"
+        >
+          <t-icon wx:if="{{bulkAllSelected}}" name="data-error" size="24" color="#df76b0" />
+          <t-icon wx:else name="data-checked" size="24" color="#df76b0" />
+        </view>
+        <text class="cm-bulk-send-text">
+          {{bulkSelectedCount > 0 ? ('已选' + bulkSelectedCount + '个活动，点击下载参与明细') : '请选择至少一个活动'}}
+        </text>
+        <view
+          class="cm-bulk-icon-btn cm-bulk-icon-btn--send {{bulkSending ? 'cm-bulk-icon-btn--loading' : ''}} {{bulkSelectedCount > 0 ? '' : 'cm-bulk-icon-btn--disabled'}}"
+          hover-class="cm-bulk-icon-btn--hover"
+          bindtap="onSendBulkEvents"
+        >
+          <t-icon name="send" size="24" color="#df76b0" />
+        </view>
       </view>
+      <t-search
+        wx:else
+        value="{{searchKeyword}}"
+        shape="round"
+        placeholder="搜索活动名称、地点"
+        bind:change="onEventListSearchChange"
+        bind:clear="onEventListSearchClear"
+      />
     </view>
 
-    <view class="date-filter-card">
-      <view class="date-filter-title">按日期范围查看图表</view>
-      <view class="date-filter-row">
-        <view class="date-picker-item">
-          <view class="date-label">开始日期</view>
-          <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
-            <view class="date-picker-value">{{startDate || '请选择开始日期'}}</view>
-          </picker>
-        </view>
-        <view class="date-picker-item">
-          <view class="date-label">结束日期</view>
-          <picker mode="date" value="{{endDate}}" bindchange="onEndDateChange">
-            <view class="date-picker-value">{{endDate || '请选择结束日期'}}</view>
-          </picker>
-        </view>
-      </view>
-      <t-button
-        wx:if="{{startDate && endDate}}"
-        theme="primary"
-        size="small"
-        loading="{{downloading}}"
-        class="download-btn"
-        bindtap="downloadExcel"
-      >
-        发送文件
-      </t-button>
-    </view>
-    
-    <view wx:if="{{loading}}" class="loading-container">
-      <t-loading size="24px" theme="circular" />
-      <view class="loading-text">正在加载数据...</view>
-    </view>
-    
-    <view wx:else class="content">
-      <!-- 总体统计卡片 -->
-      <view class="stats-overview">
-        <view class="stats-card">
-          <view class="stats-number">{{totalEvents}}</view>
-          <view class="stats-label">活动总数</view>
-        </view>
-        <view class="stats-card">
-          <view class="stats-number">{{totalParticipants}}</view>
-          <view class="stats-label">总参与人次</view>
-        </view>
-        <view class="stats-card">
-          <view class="stats-number">{{totalCheckedIn}}</view>
-          <view class="stats-label">总签到人次</view>
-        </view>
-        <view class="stats-card">
-          <view class="stats-number">{{checkinRate}}%</view>
-          <view class="stats-label">平均签到率</view>
-        </view>
-      </view>
-      
-      <!-- 图表展示区域 -->
-      <view class="charts-section" wx:if="{{!hideCharts}}">
-        <!-- 月度活动趋势图 -->
-        <view class="chart-container" wx:if="{{monthlyChart.length > 0}}">
-          <bar-chart 
-            data="{{monthlyChart}}" 
-            title="月度活动趋势"
-            height="{{280}}"
-            bar-color="#9c88ff"
-            show-value="{{true}}"
-          />
-        </view>
-        
-        <!-- 活动费用分布饼图 -->
-        <view class="chart-container" wx:if="{{budgetChart.length > 0}}">
-          <pie-chart 
-            data="{{budgetChart}}" 
-            title="活动预算分布"
-            height="{{280}}"
-            colors="{{['#df76b0', '#9c88ff', '#5fb3d4', '#f4b844', '#67c23a']}}"
-          />
-        </view>
-        
-        <!-- 签到率对比图 -->
-        <view class="chart-container" wx:if="{{checkinChart.length > 0}}">
-          <bar-chart 
-            data="{{checkinChart}}" 
-            title="各活动签到率对比"
-            height="{{300}}"
-            bar-color="#5fb3d4"
-            show-value="{{true}}"
-          />
-        </view>
-      </view>
+    <view wx:if="{{filteredEvents.length === 0}}" class="cm-filter-empty">
+      <t-empty icon="search" description="未找到相关活动" />
     </view>
 
-    <view class="bottom-safe-area"></view>
-  </scroll-view>
-</view> 
+    <view wx:else class="cm-member-list-root">
+      <view class="cm-tab-body-fill">
+        <club-event-indexes
+          id="event-indexes-month"
+          expandable-id-suffix="month"
+          club-id="{{clubId}}"
+          groups="{{monthEventGroups}}"
+          index-sidebar="{{monthIndexSidebar}}"
+          default-cover="{{default_cover}}"
+          bind:bulkselectchange="onBulkSelectChange"
+          bind:eventupdated="onEventUpdated"
+        />
+      </view>
+    </view>
+  </view>
+
+  <!-- 添加活动悬浮按钮（加载中由骨架屏展示，避免双 FAB） -->
+  <view class="fab-container" wx:if="{{!loading}}">
+    <expandable-container_fullscreen
+      id="nestedEventCreatePopup"
+      expanded-width="750"
+      expanded-height="1800"
+      bg-color="rgba(223, 118, 176, 0.8)"
+      fullscreen-sheet-bg-color="#f7f8fa"
+      fullscreen-top-padding="{{0}}"
+      bind:collapse="onNestedEventCreateCollapse"
+      bind:collapsed="onNestedEventCreateCollapsed"
+      bind:contentReady="onNestedEventCreateContentReady"
+    >
+      <view slot="trigger" class="fab-add">
+        <t-icon name="add" size="28" />
+      </view>
+      <view slot="content" class="nested-popup-shell">
+        <view
+          wx:if="{{nestedEventCreate.loading}}"
+          style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 999; background: #f7f8fa;"
+        >
+          <event-create-skeleton />
+        </view>
+        <block wx:if="{{nestedEventCreate.renderPanel}}">
+          <event-create-panel
+            id="nestedEventCreatePanel"
+            club-id="{{clubId * 1}}"
+            bind:loaded="onNestedEventCreateLoaded"
+            bind:create-success="onNestedEventCreateSuccess"
+            bind:create-error="onNestedEventCreateError"
+            bind:close="closeNestedEventCreate"
+          />
+        </block>
+      </view>
+    </expandable-container_fullscreen>
+  </view>
+
+  <t-toast id="t-toast" />
+</view>

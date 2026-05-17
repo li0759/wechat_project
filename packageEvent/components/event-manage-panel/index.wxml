@@ -58,8 +58,260 @@
   <block wx:else>
     <scroll-view class="main-content" scroll-y>
       <view class="rows">
-        <!-- 标题（独立框） -->
-        <expandable-container id="row-title" expanded-width="700" expanded-height="520" bg-color="#f2f3f5">
+        <!-- 顶部：活动状态 + 时间线预览；点击展开全屏时间线 -->
+        <expandable-container_fullscreen
+          wx:if="{{event}}"
+          id="card-timeline"
+          fullSize="{{true}}"
+          expanded-width="750"
+          expanded-height="1800"
+          bg-color="rgba(223, 118, 176, 0.8)"
+          fullscreen-sheet-bg-color="#f7f8fa"
+          fullscreen-top-padding="{{0}}"
+          bind:expand="onTimelineModalExpand"
+          bind:collapse="onTimelineModalCollapse"
+        >
+          <view slot="trigger" class="top-preview-box top-preview-box--interactive">
+              <view class="top-preview-header status-card-header">
+                <view class="status-card-title">
+                  <t-icon name="play-circle" size="24" color="var(--md-sys-color-primary)" />
+                  <text>活动状态</text>
+                </view>
+                <view class="status-header-right">
+                  <text wx:if="{{!event.is_cancelled && event.actual_startTime && !event.actual_endTime}}" class="status-inline-start">{{event.actual_startTime_display}}</text>
+                  <view class="status-badge {{event.actual_startTime ? (event.actual_endTime ? 'status-badge-ended' : 'status-badge-active') : 'status-badge-pending'}}">
+                    {{event.is_cancelled ? '已取消' : (event.actual_startTime ? (event.actual_endTime ? '已结束' : '进行中') : '未开始')}}
+                  </view>
+                </view>
+              </view>
+              <view class="top-preview-body">
+                <scroll-view class="top-preview-scroll" scroll-y="{{true}}" show-scrollbar="{{false}}">
+                  <view class="top-preview-inner">
+                    <view
+                      class="tl-modal-row"
+                      wx:for="{{topTimelineItems}}"
+                      wx:for-item="item"
+                      wx:for-index="topIdx"
+                      wx:key="id"
+                    >
+                      <view class="tl-modal-left">
+                        <text class="tl-axis-date">{{item.time_axis_date}}</text>
+                        <text class="tl-axis-time">{{item.time_axis_time}}</text>
+                      </view>
+                      <view class="tl-modal-rail">
+                        <view class="tl-dot"></view>
+                        <view class="tl-vline" wx:if="{{topIdx < topTimelineItems.length - 1}}"></view>
+                      </view>
+                      <view class="tl-modal-main {{item.milestone ? (item.type === 'ended' ? 'tl-modal-main--milestone-end' : 'tl-modal-main--milestone-start') : ''}}">
+                        <block wx:if="{{item.milestone}}">
+                          <text class="tl-milestone-title">{{item.summary}}</text>
+                          <view class="tl-op-row" wx:if="{{item.operator}}">
+                            <image class="tl-op-avatar" src="{{item.operator.avatar || defaultAvatarUrl}}" mode="aspectFill" />
+                            <text class="tl-op-name">{{item.operator.user_name}}</text>
+                          </view>
+                        </block>
+                        <block wx:elif="{{item.type === 'moment'}}">
+                          <view class="tl-op-row" wx:if="{{item.operator}}">
+                            <image class="tl-op-avatar" src="{{item.operator.avatar || defaultAvatarUrl}}" mode="aspectFill" />
+                            <view class="tl-op-meta">
+                              <text class="tl-op-name">{{item.operator.user_name}}</text>
+                              <text class="tl-op-sub">{{item.summary}}</text>
+                            </view>
+                          </view>
+                          <view class="tl-moment-body" wx:if="{{item.moment}}">
+                            <text class="tl-moment-text" wx:if="{{item.moment.description}}">{{item.moment.description}}</text>
+                            <view class="tl-moment-images" wx:if="{{item.moment.image_files && item.moment.image_files.length}}">
+                              <view class="tl-images-grid">
+                                <t-image
+                                  wx:for="{{item.moment.image_files}}"
+                                  wx:for-item="img"
+                                  wx:key="file_id"
+                                  src="{{img.fileUrl}}"
+                                  width="100rpx"
+                                  height="100rpx"
+                                  mode="aspectFill"
+                                  style="margin: 8rpx; border-radius: 12rpx; min-width: 100rpx; min-height: 100rpx;"
+                                />
+                              </view>
+                            </view>
+                          </view>
+                        </block>
+                        <block wx:else>
+                          <view class="tl-op-row" wx:if="{{item.operator}}">
+                            <image class="tl-op-avatar" src="{{item.operator.avatar || defaultAvatarUrl}}" mode="aspectFill" />
+                            <view class="tl-op-meta">
+                              <text class="tl-op-name">{{item.operator.user_name}}</text>
+                              <text class="tl-op-sub">{{item.summary}}</text>
+                            </view>
+                          </view>
+                          <text wx:else class="tl-plain-summary">{{item.summary}}</text>
+                        </block>
+                      </view>
+                    </view>
+                    <view wx:if="{{!topTimelineItems.length}}" class="top-preview-empty">暂无时间线</view>
+                    <view class="top-preview-scrollpad" />
+                  </view>
+                </scroll-view>
+                <view class="top-preview-avatars">
+                  <view class="status-avatar-grid status-avatar-grid--top-rtl">
+                    <view class="status-avatar-cell" wx:for="{{statusPanelMembers}}" wx:key="user_id">
+                      <view class="status-avatar-inner">
+                        <image class="status-avatar-img" src="{{item.avatar || defaultAvatarUrl}}" mode="aspectFill" />
+                        <view wx:if="{{item.clockin_date}}" class="status-avatar-check">√</view>
+                      </view>
+                    </view>
+                  </view>
+                </view>
+              </view>
+              <view class="top-preview-stack-mask" />
+            </view>
+
+          <view slot="content" class="popup-shell fullscreen-popup">
+            <view class="popup-body popup-body-full tl-modal-root">
+              <view class="tl-modal-header">
+                <text class="tl-modal-h-title">{{timelineModalTab === 'members' ? '参与成员' : '活动时间线'}}</text>
+                <text class="tl-modal-h-count" wx:if="{{timelineModalTab === 'timeline' && timelineModalTotalRecords > 0}}">共 {{timelineModalTotalRecords}} 条</text>
+                <view wx:if="{{timelineModalTab === 'members'}}" class="tl-modal-h-member-stats">
+                  <text class="tl-modal-h-ratio">{{membersClockinCount}}/{{statusPanelMembers.length}}</text>
+                  <text class="tl-modal-h-ratio-label">打卡/参加</text>
+                </view>
+              </view>
+              <swiper
+                class="tl-modal-swiper"
+                current="{{timelineModalSwiperIndex}}"
+                bindchange="onTimelineModalSwiperChange"
+                duration="{{280}}"
+                easing-function="easeOutCubic"
+              >
+                <swiper-item class="tl-modal-swiper-item">
+                  <view class="tl-modal-tab-body">
+                  <scroll-view
+                    class="tl-modal-scroll"
+                    scroll-y="{{true}}"
+                    lower-threshold="120"
+                    bindscrolltolower="onTimelineModalScrollToLower"
+                    show-scrollbar="{{false}}"
+                  >
+                    <view
+                      class="tl-modal-row"
+                      wx:for="{{timelineModalItems}}"
+                      wx:for-item="item"
+                      wx:for-index="idx"
+                      wx:key="id"
+                    >
+                      <view class="tl-modal-left">
+                        <text class="tl-axis-date">{{item.time_axis_date}}</text>
+                        <text class="tl-axis-time">{{item.time_axis_time}}</text>
+                      </view>
+                      <view class="tl-modal-rail">
+                        <view class="tl-dot"></view>
+                        <view class="tl-vline" wx:if="{{idx < timelineModalItems.length - 1}}"></view>
+                      </view>
+                      <view class="tl-modal-main {{item.milestone ? (item.type === 'ended' ? 'tl-modal-main--milestone-end' : 'tl-modal-main--milestone-start') : ''}}">
+                        <block wx:if="{{item.milestone}}">
+                          <text class="tl-milestone-title">{{item.summary}}</text>
+                          <view class="tl-op-row" wx:if="{{item.operator}}">
+                            <image class="tl-op-avatar" src="{{item.operator.avatar || defaultAvatarUrl}}" mode="aspectFill" />
+                            <text class="tl-op-name">{{item.operator.user_name}}</text>
+                          </view>
+                        </block>
+                        <block wx:elif="{{item.type === 'moment'}}">
+                          <view class="tl-op-row" wx:if="{{item.operator}}">
+                            <image class="tl-op-avatar" src="{{item.operator.avatar || defaultAvatarUrl}}" mode="aspectFill" />
+                            <view class="tl-op-meta">
+                              <text class="tl-op-name">{{item.operator.user_name}}</text>
+                              <text class="tl-op-sub">{{item.summary}}</text>
+                            </view>
+                          </view>
+                          <view class="tl-moment-body" wx:if="{{item.moment}}">
+                            <text class="tl-moment-text" wx:if="{{item.moment.description}}">{{item.moment.description}}</text>
+                            <view class="tl-moment-images" wx:if="{{item.moment.image_files && item.moment.image_files.length}}">
+                              <view class="tl-images-grid">
+                                <t-image
+                                  wx:for="{{item.moment.image_files}}"
+                                  wx:for-item="img"
+                                  wx:key="file_id"
+                                  src="{{img.fileUrl}}"
+                                  width="100rpx"
+                                  height="100rpx"
+                                  mode="aspectFill"
+                                  style="margin: 8rpx; border-radius: 12rpx; min-width: 100rpx; min-height: 100rpx;"
+                                />
+                              </view>
+                            </view>
+                          </view>
+                        </block>
+                        <block wx:else>
+                          <view class="tl-op-row" wx:if="{{item.operator}}">
+                            <image class="tl-op-avatar" src="{{item.operator.avatar || defaultAvatarUrl}}" mode="aspectFill" />
+                            <view class="tl-op-meta">
+                              <text class="tl-op-name">{{item.operator.user_name}}</text>
+                              <text class="tl-op-sub">{{item.summary}}</text>
+                            </view>
+                          </view>
+                          <text wx:else class="tl-plain-summary">{{item.summary}}</text>
+                        </block>
+                      </view>
+                    </view>
+
+                    <view wx:if="{{!timelineModalLoading && timelineModalItems.length === 0}}" class="tl-modal-empty">
+                      <t-empty description="暂无时间线" />
+                    </view>
+                    <view wx:if="{{timelineModalLoading}}" class="tl-modal-loading">加载中…</view>
+                    <view wx:elif="{{timelineModalItems.length > 0 && timelineModalPage >= timelineModalTotalPages}}" class="tl-modal-end">没有更多了</view>
+                    <view class="tl-modal-footer-space" />
+                  </scroll-view>
+                  </view>
+                </swiper-item>
+                <swiper-item class="tl-modal-swiper-item">
+                  <view class="tl-modal-tab-body">
+                  <scroll-view
+                    class="tl-modal-scroll tl-modal-scroll--members"
+                    scroll-y="{{true}}"
+                    show-scrollbar="{{false}}"
+                  >
+                    <view class="tl-members-grid">
+                      <view class="tl-member-cell" wx:for="{{statusPanelMembers}}" wx:key="user_id">
+                        <view class="tl-member-avatar-wrap">
+                          <image class="tl-member-avatar" src="{{item.avatar || defaultAvatarUrl}}" mode="aspectFill" />
+                          <view wx:if="{{item.clockin_date}}" class="tl-member-check">√</view>
+                        </view>
+                        <text class="tl-member-name">{{item.user_name}}</text>
+                        <text class="tl-member-time" wx:if="{{item.clockin_time_display}}">{{item.clockin_time_display}}</text>
+                      </view>
+                    </view>
+                    <view wx:if="{{!statusPanelMembers.length}}" class="tl-modal-empty tl-modal-empty--members">
+                      <t-empty description="暂无成员" />
+                    </view>
+                    <view class="tl-modal-footer-space" />
+                  </scroll-view>
+                  </view>
+                </swiper-item>
+              </swiper>
+              <view class="tl-modal-page-dots">
+                <view
+                  class="tl-modal-page-dot-hit"
+                  data-index="{{0}}"
+                  bindtap="onTimelineModalDotTap"
+                >
+                  <view class="tl-modal-page-dot {{timelineModalSwiperIndex === 0 ? 'tl-modal-page-dot--active' : ''}}" />
+                </view>
+                <view
+                  class="tl-modal-page-dot-hit"
+                  data-index="{{1}}"
+                  bindtap="onTimelineModalDotTap"
+                >
+                  <view class="tl-modal-page-dot {{timelineModalSwiperIndex === 1 ? 'tl-modal-page-dot--active' : ''}}" />
+                </view>
+              </view>
+            </view>
+          </view>
+        </expandable-container_fullscreen>
+
+        <!-- 标题 / 简介 / 预计开始·结束：双列 2×2，触发区宽度受栅格约束 -->
+        <view class="meta-fields-grid">
+          <view class="meta-field-cell">
+        <expandable-container id="row-title" trigger-width="100%" expanded-width="700" expanded-height="520" bg-color="#f2f3f5">
           <ripple slot="trigger" ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}">
             <view class="row row-100 row-editable">
               <view class="row-left">
@@ -84,9 +336,9 @@
             </view>
           </view>
         </expandable-container>
-
-        <!-- 简介（独立框） -->
-        <expandable-container id="row-content" expanded-width="700" expanded-height="980" bg-color="#f2f3f5">
+          </view>
+          <view class="meta-field-cell">
+        <expandable-container id="row-content" trigger-width="100%" expanded-width="700" expanded-height="980" bg-color="#f2f3f5">
           <ripple slot="trigger" ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}">
             <view class="row row-basic row-editable">
               <view class="row-basic-left">
@@ -122,9 +374,9 @@
             </view>
           </view>
         </expandable-container>
-
-        <!-- 第3行：预计开始（100rpx） -->
-        <expandable-container id="pre-start-box" expanded-width="700" expanded-height="700" bg-color="#f2f3f5" bind:expand="onPreStartBoxExpand">
+          </view>
+          <view class="meta-field-cell">
+        <expandable-container id="pre-start-box" trigger-width="100%" expanded-width="700" expanded-height="700" bg-color="#f2f3f5" bind:expand="onPreStartBoxExpand">
           <ripple slot="trigger" ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}">
             <view class="row row-100 row-editable">
               <view class="row-left">
@@ -161,9 +413,9 @@
             </view>
           </view>
         </expandable-container>
-
-        <!-- 第4行：预计结束（100rpx） -->
-        <expandable-container id="pre-end-box" expanded-width="700" expanded-height="700" bg-color="#f2f3f5" bind:expand="onPreEndBoxExpand">
+          </view>
+          <view class="meta-field-cell">
+        <expandable-container id="pre-end-box" trigger-width="100%" expanded-width="700" expanded-height="700" bg-color="#f2f3f5" bind:expand="onPreEndBoxExpand">
           <ripple slot="trigger" ripple-color="rgba(223, 118, 176, 0.8)" duration="{{800}}">
             <view class="row row-100 row-editable">
               <view class="row-left">
@@ -200,28 +452,6 @@
             </view>
           </view>
         </expandable-container>
-
-        <!-- 活动状态卡片 - 优化后的设计 -->
-        <view class="status-card">
-          <view class="status-card-header">
-            <view class="status-card-title">
-              <t-icon name="play-circle" size="24" color="var(--md-sys-color-primary)" />
-              <text>活动状态</text>
-            </view>
-            <view class="status-badge {{event.actual_startTime ? (event.actual_endTime ? 'status-badge-ended' : 'status-badge-active') : 'status-badge-pending'}}">
-              {{event.is_cancelled ? '已取消' : (event.actual_startTime ? (event.actual_endTime ? '已结束' : '进行中') : '未开始')}}
-            </view>
-          </view>
-          
-          <view class="status-card-body">
-            <view class="status-info-row">
-              <text class="status-label">实际开始</text>
-              <text class="status-value">{{event.actual_startTime_display || '未开始'}}</text>
-            </view>
-            <view class="status-info-row">
-              <text class="status-label">实际结束</text>
-              <text class="status-value">{{event.actual_endTime_display || '--'}}</text>
-            </view>
           </view>
         </view>
 

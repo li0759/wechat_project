@@ -12,14 +12,14 @@
             <!-- 待审批状态显示撤回按钮 -->
             <block wx:if="{{!item.processedDate}}">
               <view class="summary-status">正在审批</view>
-              <t-button
-                size="small"
-                theme="danger"
-                bindtap="showWithdrawDialog"
-                data-applicationid="{{item.applicationID}}"
-                class="summary-btn withdraw-btn"
-                catchtap="stopPropagation"
-              >撤回</t-button>
+              <!-- 勿用 t-button：其内部常 catch 触摸，事件冒泡不到外层，expandable 全屏里会表现为「点了没反应」 -->
+              <view
+                class="summary-btn withdraw-btn withdraw-native-btn"
+                catchtap="showWithdrawDialog"
+                data-application-id="{{item.applicationID || item.application_id}}"
+                hover-class="withdraw-native-btn--hover"
+                hover-stay-time="80"
+              >撤回</view>
             </block>
             <!-- 已处理状态显示状态 -->
             <view wx:else class="summary-status {{item.approved ? 'status-approved' : 'status-rejected'}}">
@@ -58,7 +58,8 @@
 
 <!-- 撤回确认对话框 -->
 <t-dialog
-  visible="{{ showWithdrawDialog }}"
+  visible="{{ withdrawDialogVisible }}"
+  zIndex="200000"
   title="确认撤回申请"
   content="确定要撤回这个协会申请吗？撤回后无法恢复。"
   confirm-btn="确定撤回"

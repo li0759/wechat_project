@@ -1,0 +1,7 @@
+{
+  "component": true,
+  "usingComponents": {
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "club-index-focus-panel": "/components/club-index-focus-panel/index"
+  }
+}

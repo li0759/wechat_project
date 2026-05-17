@@ -82,6 +82,26 @@
   flex-shrink: 0;
 }
 
+/* 原生撤回按钮（替代 t-button，避免触摸被组件内部吃掉） */
+.withdraw-native-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 80rpx;
+  height: 48rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+  color: #fff;
+  line-height: 1;
+  border-radius: 8rpx;
+  flex-shrink: 0;
+}
+
+.withdraw-native-btn--hover {
+  opacity: 0.88;
+}
+
 /* 撤回按钮样式 */
 .withdraw-btn {
   background-color: rgb(255, 87, 34) !important;

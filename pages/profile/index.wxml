@@ -275,7 +275,7 @@
                   <t-icon name="chart-bar" size="24px" color="rgb(223, 118, 176)" />
                   <view class="badge" wx:if="{{false}}">0</view>
                 </view>
-                <view class="grid-text">活动统计</view>
+                <view class="grid-text">活动管理</view>
               </view>
             </ripple>
             
@@ -350,6 +350,7 @@
     bg-color="rgba(223, 118, 176, 0.8)"
     fullscreen-sheet-bg-color="#f7f8fa"
     fullscreen-top-padding="{{0}}"
+    show-fullscreen-back="{{hostExpandableBackShow}}"
     bind:collapse="onGlobalPopupCollapse"
     bind:contentReady="onGlobalPopupContentReady"
   >
@@ -406,6 +407,7 @@
           event-id="{{globalPopup.id}}" 
           bind:update="onManagePanelUpdate"
           bind:loaded="onGlobalPopupLoaded"
+          bind:close="closeGlobalPopup"
         />
 
         <!-- Event Joined Panel -->
@@ -425,6 +427,7 @@
           bind:update="onManagePanelUpdate" 
           bind:dissolved="onClubDissolved"
           bind:loaded="onGlobalPopupLoaded"
+          bind:host-fullscreen-back="onClubManageHostFullscreenBack"
         />
 
         <!-- Club Members Panel -->
@@ -492,7 +495,7 @@
           bind:close="closeGlobalPopup"
         />
 
-        <!-- Club Events Panel (活动统计) -->
+        <!-- Club Events Panel (活动管理) -->
         <club-events-panel 
           wx:if="{{globalPopup.type === 'club-events'}}"
           id="clubEventsPanel" 

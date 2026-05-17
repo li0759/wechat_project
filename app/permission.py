@@ -369,6 +369,23 @@ class event:
     class get_event_members:
         # 获取活动成员：需要用户已登录
         permission_judge = lambda user, params: user is not None
+
+    class get_club_manage_events:
+        # 协会活动管理列表：需要是该协会管理员
+        permission_judge = lambda user, params: (
+            params.get('club_id') and is_club_manager(user, params['club_id'])
+        )
+
+    class get_event_participation:
+        # 活动参与明细（人员/参加/打卡/动态）：需要是该活动所属协会管理员
+        permission_judge = lambda user, params: (
+            params.get('event_id') and Event.query.get(params['event_id']) and
+            is_club_manager(user, Event.query.get(params['event_id']).clubID)
+        )
+
+    class get_event_timeline:
+        # 活动操作时间线：与成员列表一致，需已登录
+        permission_judge = lambda user, params: user is not None
     
     class join_event:
         # 加入活动：需要是活动所属社团的成员，但不能是社团管理员
@@ -653,12 +670,12 @@ class statistics:
         # 导出所有社团所有活动详情：仅超级用户可以操作
         permission_judge = lambda user, params: user and user.isSuperUser
     
-    class export_event_details:
-        # 导出活动详情：需要是活动创建者或活动所属社团管理员
+    class export_club_event_participation:
+        # 导出活动参与明细（单选/多选 event_ids）：需要是该协会管理员
         permission_judge = lambda user, params: (
-            params.get('event_id') and is_event_creator_or_club_admin(user, params['event_id'])
+            params.get('club_id') and is_club_admin(user, params['club_id'])
         )
-    
+
     class show_all_club_users:
         # 显示所有社团用户：仅超级用户可以操作
         permission_judge = lambda user, params: user and user.isSuperUser

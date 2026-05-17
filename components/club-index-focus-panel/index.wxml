@@ -1,0 +1,28 @@
+<!--
+  索引列表左滑详情窗：容器 + 右滑收回手势（逻辑对齐 expandable-container_fullscreen 下滑收回）
+-->
+<view
+  wx:if="{{!hidden}}"
+  class="cif-panel {{visible ? 'cif-panel--active' : ''}} {{dragTransform ? 'cif-panel--dragging' : ''}}"
+  style="left: {{leftInsetRpx}}rpx;{{dragTransform ? ' transform:' + dragTransform + ';' : ''}}{{dragTransition ? ' transition:' + dragTransition + ';' : ''}}"
+>
+  <view
+    class="cif-panel__gesture"
+    catchtouchstart="onPanelTouchStart"
+    catchtouchmove="onPanelTouchMove"
+    catchtouchend="onPanelTouchEnd"
+    catchtouchcancel="onPanelTouchCancel"
+  >
+    <scroll-view
+      class="cif-panel__scroll"
+      scroll-y="{{true}}"
+      show-scrollbar="{{false}}"
+      lower-threshold="{{lowerThreshold}}"
+      bindscrolltolower="onPanelScrollToLower"
+    >
+      <view class="cif-panel__body">
+        <slot />
+      </view>
+    </scroll-view>
+  </view>
+</view>

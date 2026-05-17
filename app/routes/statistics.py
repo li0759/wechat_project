@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import zipfile
 from collections import defaultdict
+from sqlalchemy import case
 from minio import Minio
 from minio.error import S3Error
 from flask import current_app
@@ -323,62 +324,313 @@ def export_all_club_all_event_details_wecom_media():
     except Exception as e:
         return jsonify({'code': 5000, 'message': f'生成企业微信会话文件失败: {str(e)}'}), 200
 
-@bp.route('/export/event/<int:event_id>/details', methods=['GET'])
+
+@bp.route('/export/club/<int:club_id>/member_activity/wecom_media', methods=['GET'])
 @jwt_required()
-def export_event_details(event_id):
-    """导出指定活动的详细信息（包含参与者列表）"""
-    # 权限检查
-    has_permission, message = check_permission(statistics.export_event_details.permission_judge)
+def export_club_member_activity_wecom_media(club_id):
+    """导出成员参与明细并上传企业微信素材。user_ids 支持单个或逗号分隔多个，如 user_ids=5 或 user_ids=5,8。"""
+    has_permission, message = check_permission(statistics.export_all_club_users.permission_judge)
     if not has_permission:
         return jsonify({'code': 4003, 'message': message}), 200
-    
+
     user_id = get_jwt_identity()
     current_user = User.query.filter_by(userID=user_id).first()
-    
     if not current_user:
         return jsonify({'code': 4004, 'message': '用户不存在'}), 200
-    
-    # 验证活动是否存在
-    event = Event.query.filter_by(eventID=event_id).first()
-    if not event:
-        return jsonify({'code': 4004, 'message': '活动不存在'}), 200
-    
+
     if not EXCEL_AVAILABLE:
         return jsonify({'code': 5000, 'message': '服务器未安装Excel支持库'}), 200
-    
+
+    club = Club.query.filter_by(clubID=club_id).first()
+    if not club:
+        return jsonify({'code': 4004, 'message': '协会不存在'}), 200
+
+    raw_user_ids = (request.args.get('user_ids') or '').strip()
+    if not raw_user_ids:
+        return jsonify({'code': 4001, 'message': '缺少 user_ids 参数'}), 200
+
+    picked_ids = []
+    for token in raw_user_ids.split(','):
+        sid = token.strip()
+        if not sid:
+            continue
+        if sid.isdigit():
+            picked_ids.append(int(sid))
+    picked_ids = list(dict.fromkeys(picked_ids))
+    if not picked_ids:
+        return jsonify({'code': 4001, 'message': 'user_ids 参数无效'}), 200
+
+    members = (
+        ClubMember.query.filter(
+            ClubMember.clubID == club_id,
+            ClubMember.userID.in_(picked_ids),
+            ClubMember.isDelete == False,
+        )
+        .all()
+    )
+    if not members:
+        return jsonify({'code': 4004, 'message': '未找到可导出的成员'}), 200
+
+    member_by_uid = {m.userID: m for m in members}
+    sorted_user_ids = [uid for uid in picked_ids if uid in member_by_uid]
+
+    event_joins = (
+        EventJoin.query.join(Event, Event.eventID == EventJoin.eventID)
+        .filter(
+            Event.clubID == club_id,
+            EventJoin.userID.in_(sorted_user_ids),
+            EventJoin.isDelete == False,
+        )
+        .order_by(EventJoin.joinDate.desc(), EventJoin.joinID.desc())
+        .all()
+    )
+
+    join_map = defaultdict(list)
+    event_ids = set()
+    for ej in event_joins:
+        join_map[ej.userID].append(ej)
+        if ej.eventID is not None:
+            event_ids.add(ej.eventID)
+
+    moment_map = defaultdict(list)
+    if event_ids:
+        moments = (
+            Moment.query.filter(
+                Moment.creatorID.in_(sorted_user_ids),
+                Moment.ref_event_ID.in_(list(event_ids)),
+            )
+            .order_by(Moment.createDate.desc(), Moment.momentID.desc())
+            .all()
+        )
+        for m in moments:
+            if m.ref_event_ID is None:
+                continue
+            key = (m.creatorID, m.ref_event_ID)
+            moment_map[key].append(m)
+
+    def _fmt(dt):
+        if not dt:
+            return ''
+        return dt.strftime('%Y-%m-%d %H:%M')
+
+    headers = ['用户姓名', '活动名称', '参加时间', '打卡时间', '人员发布的动态']
+    data_rows = []
+    moment_files_per_row = []
+    avatar_file_per_row = []
+    cover_file_per_row = []
+    for uid in sorted_user_ids:
+        member = member_by_uid[uid]
+        user_name = member.user.userName if member.user else str(uid)
+        user_avatar = member.user.avatar if member.user else None
+        joins = join_map.get(uid, [])
+        if not joins:
+            data_rows.append([user_name, '无活动记录', '', '', ''])
+            moment_files_per_row.append([])
+            avatar_file_per_row.append(user_avatar)
+            cover_file_per_row.append(None)
+            continue
+        for ej in joins:
+            event_title = ej.event.title if ej.event else '未知活动'
+            event_cover = ej.event.cover if ej.event else None
+            user_moments = moment_map.get((uid, ej.eventID), [])
+            moment_lines = []
+            for m in user_moments:
+                desc = (m.description or '').strip() or '（无文字）'
+                t = _fmt(m.createDate)
+                moment_lines.append(f'{desc}（{t}）' if t else desc)
+            data_rows.append([
+                user_name,
+                event_title,
+                _fmt(ej.joinDate),
+                _fmt(ej.clockinDate) or '未打卡',
+                '；'.join(moment_lines) if moment_lines else '无',
+            ])
+            moment_files_per_row.append(collect_moment_files_from_moments(user_moments))
+            avatar_file_per_row.append(user_avatar)
+            cover_file_per_row.append(event_cover)
+
+    if not PILLOW_AVAILABLE:
+        return jsonify({'code': 5000, 'message': '服务器未安装图片处理库，无法打包动态原图'}), 200
+
     try:
-        # 获取活动参与者
-        event_joins = EventJoin.query.filter_by(eventID=event_id).all()
-        
-        # 准备数据
-        headers = [
-            '活动标题', '参与者ID', '参与者姓名', '性别', '手机号', '邮箱', '单位',
-            '报名时间', '签到时间', '签到状态', '备注'
-        ]
-        
-        data_rows = []
-        for join in event_joins:
-            user = User.query.filter_by(userID=join.userID).first()
-            if user:
-                is_checked_in = '已签到' if join.clockinDate else '未签到'
-                data_rows.append([
-                    event.title,
-                    user.userID,
-                    user.userName,
-                    user.gender or '',
-                    user.phone or '',
-                    user.email or '',
-                    user.department or '',
-                    join.createDate.strftime('%Y-%m-%d %H:%M:%S') if join.createDate else '',
-                    join.clockinDate.strftime('%Y-%m-%d %H:%M:%S') if join.clockinDate else '',
-                    is_checked_in,
-                    join.note or ''
-                ])
-        
-        return create_excel_file_and_upload(headers, data_rows, f'event_{event_id}_details')
-        
+        export_resp = create_participation_export_archive(
+            headers=headers,
+            data_rows=data_rows,
+            moment_files_per_row=moment_files_per_row,
+            filename_prefix=f'club_{club_id}_member_activity',
+            excel_basename='成员活动明细',
+            sheet_title='成员活动明细',
+            avatar_file_per_row=avatar_file_per_row,
+            cover_file_per_row=cover_file_per_row,
+            export_layout='member_activity',
+        )
+        export_payload = export_resp.get_json(silent=True) or {}
+        if export_payload.get('code') != 200:
+            return jsonify({
+                'code': export_payload.get('code', 5000),
+                'message': export_payload.get('message', '导出失败'),
+            }), 200
+
+        file_data = export_payload.get('data') or {}
+        object_path = file_data.get('file_path')
+        file_name = file_data.get('filename') or f"club_{club_id}_member_activity_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+        if not object_path:
+            return jsonify({'code': 5000, 'message': '导出结果缺少文件路径'}), 200
+
+        media_id = upload_minio_object_to_wecom_media(object_path=object_path, file_name=file_name)
+        return jsonify({
+            'code': 200,
+            'message': '已生成企业微信文件素材（含动态原图压缩包）',
+            'data': {
+                'media_id': media_id,
+                'filename': file_name,
+                'archive_format': file_data.get('archive_format', 'zip'),
+                'club_id': club_id,
+                'selected_user_count': len(sorted_user_ids),
+                'moment_image_count': file_data.get('moment_image_count', 0),
+            },
+        }), 200
     except Exception as e:
-        return jsonify({'code': 5000, 'message': f'导出失败: {str(e)}'}), 200
+        return jsonify({'code': 5000, 'message': f'生成企业微信会话文件失败: {str(e)}'}), 200
+
+@bp.route('/export/club/<int:club_id>/event_participation/wecom_media', methods=['GET'])
+@jwt_required()
+def export_club_event_participation_wecom_media(club_id):
+    """导出活动参与明细并上传企业微信素材。event_ids 支持单个或逗号分隔多个，如 event_ids=12 或 event_ids=12,34。"""
+    has_permission, message = check_permission(statistics.export_club_event_participation.permission_judge)
+    if not has_permission:
+        return jsonify({'code': 4003, 'message': message}), 200
+
+    user_id = get_jwt_identity()
+    current_user = User.query.filter_by(userID=user_id).first()
+    if not current_user:
+        return jsonify({'code': 4004, 'message': '用户不存在'}), 200
+
+    if not EXCEL_AVAILABLE:
+        return jsonify({'code': 5000, 'message': '服务器未安装Excel支持库'}), 200
+
+    club = Club.query.filter_by(clubID=club_id).first()
+    if not club:
+        return jsonify({'code': 4004, 'message': '协会不存在'}), 200
+
+    raw_event_ids = (request.args.get('event_ids') or '').strip()
+    if not raw_event_ids:
+        return jsonify({'code': 4001, 'message': '缺少 event_ids 参数'}), 200
+
+    picked_ids = []
+    for token in raw_event_ids.split(','):
+        sid = token.strip()
+        if sid.isdigit():
+            picked_ids.append(int(sid))
+    picked_ids = list(dict.fromkeys(picked_ids))
+    if not picked_ids:
+        return jsonify({'code': 4001, 'message': 'event_ids 参数无效'}), 200
+
+    events = Event.query.filter(Event.clubID == club_id, Event.eventID.in_(picked_ids)).all()
+    if not events:
+        return jsonify({'code': 4004, 'message': '未找到可导出的活动'}), 200
+
+    event_by_id = {e.eventID: e for e in events}
+    sorted_events = [event_by_id[eid] for eid in picked_ids if eid in event_by_id]
+
+    headers = ['活动名称', '参与人员', '参加时间', '打卡时间', '人员发布的动态']
+    data_rows = []
+    moment_files_per_row = []
+    avatar_file_per_row = []
+    cover_file_per_row = []
+
+    def _fmt(dt):
+        if not dt:
+            return ''
+        return dt.strftime('%Y-%m-%d %H:%M')
+
+    join_date_null_last = case((EventJoin.joinDate.is_(None), 1), else_=0)
+    for ev in sorted_events:
+        event_cover = ev.cover
+        event_joins = (
+            EventJoin.query.filter_by(eventID=ev.eventID, isDelete=False)
+            .order_by(join_date_null_last.asc(), EventJoin.joinDate.desc(), EventJoin.joinID.desc())
+            .all()
+        )
+        moments = Moment.query.filter_by(ref_event_ID=ev.eventID).order_by(
+            Moment.createDate.desc(), Moment.momentID.desc()
+        ).all()
+        moments_by_user = defaultdict(list)
+        for m in moments:
+            if m.creatorID is not None:
+                moments_by_user[m.creatorID].append(m)
+
+        if not event_joins:
+            data_rows.append([ev.title or '', '无参与人员', '', '', ''])
+            moment_files_per_row.append([])
+            cover_file_per_row.append(event_cover)
+            avatar_file_per_row.append(None)
+            continue
+
+        for ej in event_joins:
+            user = ej.user
+            if not user:
+                continue
+            user_moments = moments_by_user.get(user.userID, [])
+            moment_lines = []
+            for m in user_moments:
+                desc = (m.description or '').strip() or '（无文字）'
+                t = _fmt(m.createDate)
+                moment_lines.append(f'{desc}（{t}）' if t else desc)
+            data_rows.append([
+                ev.title or '',
+                user.userName or '',
+                _fmt(ej.joinDate),
+                _fmt(ej.clockinDate) or '未打卡',
+                '；'.join(moment_lines) if moment_lines else '无',
+            ])
+            moment_files_per_row.append(collect_moment_files_from_moments(user_moments))
+            cover_file_per_row.append(event_cover)
+            avatar_file_per_row.append(user.avatar)
+
+    if not PILLOW_AVAILABLE:
+        return jsonify({'code': 5000, 'message': '服务器未安装图片处理库，无法打包动态原图'}), 200
+
+    try:
+        export_resp = create_participation_export_archive(
+            headers=headers,
+            data_rows=data_rows,
+            moment_files_per_row=moment_files_per_row,
+            filename_prefix=f'club_{club_id}_event_participation',
+            excel_basename='活动参与明细',
+            sheet_title='活动参与明细',
+            avatar_file_per_row=avatar_file_per_row,
+            cover_file_per_row=cover_file_per_row,
+            export_layout='event_participation',
+        )
+        export_payload = export_resp.get_json(silent=True) or {}
+        if export_payload.get('code') != 200:
+            return jsonify({
+                'code': export_payload.get('code', 5000),
+                'message': export_payload.get('message', '导出失败'),
+            }), 200
+
+        file_data = export_payload.get('data') or {}
+        object_path = file_data.get('file_path')
+        file_name = file_data.get('filename') or f"club_{club_id}_event_participation_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+        if not object_path:
+            return jsonify({'code': 5000, 'message': '导出结果缺少文件路径'}), 200
+
+        media_id = upload_minio_object_to_wecom_media(object_path=object_path, file_name=file_name)
+        return jsonify({
+            'code': 200,
+            'message': '已生成企业微信文件素材（含动态原图压缩包）',
+            'data': {
+                'media_id': media_id,
+                'filename': file_name,
+                'archive_format': file_data.get('archive_format', 'zip'),
+                'club_id': club_id,
+                'selected_event_count': len(sorted_events),
+                'moment_image_count': file_data.get('moment_image_count', 0),
+            },
+        }), 200
+    except Exception as e:
+        return jsonify({'code': 5000, 'message': f'生成企业微信会话文件失败: {str(e)}'}), 200
 
 @bp.route('/show/all_club/users', methods=['GET'])
 @jwt_required()
@@ -520,6 +772,9 @@ def show_club_all_event_details(club_id):
                 'total_participants': total_participants,
                 'checked_in_count': checked_in_count,
                 'create_time': event.createDate.strftime('%Y-%m-%d %H:%M:%S') if event.createDate else '',
+                'cover_url': event.cover.fileUrl if event.cover else None,
+                'is_cancelled': bool(event.is_cancelled),
+                'club_deleted': bool(event.club.isDelete) if event.club else False,
                 'organizer': {
                     'user_id': organizer.userID if organizer else None,
                     'user_name': organizer.userName if organizer else '未知'
@@ -1115,7 +1370,7 @@ def export_club_financial_statistics(club_id):
                     pass
         
         # 生成下载URL
-        base_url = current_app.config.get('BASE_URL', 'https://www.vhhg.top')
+        base_url = (current_app.config.get('BASE_URL') or 'https://www.vhhg.top').rstrip('/')
         download_url = f"{base_url}/api/v1/file/download/tmp/{file_path}"
         
         current_app.logger.info(f"协会{club_id}收支统计Excel文件生成并上传成功: {file_path}")
@@ -1144,129 +1399,355 @@ def export_club_financial_statistics(club_id):
         current_app.logger.error(f'导出协会{club_id}收支统计失败: {str(e)}')
         return jsonify({'code': 5000, 'message': f'导出失败: {str(e)}'}), 200
 
-def create_excel_file_and_upload(headers, data_rows, filename_prefix):
-    """创建Excel文件并上传到MinIO，返回下载URL"""
+def collect_moment_files_from_moments(moments):
+    """从动态列表按 imageIDs 顺序收集图片文件对象。"""
+    from app.models.file import File
+
+    image_ids = []
+    for moment in moments or []:
+        if not moment.imageIDs or not isinstance(moment.imageIDs, list):
+            continue
+        for image_id in moment.imageIDs:
+            if image_id not in image_ids:
+                image_ids.append(image_id)
+    if not image_ids:
+        return []
+    files = File.query.filter(File.fileID.in_(image_ids)).all()
+    file_map = {f.fileID: f for f in files}
+    return [file_map[fid] for fid in image_ids if fid in file_map]
+
+
+def _participation_row_asset_folder_name(row_idx, row_data):
+    """根据前两列文本生成动态原图子文件夹名。"""
+    skip_values = {'无活动记录', '无参与人员', '无', ''}
+    parts = []
+    for value in (row_data or [])[:2]:
+        text = str(value or '').strip()
+        if not text or text in skip_values:
+            continue
+        parts.append(sanitize_filename(text))
+    if not parts:
+        parts = [f'行{row_idx:03d}']
+    return f"{'-'.join(parts[:2])}-资源"
+
+
+def _write_participation_single_image_cell(
+    ws,
+    row_idx,
+    col_idx,
+    file_obj,
+    row_asset_folder,
+    excel_path,
+    temp_root,
+    temp_thumb_files,
+    file_basename,
+    thumb_prefix,
+    empty_label,
+    link_label,
+    minlength,
+):
+    """向 Excel 单元格写入单张图片略缩图，并把原图落到行资源目录。"""
+    cell = ws.cell(row=row_idx, column=col_idx, value=empty_label)
+    cell.alignment = Alignment(horizontal='center', vertical='center')
+    if not file_obj or not getattr(file_obj, 'fileUrl', None):
+        return 0
+    image_bytes = download_image_from_minio(file_obj.fileUrl)
+    if not image_bytes:
+        return 0
+    origin_path = extract_file_path_from_download_url(file_obj.fileUrl)
+    ext = os.path.splitext(origin_path)[1] if origin_path else '.jpg'
+    image_name = f'{file_basename}{ext or ".jpg"}'
+    image_abs = os.path.join(row_asset_folder, image_name)
+    with open(image_abs, 'wb') as f:
+        f.write(image_bytes)
+
+    thumb_bytes = generate_thumbnail_bytes(image_bytes, minlength=minlength)
+    if thumb_bytes:
+        fd, thumb_path = tempfile.mkstemp(prefix=thumb_prefix, suffix='.jpg', dir=temp_root)
+        os.close(fd)
+        with open(thumb_path, 'wb') as f:
+            f.write(thumb_bytes)
+        temp_thumb_files.append(thumb_path)
+        col_letter = get_excel_column_name(col_idx)
+        excel_img = ExcelImage(thumb_path)
+        excel_img.anchor = f'{col_letter}{row_idx}'
+        ws.add_image(excel_img)
+
+    relative_link = os.path.relpath(image_abs, os.path.dirname(excel_path)).replace('\\', '/')
+    cell.value = link_label
+    cell.hyperlink = relative_link
+    cell.style = 'Hyperlink'
+    return 1
+
+
+def create_participation_export_archive(
+    headers,
+    data_rows,
+    moment_files_per_row,
+    filename_prefix,
+    excel_basename='参与明细',
+    sheet_title='参与明细',
+    avatar_file_per_row=None,
+    cover_file_per_row=None,
+    export_layout='basic',
+):
+    """参与/成员活动明细 ZIP 导出：Excel（封面/头像/动态略缩图+超链接）+ 原图文件夹。"""
     if not EXCEL_AVAILABLE:
-        raise Exception("Excel支持库未安装")
-    
+        raise Exception('Excel支持库未安装')
+    if not PILLOW_AVAILABLE:
+        raise Exception('图片处理库未安装')
+
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    package_name = f'{filename_prefix}_{timestamp}'
+    temp_root = tempfile.mkdtemp(prefix='participation_archive_')
+    package_root = os.path.join(temp_root, package_name)
+    os.makedirs(package_root, exist_ok=True)
+
+    excel_path = os.path.join(package_root, f'{sanitize_filename(excel_basename)}.xlsx')
+    asset_root = os.path.join(package_root, '导出资源')
+    os.makedirs(asset_root, exist_ok=True)
+
+    row_count = len(data_rows)
+    if len(moment_files_per_row) < row_count:
+        moment_files_per_row = list(moment_files_per_row) + [[]] * (row_count - len(moment_files_per_row))
+    elif len(moment_files_per_row) > row_count:
+        moment_files_per_row = moment_files_per_row[:row_count]
+
+    if avatar_file_per_row is None:
+        avatar_file_per_row = [None] * row_count
+    elif len(avatar_file_per_row) < row_count:
+        avatar_file_per_row = list(avatar_file_per_row) + [None] * (row_count - len(avatar_file_per_row))
+    elif len(avatar_file_per_row) > row_count:
+        avatar_file_per_row = avatar_file_per_row[:row_count]
+
+    if cover_file_per_row is None:
+        cover_file_per_row = [None] * row_count
+    elif len(cover_file_per_row) < row_count:
+        cover_file_per_row = list(cover_file_per_row) + [None] * (row_count - len(cover_file_per_row))
+    elif len(cover_file_per_row) > row_count:
+        cover_file_per_row = cover_file_per_row[:row_count]
+
+    if export_layout == 'member_activity':
+        full_headers = [
+            '用户头像略缩图', '用户姓名', '活动封面略缩图', '活动名称',
+            '参加时间', '打卡时间', '人员发布的动态', '动态图片略缩图',
+        ]
+    elif export_layout == 'event_participation':
+        full_headers = [
+            '活动封面略缩图', '活动名称', '用户头像略缩图', '参与人员',
+            '参加时间', '打卡时间', '人员发布的动态', '动态图片略缩图',
+        ]
+    else:
+        full_headers = list(headers) + ['动态图片略缩图']
+
+    temp_thumb_files = []
+    moment_image_count = 0
+    cover_image_count = 0
+    avatar_image_count = 0
+    used_folder_names = set()
+    moment_col = len(full_headers)
+    cover_col = None
+    avatar_col = None
+    if export_layout == 'member_activity':
+        avatar_col, cover_col = 1, 3
+    elif export_layout == 'event_participation':
+        cover_col, avatar_col = 1, 3
+
+    wb = None
     try:
-        # 创建工作簿
         wb = Workbook()
         ws = wb.active
-        ws.title = "统计数据"
-        
-        # 简化标题样式以提高微信兼容性
+        ws.title = sanitize_sheet_title(sheet_title)
+
         header_font = Font(bold=True, size=12)
-        header_fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
-        header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-        
-        # 写入标题行
-        for col, header in enumerate(headers, 1):
+        header_fill = PatternFill(start_color='D9D9D9', end_color='D9D9D9', fill_type='solid')
+        header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        data_font = Font(size=11)
+        data_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        center_alignment = Alignment(horizontal='center', vertical='center')
+
+        for col, header in enumerate(full_headers, 1):
             cell = ws.cell(row=1, column=col, value=header)
             cell.font = header_font
             cell.fill = header_fill
             cell.alignment = header_alignment
-            ws.row_dimensions[1].height = 25
-        
-        # 写入数据行
-        data_font = Font(size=11)
-        data_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-        
+        ws.row_dimensions[1].height = 25
+
+        moment_col_letter = get_excel_column_name(moment_col)
         for row_idx, row_data in enumerate(data_rows, 2):
-            for col, value in enumerate(row_data, 1):
-                cell = ws.cell(row=row_idx, column=col, value=value)
-                cell.font = data_font
-                cell.alignment = data_alignment
-                ws.row_dimensions[row_idx].height = 20
-        
-        # 优化列宽设置
+            ws.row_dimensions[row_idx].height = 90
+            row_asset_folder = None
+
+            def ensure_row_asset_folder():
+                nonlocal row_asset_folder
+                if row_asset_folder:
+                    return row_asset_folder
+                folder_base = _participation_row_asset_folder_name(row_idx, row_data)
+                folder_name = folder_base
+                suffix = 1
+                while folder_name in used_folder_names:
+                    suffix += 1
+                    folder_name = f'{folder_base}_{suffix}'
+                used_folder_names.add(folder_name)
+                row_asset_folder = os.path.join(asset_root, folder_name)
+                os.makedirs(row_asset_folder, exist_ok=True)
+                return row_asset_folder
+
+            if export_layout == 'member_activity':
+                for col_offset, value in enumerate(row_data, 2):
+                    if col_offset in (avatar_col, cover_col):
+                        continue
+                    cell = ws.cell(row=row_idx, column=col_offset, value=value)
+                    cell.font = data_font
+                    cell.alignment = data_alignment
+                avatar_file = avatar_file_per_row[row_idx - 2]
+                cover_file = cover_file_per_row[row_idx - 2]
+                if avatar_file:
+                    avatar_image_count += _write_participation_single_image_cell(
+                        ws, row_idx, avatar_col, avatar_file, ensure_row_asset_folder(),
+                        excel_path, temp_root, temp_thumb_files,
+                        'avatar', 'part_avatar_thumb_', '无头像', '头像原图', 30,
+                    )
+                else:
+                    ws.cell(row=row_idx, column=avatar_col, value='无头像').alignment = center_alignment
+                if cover_file:
+                    cover_image_count += _write_participation_single_image_cell(
+                        ws, row_idx, cover_col, cover_file, ensure_row_asset_folder(),
+                        excel_path, temp_root, temp_thumb_files,
+                        'cover', 'part_cover_thumb_', '无封面', '封面原图', 50,
+                    )
+                else:
+                    ws.cell(row=row_idx, column=cover_col, value='无封面').alignment = center_alignment
+            elif export_layout == 'event_participation':
+                for col_offset, value in enumerate(row_data, 2):
+                    if col_offset in (avatar_col, cover_col):
+                        continue
+                    cell = ws.cell(row=row_idx, column=col_offset, value=value)
+                    cell.font = data_font
+                    cell.alignment = data_alignment
+                cover_file = cover_file_per_row[row_idx - 2]
+                avatar_file = avatar_file_per_row[row_idx - 2]
+                if cover_file:
+                    cover_image_count += _write_participation_single_image_cell(
+                        ws, row_idx, cover_col, cover_file, ensure_row_asset_folder(),
+                        excel_path, temp_root, temp_thumb_files,
+                        'cover', 'part_cover_thumb_', '无封面', '封面原图', 50,
+                    )
+                else:
+                    ws.cell(row=row_idx, column=cover_col, value='无封面').alignment = center_alignment
+                if avatar_file:
+                    avatar_image_count += _write_participation_single_image_cell(
+                        ws, row_idx, avatar_col, avatar_file, ensure_row_asset_folder(),
+                        excel_path, temp_root, temp_thumb_files,
+                        'avatar', 'part_avatar_thumb_', '无头像', '头像原图', 30,
+                    )
+                else:
+                    ws.cell(row=row_idx, column=avatar_col, value='无头像').alignment = center_alignment
+            else:
+                for col, value in enumerate(row_data, 1):
+                    cell = ws.cell(row=row_idx, column=col, value=value)
+                    cell.font = data_font
+                    cell.alignment = data_alignment
+
+            img_cell = ws.cell(row=row_idx, column=moment_col, value='无动态图片')
+            img_cell.font = data_font
+            img_cell.alignment = center_alignment
+            moment_files = moment_files_per_row[row_idx - 2] if row_idx - 2 < len(moment_files_per_row) else []
+
+            if moment_files:
+                row_folder = ensure_row_asset_folder()
+                saved_paths = []
+                for idx, file_obj in enumerate(moment_files, 1):
+                    if not file_obj.fileUrl:
+                        continue
+                    image_bytes = download_image_from_minio(file_obj.fileUrl)
+                    if not image_bytes:
+                        continue
+                    moment_image_count += 1
+                    origin_path = extract_file_path_from_download_url(file_obj.fileUrl)
+                    ext = os.path.splitext(origin_path)[1] if origin_path else '.jpg'
+                    image_name = f'moment_{idx}{ext or ".jpg"}'
+                    image_abs = os.path.join(row_folder, image_name)
+                    with open(image_abs, 'wb') as f:
+                        f.write(image_bytes)
+                    saved_paths.append(image_abs)
+
+                collage_bytes = build_moment_collage_thumbnail(moment_files, minlength=50, max_images=12)
+                if collage_bytes:
+                    fd, collage_path = tempfile.mkstemp(prefix='part_moment_thumb_', suffix='.jpg', dir=temp_root)
+                    os.close(fd)
+                    with open(collage_path, 'wb') as f:
+                        f.write(collage_bytes)
+                    temp_thumb_files.append(collage_path)
+                    excel_collage = ExcelImage(collage_path)
+                    excel_collage.anchor = f'{moment_col_letter}{row_idx}'
+                    ws.add_image(excel_collage)
+                    img_cell.value = ''
+
+                if saved_paths:
+                    relative_link = os.path.relpath(saved_paths[0], os.path.dirname(excel_path)).replace('\\', '/')
+                    img_cell.value = '动态原图'
+                    img_cell.hyperlink = relative_link
+                    img_cell.style = 'Hyperlink'
+
         for column in ws.columns:
             max_length = 0
             column_letter = column[0].column_letter
             for cell in column:
                 try:
-                    cell_length = len(str(cell.value))
+                    cell_length = len(str(cell.value or ''))
                     if cell_length > max_length:
                         max_length = cell_length
-                except:
+                except Exception:
                     pass
-            adjusted_width = min(max(max_length + 2, 8), 30)
-            ws.column_dimensions[column_letter].width = adjusted_width
-        
-        # 冻结首行
+            ws.column_dimensions[column_letter].width = min(max(max_length + 2, 8), 36)
+        if export_layout in ('member_activity', 'event_participation'):
+            ws.column_dimensions[get_excel_column_name(1)].width = 18
+            ws.column_dimensions[get_excel_column_name(3)].width = 18
+        ws.column_dimensions[moment_col_letter].width = 28
         ws.freeze_panes = 'A2'
-        
-        # 设置打印和显示选项
-        ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
-        ws.page_setup.fitToWidth = 1
-        ws.page_setup.fitToHeight = 0
-        
-        # 保存到内存
-        output = io.BytesIO()
-        try:
-            wb.save(output)
-            output.seek(0)
-            
-            # 生成文件名
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"{filename_prefix}_{timestamp}.xlsx"
-            
-            # 上传到MinIO
-            minio_client = get_minio_client()
-            bucket_name = current_app.config.get('MINIO_BUCKET', 'manage-mate')
-            
-            # 确保bucket存在
-            ensure_bucket_exists(minio_client, bucket_name)
-            
-            # 将文件上传到statistics文件夹
-            file_path = f"statistics/{filename}"
-            
-            # 获取文件大小
-            file_size = output.getbuffer().nbytes
-            
-            minio_client.put_object(
-                bucket_name,
-                file_path,
-                output,
-                length=file_size,
-                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            )
-            
-            # 在上传完成后关闭工作簿，释放所有资源
-            wb.close()
-            
-        finally:
-            # 确保关闭输出流
-            if output:
-                try:
-                    output.close()
-                except:
-                    pass
-        
-        # 生成下载URL
-        base_url = current_app.config.get('BASE_URL', 'https://www.vhhg.top')
-        download_url = f"{base_url}/api/v1/file/download/tmp/{file_path}"
-        
-        current_app.logger.info(f"Excel文件生成并上传成功: {file_path}")
-        
+        wb.save(excel_path)
+
+        archive_info = create_export_archive(
+            source_dir=package_root,
+            output_dir=temp_root,
+            package_name=package_name,
+        )
+        minio_response = upload_local_file_to_minio(
+            local_file_path=archive_info['archive_path'],
+            object_path=f"statistics/{archive_info['archive_filename']}",
+            content_type=archive_info['content_type'],
+        )
+
         return jsonify({
             'code': 200,
-            'message': '导出成功',
+            'message': archive_info['message'],
             'data': {
-                'download_url': download_url,
-                'filename': filename,
-                'file_path': file_path,
-                'file_size': file_size,
-                'create_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            }
+                **minio_response,
+                'archive_format': archive_info['archive_format'],
+                'row_count': len(data_rows),
+                'moment_image_count': moment_image_count,
+                'cover_image_count': cover_image_count,
+                'avatar_image_count': avatar_image_count,
+            },
         })
-        
-    except S3Error as e:
-        current_app.logger.error(f"MinIO上传失败: {str(e)}")
-        raise Exception(f"文件上传失败: {str(e)}")
-    except Exception as e:
-        current_app.logger.error(f"创建Excel文件失败: {str(e)}")
-        raise
+    finally:
+        if wb:
+            try:
+                wb.close()
+            except Exception:
+                pass
+        for tmp_file in temp_thumb_files:
+            if tmp_file and os.path.exists(tmp_file):
+                try:
+                    os.unlink(tmp_file)
+                except Exception:
+                    pass
+        try:
+            shutil.rmtree(temp_root, ignore_errors=True)
+        except Exception:
+            pass
+
 
 def get_excel_column_name(col_num):
     """
@@ -1328,12 +1809,24 @@ def sanitize_filename(file_name):
     return safe_name or '未命名'
 
 def extract_file_path_from_download_url(file_url):
+    """从对外 fileUrl 解析 MinIO 对象路径；仅接受当前 BASE_URL 或站内相对路径。"""
     if not file_url:
         return None
-    marker = '/api/v1/file/download/'
-    if marker in file_url:
-        return file_url.split(marker, 1)[1]
-    return None
+    file_url = file_url.strip()
+    base_url = (current_app.config.get('BASE_URL') or 'https://www.vhhg.top').rstrip('/')
+    abs_prefix = f"{base_url}/api/v1/file/download/"
+    rel_prefix = '/api/v1/file/download/'
+    tail = None
+    if file_url.startswith(abs_prefix):
+        tail = file_url[len(abs_prefix):]
+    elif file_url.startswith(rel_prefix):
+        tail = file_url[len(rel_prefix):]
+    if not tail:
+        return None
+    if '?' in tail:
+        tail = tail.split('?', 1)[0]
+    tail = tail.strip()
+    return tail or None
 
 def generate_thumbnail_bytes(image_data, minlength=50):
     """参考 download_thumbnail 生成略缩图。"""
@@ -1933,7 +2426,7 @@ def upload_local_file_to_minio(local_file_path, object_path, content_type):
             content_type=content_type
         )
 
-    base_url = current_app.config.get('BASE_URL', 'https://www.vhhg.top')
+    base_url = (current_app.config.get('BASE_URL') or 'https://www.vhhg.top').rstrip('/')
     download_url = f"{base_url}/api/v1/file/download/tmp/{object_path}"
     return {
         'download_url': download_url,
@@ -2237,9 +2730,10 @@ def create_all_users_single_excel(excel_path, asset_folder, user_rows, temp_root
             clubs_text = ''.join([f"【{name}】" for name in sorted(set(club_names))]) if club_names else '无'
             ws.cell(row=row_idx, column=4, value=clubs_text).alignment = text_alignment
 
-            event_names = get_user_joined_event_names_with_club(
+            event_names = get_user_joined_event_names(
                 user.userID,
                 club_ids,
+                include_club_prefix=True,
                 start_date=activity_start_date,
                 end_date=activity_end_date
             )
@@ -2275,7 +2769,7 @@ def create_all_users_single_excel(excel_path, asset_folder, user_rows, temp_root
 
             moments_cell = ws.cell(row=row_idx, column=6, value='无动态')
             moments_cell.alignment = center_alignment
-            moment_files = collect_user_moment_files_in_clubs(
+            moment_files = collect_user_moment_files(
                 user.userID,
                 club_ids,
                 start_date=activity_start_date,
@@ -2384,9 +2878,10 @@ def create_single_club_user_excel(club, excel_path, club_asset_folder, temp_root
                 value=member.joinDate.strftime('%Y-%m-%d %H:%M:%S') if member.joinDate else ''
             ).alignment = center_alignment
 
-            event_names = get_user_joined_event_names_in_club(
+            event_names = get_user_joined_event_names(
                 user.userID,
-                club.clubID,
+                [club.clubID],
+                include_club_prefix=False,
                 start_date=activity_start_date,
                 end_date=activity_end_date
             )
@@ -2421,9 +2916,9 @@ def create_single_club_user_excel(club, excel_path, club_asset_folder, temp_root
 
             moments_cell = ws.cell(row=row_idx, column=5, value='无动态')
             moments_cell.alignment = center_alignment
-            moment_files = collect_user_moment_files_in_club(
+            moment_files = collect_user_moment_files(
                 user.userID,
-                club.clubID,
+                [club.clubID],
                 start_date=activity_start_date,
                 end_date=activity_end_date
             )
@@ -2478,54 +2973,52 @@ def create_single_club_user_excel(club, excel_path, club_asset_folder, temp_root
         'moment_image_count': moment_image_count
     }
 
-def get_user_joined_event_names_in_club(user_id, club_id, start_date=None, end_date=None):
-    """获取用户在指定协会参加过的活动名称列表。"""
-    joins = EventJoin.query.join(Event, Event.eventID == EventJoin.eventID).filter(
-        EventJoin.userID == user_id,
-        Event.clubID == club_id
-    ).all()
-
-    names = []
-    for join in joins:
-        if hasattr(join, 'isDelete') and join.isDelete:
-            continue
-        if join.event and join.event.title:
-            if start_date and end_date and not is_event_in_range(join.event, start_date, end_date):
-                continue
-            if join.event.title not in names:
-                names.append(join.event.title)
-    return names
-
-def get_user_joined_event_names_with_club(user_id, club_ids, start_date=None, end_date=None):
-    """获取用户在多个协会中的活动名，格式：协会-活动。"""
+def get_user_joined_event_names(user_id, club_ids, include_club_prefix=False, start_date=None, end_date=None):
+    """获取用户在指定协会集合中的活动名称（可选包含协会前缀）。"""
     if not club_ids:
+        return []
+
+    normalized_club_ids = [int(cid) for cid in club_ids if cid is not None]
+    if not normalized_club_ids:
         return []
 
     joins = EventJoin.query.join(Event, Event.eventID == EventJoin.eventID).join(
         Club, Club.clubID == Event.clubID
     ).filter(
         EventJoin.userID == user_id,
-        Event.clubID.in_(club_ids)
+        Event.clubID.in_(normalized_club_ids)
     ).all()
 
     names = []
     for join in joins:
         if hasattr(join, 'isDelete') and join.isDelete:
             continue
-        if join.event and join.event.title and join.event.club and join.event.club.clubName:
-            if start_date and end_date and not is_event_in_range(join.event, start_date, end_date):
-                continue
-            full_name = f"{join.event.club.clubName}-{join.event.title}"
-            if full_name not in names:
-                names.append(full_name)
+        if not join.event or not join.event.title:
+            continue
+        if start_date and end_date and not is_event_in_range(join.event, start_date, end_date):
+            continue
+        if include_club_prefix and join.event.club and join.event.club.clubName:
+            name = f"{join.event.club.clubName}-{join.event.title}"
+        else:
+            name = join.event.title
+        if name not in names:
+            names.append(name)
     return names
 
-def collect_user_moment_files_in_club(user_id, club_id, start_date=None, end_date=None):
-    """获取用户在指定协会发布过的动态图片文件。"""
-    from app.models.file import File
 
-    club_event_ids = [event.eventID for event in Event.query.filter_by(clubID=club_id).all()]
-    moment_conditions = [Moment.ref_club_ID == club_id]
+def query_user_moments_in_clubs(user_id, club_ids, start_date=None, end_date=None):
+    """查询用户在多个协会下的动态列表。"""
+    if not club_ids:
+        return []
+
+    normalized_club_ids = [int(cid) for cid in club_ids if cid is not None]
+    if not normalized_club_ids:
+        return []
+
+    club_event_ids = [
+        event.eventID for event in Event.query.filter(Event.clubID.in_(normalized_club_ids)).all()
+    ]
+    moment_conditions = [Moment.ref_club_ID.in_(normalized_club_ids)]
     if club_event_ids:
         moment_conditions.append(Moment.ref_event_ID.in_(club_event_ids))
 
@@ -2533,41 +3026,25 @@ def collect_user_moment_files_in_club(user_id, club_id, start_date=None, end_dat
         Moment.creatorID == user_id,
         db.or_(*moment_conditions)
     ).order_by(Moment.createDate.asc()).all()
+
     if start_date and end_date:
-        moments = [moment for moment in moments if moment.createDate and start_date <= moment.createDate <= end_date]
+        moments = [
+            moment for moment in moments
+            if moment.createDate and start_date <= moment.createDate <= end_date
+        ]
+    return moments
 
-    image_ids = []
-    for moment in moments:
-        if moment.imageIDs and isinstance(moment.imageIDs, list):
-            for image_id in moment.imageIDs:
-                if image_id not in image_ids:
-                    image_ids.append(image_id)
 
-    if not image_ids:
-        return []
-
-    files = File.query.filter(File.fileID.in_(image_ids)).all()
-    file_map = {f.fileID: f for f in files}
-    return [file_map[file_id] for file_id in image_ids if file_id in file_map]
-
-def collect_user_moment_files_in_clubs(user_id, club_ids, start_date=None, end_date=None):
+def collect_user_moment_files(user_id, club_ids, start_date=None, end_date=None):
     """获取用户在多个协会发布过的动态图片文件。"""
     from app.models.file import File
 
-    if not club_ids:
-        return []
-
-    club_event_ids = [event.eventID for event in Event.query.filter(Event.clubID.in_(club_ids)).all()]
-    moment_conditions = [Moment.ref_club_ID.in_(club_ids)]
-    if club_event_ids:
-        moment_conditions.append(Moment.ref_event_ID.in_(club_event_ids))
-
-    moments = Moment.query.filter(
-        Moment.creatorID == user_id,
-        db.or_(*moment_conditions)
-    ).order_by(Moment.createDate.asc()).all()
-    if start_date and end_date:
-        moments = [moment for moment in moments if moment.createDate and start_date <= moment.createDate <= end_date]
+    moments = query_user_moments_in_clubs(
+        user_id=user_id,
+        club_ids=club_ids,
+        start_date=start_date,
+        end_date=end_date,
+    )
 
     image_ids = []
     for moment in moments:
@@ -2583,551 +3060,23 @@ def collect_user_moment_files_in_clubs(user_id, club_ids, start_date=None, end_d
     file_map = {f.fileID: f for f in files}
     return [file_map[file_id] for file_id in image_ids if file_id in file_map]
 
+
 def count_user_moments_in_clubs(user_id, club_ids, start_date=None, end_date=None):
     """统计用户在多个协会中的动态数量（按动态时间可选过滤）。"""
-    if not club_ids:
-        return 0
-
-    club_event_ids = [event.eventID for event in Event.query.filter(Event.clubID.in_(club_ids)).all()]
-    moment_conditions = [Moment.ref_club_ID.in_(club_ids)]
-    if club_event_ids:
-        moment_conditions.append(Moment.ref_event_ID.in_(club_event_ids))
-
-    moments = Moment.query.filter(
-        Moment.creatorID == user_id,
-        db.or_(*moment_conditions)
-    ).all()
-
-    if start_date and end_date:
-        moments = [moment for moment in moments if moment.createDate and start_date <= moment.createDate <= end_date]
-
+    moments = query_user_moments_in_clubs(
+        user_id=user_id,
+        club_ids=club_ids,
+        start_date=start_date,
+        end_date=end_date,
+    )
     return len(moments)
 
-def create_excel_file_with_images_and_upload(events, filename_prefix, include_club_info=True):
-    """创建包含图片的Excel文件并上传到MinIO，返回下载URL"""
-    if not EXCEL_AVAILABLE:
-        raise Exception("Excel支持库未安装")
-    
-    try:
-        # 创建工作簿
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "活动详情（含图片）"
-        
-        # 首先扫描所有活动，找出最大动态数量来确定需要多少个动态列
-        max_moments = 0
-        for event in events:
-            # 统计该活动的动态数量
-            moments = Moment.query.filter_by(ref_event_ID=event.eventID).all()
-            max_moments = max(max_moments, len(moments))
-        
-        # 设置基础列
-        base_columns = ['活动ID', '活动标题', '活动描述', '活动地点', '开始时间', '结束时间', '报名人数', '签到人数', '组织者']
-        if include_club_info:
-            base_columns.insert(0, '协会名称')
-        
-        # 限制最大动态数量，避免Excel列名超出范围和文件过于复杂
-        # Excel 2007+ 支持最多16,384列，但为了可读性，我们设置一个合理的上限
-        base_col_count = len(base_columns)
-        max_excel_cols = 16384  # Excel最大列数
-        max_allowed_moments = max_excel_cols - base_col_count
-        original_max_moments = max_moments
-        max_moments = min(max_moments, max_allowed_moments, 100)  # 最多100个动态，保持可读性
-        
-        if max_moments < original_max_moments:
-            current_app.logger.warning(f"动态数量过多，限制为{max_moments}个动态以保持Excel文件的可读性")
-        
-        # 创建基础表头
-        headers = base_columns.copy()
-        
-        # 为每个动态添加列（每个动态只包含图片列，文本通过合并单元格实现）
-        for i in range(max_moments):
-            # 每个动态最多5张图片，所以需要5个图片列
-            for j in range(5):
-                headers.append(f'动态{i+1}图片{j+1}')
-        
-        # 设置列宽
-        col_widths = {}
-        base_col_count = len(base_columns)
-        
-        # 设置基础列宽
-        for i in range(base_col_count):
-            col_letter = get_excel_column_name(i + 1)
-            if include_club_info:
-                if i == 0: col_widths[col_letter] = 20  # 协会名称
-                elif i == 1: col_widths[col_letter] = 15  # 活动ID
-                elif i == 2: col_widths[col_letter] = 25  # 活动标题
-                elif i == 3: col_widths[col_letter] = 35  # 活动描述
-                elif i == 4: col_widths[col_letter] = 20  # 活动地点
-                elif i == 5: col_widths[col_letter] = 20  # 开始时间
-                elif i == 6: col_widths[col_letter] = 20  # 结束时间
-                elif i == 7: col_widths[col_letter] = 15  # 报名人数
-                elif i == 8: col_widths[col_letter] = 15  # 签到人数
-                elif i == 9: col_widths[col_letter] = 15  # 组织者
-            else:
-                if i == 0: col_widths[col_letter] = 15  # 活动ID
-                elif i == 1: col_widths[col_letter] = 25  # 活动标题
-                elif i == 2: col_widths[col_letter] = 35  # 活动描述
-                elif i == 3: col_widths[col_letter] = 20  # 活动地点
-                elif i == 4: col_widths[col_letter] = 20  # 开始时间
-                elif i == 5: col_widths[col_letter] = 20  # 结束时间
-                elif i == 6: col_widths[col_letter] = 15  # 报名人数
-                elif i == 7: col_widths[col_letter] = 15  # 签到人数
-                elif i == 8: col_widths[col_letter] = 15  # 组织者
-        
-        # 计算每列的最大图片宽度
-        col_max_widths = {}  # 存储每列的最大宽度
-        for moment_idx in range(max_moments):
-            for img_idx in range(5):  # 5个图片列
-                col_num = base_col_count + moment_idx * 5 + img_idx + 1
-                col_letter = get_excel_column_name(col_num)
-                col_max_widths[col_letter] = 0  # 初始化列宽
-        
-        # 扫描所有活动，计算每列的最大图片宽度
-        for event in events:
-            moments = Moment.query.filter_by(ref_event_ID=event.eventID).all()
-            for moment_idx, moment in enumerate(moments):
-                if moment_idx >= max_moments:
-                    break
-                
-                if moment.imageIDs and PILLOW_AVAILABLE:
-                    from app.models.file import File
-                    moment_images = File.query.filter(File.fileID.in_(moment.imageIDs)).all()
-                    
-                    for img_idx, img_file in enumerate(moment_images):
-                        if img_idx >= 5:  # 最多5张图片
-                            break
-                        
-                        if img_file.fileUrl and (img_file.fileUrl.startswith('https://www.vhhg.top/api/v1/file/download/') or 
-                                                img_file.fileUrl.startswith('/api/v1/file/download/')):
-                            try:
-                                # 获取图片尺寸
-                                image_data = download_image_from_minio(img_file.fileUrl)
-                                if image_data:
-                                    from PIL import Image
-                                    import io
-                                    img = Image.open(io.BytesIO(image_data))
-                                    original_width, original_height = img.size
-                                    
-                                    # 计算略缩图宽度（等比例缩放，最大200像素）
-                                    max_size = 200
-                                    if original_width > original_height:
-                                        if original_width > max_size:
-                                            adjusted_width = max_size
-                                        else:
-                                            adjusted_width = original_width
-                                    else:
-                                        if original_height > max_size:
-                                            adjusted_width = int(max_size * original_width / original_height)
-                                        else:
-                                            adjusted_width = original_width
-                                    
-                                    # 更新该列的最大宽度
-                                    col_num = base_col_count + moment_idx * 5 + img_idx + 1
-                                    col_letter = get_excel_column_name(col_num)
-                                    col_max_widths[col_letter] = max(col_max_widths[col_letter], adjusted_width)
-                            except Exception as e:
-                                current_app.logger.warning(f"获取图片尺寸失败: {str(e)}")
-        
-        # 设置动态列宽（根据每列的最大图片宽度）
-        for moment_idx in range(max_moments):
-            for img_idx in range(5):  # 5个图片列
-                col_num = base_col_count + moment_idx * 5 + img_idx + 1
-                col_letter = get_excel_column_name(col_num)
-                # 设置列宽为最大图片宽度
-                # Excel列宽单位：1单位 ≈ 7像素，所以像素宽度除以7
-                col_widths[col_letter] = col_max_widths[col_letter] / 7
-        
-        # 应用列宽设置
-        for col_letter, width in col_widths.items():
-            ws.column_dimensions[col_letter].width = width
-            
-        # 写入标题行
-        header_font = Font(bold=True, size=12)
-        header_fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
-        header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-        
-        # 写入所有表头
-        for col, header in enumerate(headers, 1):
-            cell = ws.cell(row=1, column=col, value=header)
-            cell.font = header_font
-            cell.fill = header_fill
-            cell.alignment = header_alignment
-        
-        # 设置标题行高度
-        ws.row_dimensions[1].height = 25
-        
-        # 写入数据行
-        data_font = Font(size=11)
-        data_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-        
-        current_row = 2
-        images_processed = 0
-        images_failed = 0
-        temp_image_files = []  # 存储所有临时图片文件，在Excel保存后清理
-        
-        for event in events:
-            # 获取报名人数和签到人数
-            total_participants = EventJoin.query.filter_by(eventID=event.eventID).count()
-            checked_in_count = EventJoin.query.filter_by(eventID=event.eventID).filter(
-                EventJoin.clockinDate.isnot(None)
-            ).count()
-            
-            # 获取组织者信息
-            organizer = User.query.filter_by(userID=event.authorID).first()
-            organizer_name = organizer.userName if organizer else '未知'
-            
-            # 准备基础数据行
-            row_data = [
-                event.eventID,
-                event.title,
-                event.message or '',
-                event.location_name or event.location or '',
-                event.pre_startTime.strftime('%Y-%m-%d %H:%M') if event.pre_startTime else '',
-                event.pre_endTime.strftime('%Y-%m-%d %H:%M') if event.pre_endTime else '',
-                total_participants,
-                checked_in_count,
-                organizer_name
-            ]
-            
-            if include_club_info:
-                row_data.insert(0, event.club.clubName if event.club else '未知协会')
-            
-            # 写入基础数据到Excel
-            for col, value in enumerate(row_data, 1):
-                cell = ws.cell(row=current_row, column=col, value=value)
-                cell.font = data_font
-                cell.alignment = data_alignment
-            
-            # 处理动态内容
-            base_col_count = len(base_columns)
-            moments = Moment.query.filter_by(ref_event_ID=event.eventID).all()
-            
-            # 计算图片行需要的最大高度
-            max_img_height = 0
-            if moments:
-                for moment in moments:
-                    if moment.imageIDs and PILLOW_AVAILABLE:
-                        from app.models.file import File
-                        moment_images = File.query.filter(File.fileID.in_(moment.imageIDs)).all()
-                        for img_file in moment_images:
-                            if img_file.fileUrl and (img_file.fileUrl.startswith('https://www.vhhg.top/api/v1/file/download/') or 
-                                                    img_file.fileUrl.startswith('/api/v1/file/download/')):
-                                try:
-                                    # 获取图片尺寸
-                                    image_data = download_image_from_minio(img_file.fileUrl)
-                                    if image_data:
-                                        from PIL import Image
-                                        import io
-                                        img = Image.open(io.BytesIO(image_data))
-                                        original_width, original_height = img.size
-                                        
-                                        # 计算略缩图高度（等比例缩放，最大200像素）
-                                        max_size = 200
-                                        if original_width > original_height:
-                                            if original_width > max_size:
-                                                adjusted_height = int(max_size * original_height / original_width)
-                                            else:
-                                                adjusted_height = original_height
-                                        else:
-                                            if original_height > max_size:
-                                                adjusted_height = max_size
-                                            else:
-                                                adjusted_height = original_height
-                                        
-                                        max_img_height = max(max_img_height, adjusted_height)
-                                except Exception as e:
-                                    current_app.logger.warning(f"获取图片尺寸失败: {str(e)}")
-                                    max_img_height = max(max_img_height, 200)  # 使用默认高度
-            
-            # 设置行高以容纳图片和文字
-            if moments:
-                # Excel行高单位：1单位 ≈ 1.33像素，所以像素高度除以1.33
-                adjusted_row_height = max_img_height / 1.33 + 5  # 图片行高度（根据最大图片高度）
-                ws.row_dimensions[current_row].height = adjusted_row_height
-                ws.row_dimensions[current_row + 1].height = 45   # 文本行高度
-            
-            # 处理每个动态
-            for moment_idx, moment in enumerate(moments):
-                if moment_idx >= max_moments:
-                    break
-                
-                # 计算动态的起始列位置
-                moment_start_col = base_col_count + moment_idx * 5 + 1
-                
-                # 1. 处理动态中的图片（图片行）
-                if moment.imageIDs and PILLOW_AVAILABLE:
-                    from app.models.file import File
-                    moment_images = File.query.filter(File.fileID.in_(moment.imageIDs)).all()
-                    
-                    for img_idx, img_file in enumerate(moment_images):
-                        if img_idx >= 5:  # 最多5张图片
-                            break
-                        
-                        if img_file.fileUrl and (img_file.fileUrl.startswith('https://www.vhhg.top/api/v1/file/download/') or 
-                                                img_file.fileUrl.startswith('/api/v1/file/download/')):
-                            try:
-                                # 从MinIO下载图片
-                                image_data = download_image_from_minio(img_file.fileUrl)
-                                if image_data:
-                                    temp_img_file = None
-                                    try:
-                                        temp_fd, temp_img_file = tempfile.mkstemp(suffix='.jpg')
-                                        os.close(temp_fd)
-                                        with open(temp_img_file, 'wb') as f:
-                                            f.write(image_data)
-                                        excel_img = ExcelImage(temp_img_file)
-                                        original_width = excel_img.width
-                                        original_height = excel_img.height
-                                        
-                                        # 计算略缩图尺寸（等比例缩放，最大200像素）
-                                        max_size = 200
-                                        if original_width > original_height:
-                                            if original_width > max_size:
-                                                excel_img.width = max_size
-                                                excel_img.height = int(max_size * original_height / original_width)
-                                            else:
-                                                excel_img.width = original_width
-                                                excel_img.height = original_height
-                                        else:
-                                            if original_height > max_size:
-                                                excel_img.height = max_size
-                                                excel_img.width = int(max_size * original_width / original_height)
-                                            else:
-                                                excel_img.width = original_width
-                                                excel_img.height = original_height
-                                        
-                                        # 计算图片列位置
-                                        img_col = moment_start_col + img_idx
-                                        img_col_letter = get_excel_column_name(img_col)
-                                        
-                                        # 设置图片位置（图片行）
-                                        excel_img.anchor = f'{img_col_letter}{current_row}'
-                                        
-                                        # 添加略缩图到工作表
-                                        ws.add_image(excel_img)
-                                        
-                                        # 创建原始图片对象（用于打包）
-                                        original_excel_img = ExcelImage(temp_img_file)
-                                        original_excel_img.width = original_width
-                                        original_excel_img.height = original_height
-                                        
-                                        # 将原始图片放在隐藏位置（比如Z列之后）
-                                        hidden_col = 26 + moment_idx * 5 + img_idx  # 使用隐藏列
-                                        hidden_col_letter = get_excel_column_name(hidden_col)
-                                        original_excel_img.anchor = f'{hidden_col_letter}999'  # 放在第999行
-                                        
-                                        # 添加原始图片到工作表（隐藏）
-                                        ws.add_image(original_excel_img)
-                                        
-                                        # 为略缩图单元格添加超链接到原始图片
-                                        cell = ws.cell(row=current_row, column=img_col)
-                                        cell.hyperlink = f"#{hidden_col_letter}999"
-                                        cell.style = "Hyperlink"
-                                        
-                                        images_processed += 1
-                                        temp_image_files.append(temp_img_file)
-                                        
-                                        current_app.logger.info(f"成功添加动态{moment.momentID}的第{img_idx+1}张图片到列{img_col_letter}")
-                                    except Exception as img_error:
-                                        current_app.logger.error(f"创建Excel图片对象失败，动态{moment.momentID}第{img_idx+1}张图片: {str(img_error)}")
-                                        images_failed += 1
-                                        if temp_img_file and os.path.exists(temp_img_file):
-                                            try: os.unlink(temp_img_file)
-                                            except: pass
-                                else:
-                                    images_failed += 1
-                            except Exception as e:
-                                current_app.logger.error(f"处理动态{moment.momentID}图片时出错: {str(e)}")
-                                images_failed += 1
-                        else:
-                            current_app.logger.warning(f"动态{moment.momentID}第{img_idx+1}张图片URL无效")
-                
-                # 2. 准备动态文字内容
-                creator_name = moment.creator.userName if moment.creator else '未知用户'
-                moment_content = moment.description or '无内容'
-                moment_text = f"发布者: {creator_name}\n内容: {moment_content}"
-                
-                # 3. 合并文本单元格并写入内容（文本行）
-                text_start_col = moment_start_col
-                text_end_col = moment_start_col + 4  # 合并5个图片列的宽度
-                text_start_letter = get_excel_column_name(text_start_col)
-                text_end_letter = get_excel_column_name(text_end_col)
-                
-                # 合并单元格
-                ws.merge_cells(f'{text_start_letter}{current_row + 1}:{text_end_letter}{current_row + 1}')
-                
-                # 写入文本内容
-                cell = ws.cell(row=current_row + 1, column=text_start_col, value=moment_text)
-                cell.font = data_font
-                cell.alignment = data_alignment
-                
-                # 4. 添加动态外部边框（只在动态外部添加边框）
-                from openpyxl.styles import Border, Side
-                
-                # 定义外部边框样式
-                left_border = Border(left=Side(style='thick', color='000000'))
-                right_border = Border(right=Side(style='thick', color='000000'))
-                top_border = Border(top=Side(style='thick', color='000000'))
-                bottom_border = Border(bottom=Side(style='thick', color='000000'))
-                
-                # 为图片行添加外部边框
-                for col_idx in range(5):
-                    col_num = moment_start_col + col_idx
-                    cell = ws.cell(row=current_row, column=col_num)
-                    
-                    # 构建边框（组合多个边框）
-                    border_parts = []
-                    
-                    # 上边框（所有列）
-                    border_parts.append(Side(style='thick', color='000000'))
-                    
-                    # 左边框（第一列）
-                    if col_idx == 0:
-                        border_parts.append(Side(style='thick', color='000000'))
-                    
-                    # 右边框（最后一列）
-                    if col_idx == 4:
-                        border_parts.append(Side(style='thick', color='000000'))
-                    
-                    # 设置边框
-                    if len(border_parts) == 1:
-                        cell.border = Border(top=border_parts[0])
-                    elif len(border_parts) == 2:
-                        if col_idx == 0:
-                            cell.border = Border(top=border_parts[0], left=border_parts[1])
-                        else:
-                            cell.border = Border(top=border_parts[0], right=border_parts[1])
-                    elif len(border_parts) == 3:
-                        cell.border = Border(top=border_parts[0], left=border_parts[1], right=border_parts[2])
-                
-                # 为文本行添加外部边框
-                text_cell = ws.cell(row=current_row + 1, column=text_start_col)
-                text_cell.border = Border(
-                    left=Side(style='thick', color='000000'),
-                    right=Side(style='thick', color='000000'),
-                    bottom=Side(style='thick', color='000000')
-                )
-            
-            # 如果没有动态，设置较小的行高
-            if not moments:
-                ws.row_dimensions[current_row].height = 30
-                current_row += 1
-            else:
-                # 有动态时，移动到下一行活动（图片行 + 文本行）
-                current_row += 2
-        
-        # 冻结首行
-        ws.freeze_panes = 'A2'
-        
-        # 设置打印和显示选项
-        ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
-        ws.page_setup.fitToWidth = 1
-        ws.page_setup.fitToHeight = 0
-        
-        # 使用临时文件保存Excel，避免内存流问题
-        temp_file = None
-        try:
-            # 创建临时文件
-            temp_fd, temp_file = tempfile.mkstemp(suffix='.xlsx')
-            os.close(temp_fd)  # 关闭文件描述符，我们只需要文件路径
-            
-            # 保存到临时文件
-            wb.save(temp_file)
-            
-            # 生成文件名
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"{filename_prefix}_with_images_{timestamp}.xlsx"
-            
-            # 上传到MinIO
-            minio_client = get_minio_client()
-            bucket_name = current_app.config.get('MINIO_BUCKET', 'manage-mate')
-            
-            # 确保bucket存在
-            ensure_bucket_exists(minio_client, bucket_name)
-            
-            # 将文件上传到statistics文件夹
-            file_path = f"statistics/{filename}"
-            
-            # 获取文件大小
-            file_size = os.path.getsize(temp_file)
-            
-            # 从临时文件上传到MinIO
-            current_app.logger.info(f"开始上传文件到MinIO: bucket={bucket_name}, path={file_path}, size={file_size}")
-            with open(temp_file, 'rb') as file_data:
-                minio_client.put_object(
-                    bucket_name,
-                    file_path,
-                    file_data,
-                    length=file_size,
-                    content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                )
-            current_app.logger.info(f"MinIO上传完成: {file_path}")
-            
-            # 在上传完成后关闭工作簿，释放所有资源
-            wb.close()
-            
-        finally:
-            # 清理临时Excel文件
-            if temp_file and os.path.exists(temp_file):
-                try:
-                    os.unlink(temp_file)
-                except:
-                    pass
-            
-            # 清理所有临时图片文件
-            for temp_img_file in temp_image_files:
-                if temp_img_file and os.path.exists(temp_img_file):
-                    try:
-                        os.unlink(temp_img_file)
-                    except:
-                        pass
-        
-        # 生成下载URL
-        base_url = current_app.config.get('BASE_URL', 'https://www.vhhg.top')
-        download_url = f"{base_url}/api/v1/file/download/tmp/{file_path}"
-        
-        current_app.logger.info(f"包含动态图片的Excel文件生成并上传成功: {file_path}, 最大动态数: {max_moments}, 处理图片: {images_processed}张, 失败: {images_failed}张")
-        
-        return jsonify({
-            'code': 200,
-            'message': f'导出成功（包含动态图片）- 最大动态数: {max_moments}, 成功处理{images_processed}张图片，失败{images_failed}张',
-            'data': {
-                'download_url': download_url,
-                'filename': filename,
-                'file_path': file_path,
-                'file_size': file_size,
-                'create_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                'includes_images': True,
-                'max_moments': max_moments,
-                'images_processed': images_processed,
-                'images_failed': images_failed
-            }
-        })
-        
-    except Exception as e:
-        current_app.logger.error(f"创建包含图片的Excel文件失败: {str(e)}")
-        raise
-
-def is_supported_image_format(file_type):
-    """检查图片格式是否被Excel支持"""
-    if not file_type:
-        return False
-    
-    # Excel支持的图片格式
-    supported_formats = ['JPEG', 'JPG', 'PNG', 'GIF', 'BMP', 'TIFF']
-    file_type_upper = file_type.upper().replace('.', '')
-    return file_type_upper in supported_formats
-
 def download_image_from_minio(image_url):
-    """从MinIO下载图片数据并转换为Excel支持的格式"""
+    """从MinIO下载图片数据并转换为Excel支持的格式（fileUrl 须为当前 BASE_URL 或相对下载路径）。"""
     try:
-        # 提取文件路径 - 支持完整URL和相对路径
-        if image_url.startswith('https://www.vhhg.top/api/v1/file/download/'):
-            file_path = image_url.replace('https://www.vhhg.top/api/v1/file/download/', '')
-        elif image_url.startswith('/api/v1/file/download/'):
-            file_path = image_url.replace('/api/v1/file/download/', '')
-        else:
+        image_url = (image_url or '').strip()
+        file_path = extract_file_path_from_download_url(image_url)
+        if not file_path:
             current_app.logger.error(f"无效的图片URL格式: {image_url}")
             return None
         

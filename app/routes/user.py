@@ -63,9 +63,10 @@ def get_departments():
             'department_name': d.department_name,
             'user_count_total': total_count(dept_id),
             'has_children': bool(children_map.get(dept_id)),
+            'order': d.order or 0,
         })
 
-    top_departments.sort(key=lambda x: (x.get('department_name') or ''))
+    top_departments.sort(key=lambda x: (x.get('order', 0) or 0),reverse=True)
 
     return jsonify({
         'Flag': '4000',
@@ -132,12 +133,13 @@ def expand_department(dept_id):
                 'department_name': d.department_name,
                 'user_count_total': total_count(cid),
                 'has_children': bool(children_map.get(cid)),
+                'order': d.order or 0,
             })
-        children.sort(key=lambda x: (x.get('department_name') or ''))
+        children.sort(key=lambda x: (x.get('order', 0) or 0),reverse=True)
         return jsonify({'Flag': '4000', 'message': '调用成功', 'data': {'type': 'children', 'departments': children}})
 
     # 无子部门：返回人员列表（复用现有 users 接口逻辑，但只保留必要字段）
-    users = User.query.filter_by(departmentID=dept_id, isDelete=False).all()
+    users = User.query.filter_by(departmentID=dept_id, isDelete=False).order_by(User.order.desc()).all()
     result = []
     for u in users:
         result.append({
@@ -163,7 +165,7 @@ def get_department_users(dept_id):
         return jsonify({'Flag': '4002', 'message': message}), 200
 
     # 获取指定部门的用户
-    users = User.query.filter_by(departmentID=dept_id, isDelete=False).all()
+    users = User.query.filter_by(departmentID=dept_id, isDelete=False).order_by(User.order.desc()).all()
 
     if not users:
         return jsonify({
@@ -238,8 +240,8 @@ def get_department_users(dept_id):
 @bp.route('/list_weak', methods=['GET'])
 def get_user_list_weak():
 
-    users = User.query.filter_by(isDelete=False).all()
-    
+    users = User.query.filter_by(isDelete=False).order_by(User.order.desc()).all()
+
     user_list = []
 
     def roles_list(user):
@@ -387,6 +389,7 @@ def delete_user(user_id):
         return jsonify({'Flag':'4001','message': '该用户不存在'}), 404
 
 
+
 def sync_wecom_users_to_db():
     """从企业微信同步用户数据到数据库"""
     try:
@@ -452,6 +455,7 @@ def sync_wecom_users_to_db():
                         leader_id = None
 
                 existing_dept = Department.query.filter_by(departmentID=dept_id).first()
+                dept_order = d.get('order', 0) or 0
                 if existing_dept:
                     changed = False
                     if name and existing_dept.department_name != name:
@@ -463,6 +467,9 @@ def sync_wecom_users_to_db():
                     if leader_id and existing_dept.department_leaderID != leader_id:
                         existing_dept.department_leaderID = leader_id
                         changed = True
+                    if existing_dept.order != dept_order:
+                        existing_dept.order = dept_order
+                        changed = True
                     if changed:
                         print(f"更新部门: {dept_id} {name}")
                 else:
@@ -470,7 +477,8 @@ def sync_wecom_users_to_db():
                         departmentID=dept_id,
                         parentID=parent_id,
                         department_name=name or str(dept_id),
-                        department_leaderID=leader_id
+                        department_leaderID=leader_id,
+                        order=dept_order
                     ))
                     print(f"新增部门: {dept_id} {name}")
             db.session.commit()
@@ -524,6 +532,9 @@ def sync_wecom_users_to_db():
                     v = (v or '').strip()
                     return v or None
 
+                user_order_list = user_info.get('order', [])
+                user_order = int(user_order_list[0]) if user_order_list else 0
+
                 user_data = {
                     'wecomUserID': wecom_id,
                     'userName': user_info.get('name') or '',
@@ -533,6 +544,7 @@ def sync_wecom_users_to_db():
                     'phone': norm_phone(user_info.get('mobile', '')),
                     'gender': int(user_info.get('gender') or 0),
                     'isDelete': False,  # 出现在通讯录 => 恢复/保持可用
+                    'order': user_order,
                 }
 
                 if existing_user:
@@ -546,7 +558,6 @@ def sync_wecom_users_to_db():
                         if getattr(existing_user, field) != value:
                             setattr(existing_user, field, value)
                             updated = True
-
                     if updated:
                         sync_count['updated'] += 1
                         print(f"更新用户: {user_info.get('name')} ({wecom_id})")
@@ -555,6 +566,9 @@ def sync_wecom_users_to_db():
                     dept_ids = user_info.get('department', [])
                     department_names = [id_to_name.get(int(i), str(i)) for i in dept_ids]
                     primary_dept_id = int(dept_ids[0]) if dept_ids else None
+
+                    user_order_list = user_info.get('order', [])
+                    user_order = int(user_order_list[0]) if user_order_list else 0
 
                     new_user = User(
                         wecomUserID=wecom_id,
@@ -565,7 +579,8 @@ def sync_wecom_users_to_db():
                         phone=norm_phone(user_info.get('mobile', '')),
                         gender=int(user_info.get('gender') or 0),
                         isSuperUser=False,
-                        isDelete=False
+                        isDelete=False,
+                        order=user_order
                     )
                     db.session.add(new_user)
                     sync_count['inserted'] += 1

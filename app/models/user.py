@@ -26,6 +26,7 @@ class User(db.Model):
     wecom_sess_expires = db.Column(db.DateTime, nullable=True)
     # OAuth相关字段
     position = db.Column(db.String(128))
+    order = db.Column(db.Integer,default=0)
 
     @property
     def get_user_roles(self):

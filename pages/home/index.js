@@ -93,12 +93,23 @@ Page({
       tapX: 0,
       tapY: 0
     },
+    /** 全屏详情栈：同层 expandable 内切换 type/id，返回时 pop */
+    globalPopupStack: [],
+    /** 栈深 > 1 时返回只 pop 栈，不收起 sheet */
+    globalPopupDeferBack: false,
+    /** 栈切换时内容区过渡类：push-in | pop-in */
+    globalPopupStackAnim: '',
+    /** 栈 push/pop 过渡层：push 时盖在父 panel 上，pop 时盖住正在收起的子 panel */
+    globalPopupOverlay: null,
 
     /** 任一侧全屏弹窗打开：冻结抽屉 transition、忽略抽屉/右滑进抽屉的 touch，减轻与全屏层偶发合成闪一下 */
     homeFullscreenLayerActive: false,
 
     /** 与 app.notifyFullscreenBackIntercept 同步：根级唯一 page-container 是否挂载（拦截系统返回） */
-    fsBackInterceptShow: false
+    fsBackInterceptShow: false,
+
+    /** 全局全屏 expandable 左上角返回：添加成员嵌套全屏打开时由 club-manage-panel 置为 false */
+    hostExpandableBackShow: true
   },
 
   onFsBackInterceptBeforeLeave() {
@@ -1270,7 +1281,12 @@ Page({
   /**
    * 加载通知数据
    */
-  fetchMessagesForPanel: function(done) {
+  /**
+   * @param {Function} [done]
+   * @param {{ silent?: boolean }} [options] silent=true 时不切全屏骨架，避免标记已读后整页通知列表卸载重挂
+   */
+  fetchMessagesForPanel: function(done, options) {
+    const silent = !!(options && options.silent);
     const token = wx.getStorageSync('token');
     if (!token) {
       this.setData({
@@ -1280,9 +1296,11 @@ Page({
       return;
     }
 
-    this.setData({
-      messagesLoading: true
-    });
+    if (!silent) {
+      this.setData({
+        messagesLoading: true
+      });
+    }
 
     wx.request({
       url: app.globalData.request_url + `/message/user_get/list`,
@@ -1389,7 +1407,7 @@ Page({
         'Content-Type': 'application/json'
       },
       complete: () => {
-        this.fetchMessagesForPanel();
+        this.fetchMessagesForPanel(undefined, { silent: true });
       },
       success: () => {
         if (!url) return;
@@ -1418,6 +1436,11 @@ Page({
           this.openGlobalPopupByType('club-detail', String(params.clubId), tapX, tapY);
           return;
         }
+        // 已加入协会视图（通知/企微等历史 URL 常指向该路径，与子包内占位页一致）
+        if (basePath === '/packageClub/club-joined/index' && params.clubId) {
+          this.openGlobalPopupByType('club-joined', String(params.clubId), tapX, tapY);
+          return;
+        }
 
         // 活动弹窗
         if (basePath === '/packageEvent/event-manage/index' && params.eventId) {
@@ -1426,6 +1449,10 @@ Page({
         }
         if (basePath === '/packageEvent/event-detail/index' && params.eventId) {
           this.openGlobalPopupByType('event-detail', String(params.eventId), tapX, tapY);
+          return;
+        }
+        if (basePath === '/packageEvent/event-joined/index' && params.eventId) {
+          this.openGlobalPopupByType('event-joined', String(params.eventId), tapX, tapY);
           return;
         }
 
@@ -1449,27 +1476,7 @@ Page({
     const sys = wx.getSystemInfoSync();
     const safeX = (typeof tapX === 'number' && !Number.isNaN(tapX)) ? tapX : sys.windowWidth / 2;
     const safeY = (typeof tapY === 'number' && !Number.isNaN(tapY)) ? tapY : sys.windowHeight / 2;
-    const bgColor = 'rgba(223, 118, 176, 0.8)';
-    const sheetBgColor = '#f7f8fa';
-    this.setData({
-      globalPopup: {
-        visible: true,
-        loading: true,
-        renderPanel: false,
-        type,
-        id,
-        bgColor,
-        sheetBgColor,
-        tapX: safeX,
-        tapY: safeY
-      }
-    }, () => {
-      this.syncHomeFullscreenLayerState()
-      setTimeout(() => {
-        const popup = this.selectComponent('#globalFullscreenPopup');
-        if (popup && popup.expand) popup.expand(safeX, safeY);
-      }, 50);
-    });
+    this._openGlobalPopupRoot(type, id, safeX, safeY);
   },
 
   /**
@@ -1591,14 +1598,25 @@ Page({
     this.applyLocalChanges();
   },
 
-  // 从面板跳转到协会
+  /** 已加入协会面板内变更（与协会列表缓存对齐） */
+  onClubJoinedPanelUpdate: function() {
+    this.applyLocalChanges();
+  },
+
+  // 活动详情内点协会：压入 globalPopup 栈
   onNavigateClubFromPanel: function(e) {
     const clubId = e.detail?.clubId;
     if (!clubId) return;
-    
-    wx.navigateTo({
-      url: `/packageClub/club-detail/index?clubId=${clubId}`
-    });
+    const type = e.detail?.popupType || 'club-detail';
+    this._pushGlobalPopupStack(type, String(clubId), e.detail?.tapX, e.detail?.tapY);
+  },
+
+  // 协会详情内点活动：压入 globalPopup 栈
+  onNavigateEventFromPanel: function(e) {
+    const eventId = e.detail?.eventId;
+    if (!eventId) return;
+    const type = e.detail?.popupType || 'event-detail';
+    this._pushGlobalPopupStack(type, String(eventId), e.detail?.tapX, e.detail?.tapY);
   },
 
   // 从弹窗跳转到协会（保留用于管理弹窗）
@@ -1903,13 +1921,279 @@ Page({
 
   // ========= 全局弹窗相关方法 =========
 
+  _panelIdForGlobalPopupType(type) {
+    const map = {
+      'event-detail': '#globalEventDetailPanel',
+      'event-joined': '#globalEventJoinedPanel',
+      'event-manage': '#globalEventManagePanel',
+      'club-detail': '#globalClubDetailPanel',
+      'club-joined': '#globalClubJoinedPanel',
+      'club-manage': '#globalClubManagePanel'
+    };
+    return map[type] || '';
+  },
+
+  _overlayPanelIdForType(type) {
+    const map = {
+      'event-detail': '#overlayEventDetailPanel',
+      'event-joined': '#overlayEventJoinedPanel',
+      'event-manage': '#overlayEventManagePanel',
+      'club-detail': '#overlayClubDetailPanel',
+      'club-joined': '#overlayClubJoinedPanel',
+      'club-manage': '#overlayClubManagePanel'
+    };
+    return map[type] || '';
+  },
+
+  _renderGlobalPopupOverlayPanel() {
+    const ov = this.data.globalPopupOverlay;
+    if (!ov) return;
+    this.setData({ 'globalPopupOverlay.renderPanel': true }, () => {
+      setTimeout(() => {
+        const panelId = this._overlayPanelIdForType(ov.type);
+        if (!panelId) return;
+        const panel = this.selectComponent(panelId);
+        if (panel && panel.loadData) panel.loadData();
+      }, 50);
+    });
+  },
+
+  onGlobalPopupStackPushMid() {
+    const ov = this.data.globalPopupOverlay;
+    if (!ov) return;
+    this.setData({ 'globalPopupOverlay.enterActive': true }, () => {
+      this._renderGlobalPopupOverlayPanel();
+    });
+  },
+
+  onGlobalPopupStackPushComplete() {
+    const ov = this.data.globalPopupOverlay;
+    if (!ov) return;
+    const stack = this.data.globalPopupStack || [];
+    const pending = stack[stack.length - 1];
+    if (!pending) return;
+    this.setData({
+      globalPopupOverlay: null,
+      'globalPopup.type': pending.type,
+      'globalPopup.id': pending.id,
+      'globalPopup.loading': ov.loading !== false,
+      'globalPopup.renderPanel': !!ov.renderPanel
+    }, () => {
+      if (this.data.globalPopup.renderPanel && !this.data.globalPopup.loading) return;
+      if (this.data.globalPopup.renderPanel) {
+        const panelId = this._panelIdForGlobalPopupType(pending.type);
+        const panel = panelId ? this.selectComponent(panelId) : null;
+        if (panel && panel.loadData) panel.loadData();
+      } else {
+        this._renderGlobalPopupPanel();
+      }
+    });
+  },
+
+  onGlobalPopupOverlayLoaded() {
+    if (!this.data.globalPopupOverlay) return;
+    this.setData({ 'globalPopupOverlay.loading': false });
+  },
+
+  _renderGlobalPopupPanel() {
+    this.setData({ 'globalPopup.renderPanel': true }, () => {
+      setTimeout(() => {
+        const panelId = this._panelIdForGlobalPopupType(this.data.globalPopup.type);
+        if (!panelId) return;
+        const panel = this.selectComponent(panelId);
+        if (panel && panel.loadData) panel.loadData();
+      }, 100);
+    });
+  },
+
+  _clearGlobalPopupStackAnimLater() {
+    if (this.__gpStackAnimTimer) clearTimeout(this.__gpStackAnimTimer);
+    this.__gpStackAnimTimer = setTimeout(() => {
+      this.setData({ globalPopupStackAnim: '' });
+    }, 380);
+  },
+
+  _getGlobalPopupBackRipplePoint() {
+    const popup = this.selectComponent('#globalFullscreenPopup');
+    const sys = wx.getSystemInfoSync();
+    let tapY = Number(sys.statusBarHeight || 0) + 44;
+    try {
+      const nav = popup && popup.data && popup.data.fsNav;
+      if (nav && nav.totalHeight) tapY = Math.max(tapY, Number(nav.totalHeight) - 16);
+    } catch (e) {}
+    return { tapX: 28, tapY };
+  },
+
+  _playGlobalPopupStackPushRipple(tapX, tapY) {
+    const popup = this.selectComponent('#globalFullscreenPopup');
+    if (popup && typeof popup.playStackPushRipple === 'function') {
+      return popup.playStackPushRipple(tapX, tapY);
+    }
+    this.onGlobalPopupStackPushMid();
+    setTimeout(() => this.onGlobalPopupStackPushComplete(), 400);
+    return Promise.resolve();
+  },
+
+  _playGlobalPopupStackPopRipple(tapX, tapY) {
+    const popup = this.selectComponent('#globalFullscreenPopup');
+    if (popup && typeof popup.playStackPopRipple === 'function') {
+      return popup.playStackPopRipple(tapX, tapY);
+    }
+    return Promise.resolve();
+  },
+
+  /** 首次打开全屏（带涟漪展开） */
+  _openGlobalPopupRoot(type, id, tapX, tapY) {
+    const bgColor = 'rgba(223, 118, 176, 0.8)';
+    const sheetBgColor = '#f7f8fa';
+    this.setData({
+      globalPopupStack: [{ type, id: String(id), tapX, tapY }],
+      globalPopupDeferBack: false,
+      globalPopup: {
+        visible: true,
+        loading: true,
+        renderPanel: false,
+        type,
+        id: String(id),
+        bgColor,
+        sheetBgColor,
+        tapX,
+        tapY
+      }
+    }, () => {
+      this.syncHomeFullscreenLayerState();
+      setTimeout(() => {
+        const popup = this.selectComponent('#globalFullscreenPopup');
+        if (popup && popup.expand) popup.expand(tapX, tapY);
+      }, 50);
+    });
+  },
+
+  /** 栈 push：父级保持 type 并显示骨架，子级走 overlay 叠层 */
+  _pushGlobalPopupStack(type, id, tapX, tapY) {
+    const sys = wx.getSystemInfoSync();
+    const safeX = (typeof tapX === 'number' && !isNaN(tapX)) ? tapX : sys.windowWidth / 2;
+    const safeY = (typeof tapY === 'number' && !isNaN(tapY)) ? tapY : sys.windowHeight / 2;
+    const entry = {
+      type,
+      id: String(id),
+      tapX: safeX,
+      tapY: safeY
+    };
+    const stack = [...(this.data.globalPopupStack || []), entry];
+
+    if (stack.length <= 1) {
+      this.setData({
+        globalPopupStack: stack,
+        globalPopupDeferBack: false,
+        globalPopupOverlay: null,
+        'globalPopup.type': type,
+        'globalPopup.id': String(id),
+        'globalPopup.loading': true,
+        'globalPopup.renderPanel': false
+      }, () => {
+        this._renderGlobalPopupPanel();
+      });
+      return;
+    }
+
+    this.setData({
+      globalPopupStack: stack,
+      globalPopupDeferBack: true,
+      'globalPopup.renderPanel': false,
+      'globalPopup.loading': true,
+      globalPopupOverlay: {
+        type,
+        id: String(id),
+        loading: true,
+        renderPanel: false,
+        enterActive: false,
+        leaveActive: false
+      }
+    }, () => {
+      this._playGlobalPopupStackPushRipple(safeX, safeY);
+    });
+  },
+
+  /** 栈 pop：收起 overlay 涟漪后恢复父级 */
+  _popGlobalPopupStack() {
+    const stack = this.data.globalPopupStack || [];
+    if (stack.length <= 1) {
+      this.closeGlobalPopup();
+      return;
+    }
+    const newStack = stack.slice(0, -1);
+    const prev = newStack[newStack.length - 1];
+    const backPt = this._getGlobalPopupBackRipplePoint();
+    const leavingType = this.data.globalPopup.type;
+    const leavingId = this.data.globalPopup.id;
+
+    this.setData({
+      globalPopupOverlay: {
+        type: leavingType,
+        id: leavingId,
+        loading: false,
+        renderPanel: true,
+        enterActive: false,
+        leaveActive: true
+      },
+      globalPopupStack: newStack,
+      globalPopupDeferBack: newStack.length > 1,
+      globalPopupStackAnim: '',
+      'globalPopup.type': prev.type,
+      'globalPopup.id': prev.id,
+      'globalPopup.loading': true,
+      'globalPopup.renderPanel': false
+    }, () => {
+      this._renderGlobalPopupPanel();
+      this._playGlobalPopupStackPopRipple(backPt.tapX, backPt.tapY);
+      setTimeout(() => {
+        this.setData({ globalPopupOverlay: null });
+      }, 380);
+    });
+  },
+
+  onGlobalPopupCovered() {
+    this.setData({
+      'globalPopup.renderPanel': false,
+      'globalPopup.loading': true
+    });
+  },
+
+  onGlobalPopupUncovered() {
+    if (!this.data.globalPopup.renderPanel) {
+      this._renderGlobalPopupPanel();
+    }
+  },
+
+  onGlobalPopupFullscreenBack() {
+    const stack = this.data.globalPopupStack || [];
+    if (stack.length > 1) {
+      this._popGlobalPopupStack();
+      return;
+    }
+    this._collapseGlobalPopupToRootTap();
+  },
+
+  /** 最终收起：涟漪收拢到首次打开全屏时的点击位置 */
+  _collapseGlobalPopupToRootTap() {
+    const gp = this.data.globalPopup || {};
+    const popup = this.selectComponent('#globalFullscreenPopup');
+    if (popup && typeof popup.setCollapseRippleOrigin === 'function') {
+      const tx = gp.tapX;
+      const ty = gp.tapY;
+      if (typeof tx === 'number' && typeof ty === 'number') {
+        popup.setCollapseRippleOrigin(tx, ty);
+      }
+    }
+    if (popup && popup.collapse) popup.collapse();
+  },
+
   // 打开全局弹窗
   openGlobalPopup: function(e) {
     const dataset = e.currentTarget.dataset;
     const type = dataset.popupType;
     const id = dataset.popupId;
-    const bgColor = dataset.bgColor || '#f7f8fa';
-    const sheetBgColor = dataset.sheetBgColor || '#f7f8fa';
     
     console.log('openGlobalPopup 被调用:', { type, id, loading: true });
     
@@ -1931,38 +2215,23 @@ Page({
       console.log('使用屏幕中心坐标:', tapX, tapY);
     }
     
-    this.setData({
-      globalPopup: {
-        visible: true,
-        loading: true,
-        renderPanel: false,
-        type,
-        id,
-        bgColor,
-        sheetBgColor,
-        tapX,
-        tapY
-      }
-    }, () => {
-      this.syncHomeFullscreenLayerState()
-      console.log('globalPopup 数据已设置:', this.data.globalPopup);
-      setTimeout(() => {
-        const popup = this.selectComponent('#globalFullscreenPopup');
-        if (popup && popup.expand) {
-          popup.expand(tapX, tapY);
-        } else {
-          console.error('找不到 globalFullscreenPopup 组件');
-        }
-      }, 50);
-    });
+    this._openGlobalPopupRoot(type, id, tapX, tapY);
   },
 
   // 关闭全局弹窗
   closeGlobalPopup: function() {
-    const popup = this.selectComponent('#globalFullscreenPopup');
-    if (popup && popup.collapse) {
-      popup.collapse();
+    const stack = this.data.globalPopupStack || [];
+    if (stack.length > 1) {
+      this._popGlobalPopupStack();
+      return;
     }
+    this._collapseGlobalPopupToRootTap();
+  },
+
+  /** club-manage 内「添加成员」嵌套全屏打开/关闭时，隐藏或恢复本页全局全屏的左上角返回 */
+  onClubManageHostFullscreenBack(e) {
+    const show = !!(e.detail && e.detail.show)
+    this.setData({ hostExpandableBackShow: show })
   },
 
   // 全局弹窗收起回调 - 延迟隐藏以等待动画完成
@@ -1977,7 +2246,12 @@ Page({
         'globalPopup.loading': true,
         'globalPopup.renderPanel': false,  // 重置 renderPanel
         'globalPopup.type': '',
-        'globalPopup.id': ''
+        'globalPopup.id': '',
+        globalPopupStack: [],
+        globalPopupDeferBack: false,
+        globalPopupStackAnim: '',
+        globalPopupOverlay: null,
+        hostExpandableBackShow: true
       }, () => {
         this.syncHomeFullscreenLayerState()
       })
@@ -1986,36 +2260,7 @@ Page({
 
   // 全局弹窗内容准备好回调
   onGlobalPopupContentReady: function() {
-    console.log('onGlobalPopupContentReady 被调用，开始渲染 panel');
-    // 弹窗动画完成，现在可以渲染 panel 了
-    this.setData({
-      'globalPopup.renderPanel': true
-    }, () => {
-      // 等待 panel 渲染后，调用 loadData
-      setTimeout(() => {
-        const { type } = this.data.globalPopup;
-        let panelId = '';
-        
-        if (type === 'event-detail') {
-          panelId = '#globalEventDetailPanel';
-        } else if (type === 'event-joined') {
-          panelId = '#globalEventJoinedPanel';
-        } else if (type === 'event-manage') {
-          panelId = '#globalEventManagePanel';
-        } else if (type === 'club-detail') {
-          panelId = '#globalClubDetailPanel';
-        } else if (type === 'club-manage') {
-          panelId = '#globalClubManagePanel';
-        }
-        
-        if (panelId) {
-          const panel = this.selectComponent(panelId);
-          if (panel && panel.loadData) {
-            panel.loadData();
-          }
-        }
-      }, 100);
-    });
+    this._renderGlobalPopupPanel();
   },
 
   // 全局弹窗内容加载完成回调

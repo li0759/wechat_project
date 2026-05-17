@@ -1,148 +1,81 @@
-<!-- 成员管理骨架屏 -->
-<view class="skeleton-container">
-  <!-- 搜索栏骨架（clubMembersPanel 已移除真实搜索框，这里同步去掉） -->
-
-  <!-- 成员列表骨架 -->
-  <view class="skeleton-list">
-    <!-- 索引字母 A -->
-    <view class="skeleton-index-anchor">
-      <text class="skeleton-index-text">A</text>
-    </view>
-    
-    <!-- 成员卡片 1 -->
-    <view class="skeleton-member-card">
-      <view class="skeleton-delete-btn">×</view>
-      <t-skeleton animation="gradient" rowCol="{{[{ width: '96rpx', height: '96rpx', borderRadius: '50%' }]}}" />
-      <view class="skeleton-member-info">
-        <view class="skeleton-name-row">
-          <t-skeleton animation="gradient" rowCol="{{[{ width: '120rpx', height: '32rpx' }]}}" />
-          <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '28rpx', borderRadius: '12rpx', marginLeft: '12rpx' }]}}" />
-        </view>
-        <t-skeleton animation="gradient" rowCol="{{[{ width: '280rpx', height: '26rpx', marginTop: '8rpx' }]}}" />
-        <t-skeleton animation="gradient" rowCol="{{[{ width: '200rpx', height: '26rpx', marginTop: '8rpx' }]}}" />
-      </view>
-    </view>
-    
-    <!-- 成员卡片 2 -->
-    <view class="skeleton-member-card">
-      <view class="skeleton-delete-btn">×</view>
-      <t-skeleton animation="gradient" rowCol="{{[{ width: '96rpx', height: '96rpx', borderRadius: '50%' }]}}" />
-      <view class="skeleton-member-info">
-        <view class="skeleton-name-row">
-          <t-skeleton animation="gradient" rowCol="{{[{ width: '100rpx', height: '32rpx' }]}}" />
-          <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '28rpx', borderRadius: '12rpx', marginLeft: '12rpx' }]}}" />
-        </view>
-        <t-skeleton animation="gradient" rowCol="{{[{ width: '260rpx', height: '26rpx', marginTop: '8rpx' }]}}" />
-      </view>
-    </view>
-    
-    <!-- 成员卡片 3 -->
-    <view class="skeleton-member-card">
-      <view class="skeleton-delete-btn">×</view>
-      <t-skeleton animation="gradient" rowCol="{{[{ width: '96rpx', height: '96rpx', borderRadius: '50%' }]}}" />
-      <view class="skeleton-member-info">
-        <view class="skeleton-name-row">
-          <t-skeleton animation="gradient" rowCol="{{[{ width: '140rpx', height: '32rpx' }]}}" />
-          <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '28rpx', borderRadius: '12rpx', marginLeft: '12rpx' }]}}" />
-        </view>
-        <t-skeleton animation="gradient" rowCol="{{[{ width: '280rpx', height: '26rpx', marginTop: '8rpx' }]}}" />
-      </view>
-    </view>
-    
-    <!-- 索引字母 B -->
-    <view class="skeleton-index-anchor">
-      <text class="skeleton-index-text">B</text>
-    </view>
-    
-    <!-- 成员卡片 4 -->
-    <view class="skeleton-member-card">
-      <view class="skeleton-delete-btn">×</view>
-      <t-skeleton animation="gradient" rowCol="{{[{ width: '96rpx', height: '96rpx', borderRadius: '50%' }]}}" />
-      <view class="skeleton-member-info">
-        <view class="skeleton-name-row">
-          <t-skeleton animation="gradient" rowCol="{{[{ width: '110rpx', height: '32rpx' }]}}" />
-          <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '28rpx', borderRadius: '12rpx', marginLeft: '12rpx' }]}}" />
-        </view>
-        <t-skeleton animation="gradient" rowCol="{{[{ width: '280rpx', height: '26rpx', marginTop: '8rpx' }]}}" />
-      </view>
-    </view>
-    <!-- 成员卡片 5 -->
-    <view class="skeleton-member-card">
-      <view class="skeleton-delete-btn">×</view>
-      <t-skeleton animation="gradient" rowCol="{{[{ width: '96rpx', height: '96rpx', borderRadius: '50%' }]}}" />
-      <view class="skeleton-member-info">
-        <view class="skeleton-name-row">
-          <t-skeleton animation="gradient" rowCol="{{[{ width: '110rpx', height: '32rpx' }]}}" />
-          <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '28rpx', borderRadius: '12rpx', marginLeft: '12rpx' }]}}" />
-        </view>
-        <t-skeleton animation="gradient" rowCol="{{[{ width: '280rpx', height: '26rpx', marginTop: '8rpx' }]}}" />
-      </view>
-    </view>
-    <!-- 成员卡片 6 -->
-    <view class="skeleton-member-card">
-      <view class="skeleton-delete-btn">×</view>
-      <t-skeleton animation="gradient" rowCol="{{[{ width: '96rpx', height: '96rpx', borderRadius: '50%' }]}}" />
-      <view class="skeleton-member-info">
-        <view class="skeleton-name-row">
-          <t-skeleton animation="gradient" rowCol="{{[{ width: '110rpx', height: '32rpx' }]}}" />
-          <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '28rpx', borderRadius: '12rpx', marginLeft: '12rpx' }]}}" />
-        </view>
-        <t-skeleton animation="gradient" rowCol="{{[{ width: '280rpx', height: '26rpx', marginTop: '8rpx' }]}}" />
+<!-- 成员管理骨架：搜索 + 5 分组各 1 行 + 侧栏 + FAB -->
+<view class="sk-root">
+  <view class="sk-main cm-indexes-shell">
+    <view class="sk-toolbar cm-member-toolbar">
+      <view class="sk-search">
+        <t-skeleton
+          animation="gradient"
+          rowCol="{{[{ width: '100%', height: '72rpx', borderRadius: '999rpx' }]}}"
+        />
       </view>
     </view>
 
-    <!-- 索引字母 C -->
-    <view class="skeleton-index-anchor">
-      <text class="skeleton-index-text">C</text>
-    </view>
-    
-    <!-- 成员卡片 7 -->
-    <view class="skeleton-member-card">
-      <view class="skeleton-delete-btn">×</view>
-      <t-skeleton animation="gradient" rowCol="{{[{ width: '96rpx', height: '96rpx', borderRadius: '50%' }]}}" />
-      <view class="skeleton-member-info">
-        <view class="skeleton-name-row">
-          <t-skeleton animation="gradient" rowCol="{{[{ width: '110rpx', height: '32rpx' }]}}" />
-          <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '28rpx', borderRadius: '12rpx', marginLeft: '12rpx' }]}}" />
+    <view class="sk-list-root cm-member-list-root">
+      <view class="sk-cmb">
+        <view class="sk-cmb__body">
+          <view class="sk-cmb__scroll">
+            <block wx:for="{{branches}}" wx:key="anchor">
+              <view class="sk-anchor">
+                <view class="sk-anchor__header">{{item.anchor}}</view>
+                <view class="sk-card">
+                  <view class="sk-card__row">
+                    <t-skeleton
+                      animation="gradient"
+                      rowCol="{{[{ width: '84rpx', height: '84rpx', borderRadius: '50%' }]}}"
+                    />
+                    <view class="sk-card__info">
+                      <view class="sk-card__name-row">
+                        <t-skeleton
+                          animation="gradient"
+                          rowCol="{{[{ width: item.nameW, height: '32rpx' }]}}"
+                        />
+                        <t-skeleton
+                          animation="gradient"
+                          rowCol="{{[{ width: '72rpx', height: '28rpx', borderRadius: '12rpx', marginLeft: '10rpx' }]}}"
+                        />
+                        <t-skeleton
+                          animation="gradient"
+                          rowCol="{{[{ width: '48rpx', height: '28rpx', borderRadius: '12rpx', marginLeft: '8rpx' }]}}"
+                        />
+                      </view>
+                      <view class="sk-card__meta-row">
+                        <t-skeleton
+                          animation="gradient"
+                          rowCol="{{[{ width: '120rpx', height: '32rpx', borderRadius: '8rpx' }]}}"
+                        />
+                        <t-skeleton
+                          animation="gradient"
+                          rowCol="{{[{ width: '96rpx', height: '32rpx', borderRadius: '8rpx', marginLeft: '10rpx' }]}}"
+                        />
+                      </view>
+                      <t-skeleton
+                        animation="gradient"
+                        rowCol="{{[{ width: '200rpx', height: '24rpx', marginTop: '8rpx' }]}}"
+                      />
+                    </view>
+                  </view>
+                </view>
+              </view>
+            </block>
+          </view>
+
+          <view class="sk-cmb__sidebar">
+            <view
+              wx:for="{{branches}}"
+              wx:key="sidebar"
+              class="sk-cmb__sidebar-item {{item.sidebarActive ? 'sk-cmb__sidebar-item--active' : ''}}"
+            >
+              <text class="sk-cmb__sidebar-char">{{item.sidebar}}</text>
+            </view>
+          </view>
         </view>
-        <t-skeleton animation="gradient" rowCol="{{[{ width: '280rpx', height: '26rpx', marginTop: '8rpx' }]}}" />
-      </view>
-    </view>
-    <!-- 成员卡片 8 -->
-    <view class="skeleton-member-card">
-      <view class="skeleton-delete-btn">×</view>
-      <t-skeleton animation="gradient" rowCol="{{[{ width: '96rpx', height: '96rpx', borderRadius: '50%' }]}}" />
-      <view class="skeleton-member-info">
-        <view class="skeleton-name-row">
-          <t-skeleton animation="gradient" rowCol="{{[{ width: '110rpx', height: '32rpx' }]}}" />
-          <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '28rpx', borderRadius: '12rpx', marginLeft: '12rpx' }]}}" />
-        </view>
-        <t-skeleton animation="gradient" rowCol="{{[{ width: '280rpx', height: '26rpx', marginTop: '8rpx' }]}}" />
-      </view>
-    </view>
-    <!-- 成员卡片 9 -->
-    <view class="skeleton-member-card">
-      <view class="skeleton-delete-btn">×</view>
-      <t-skeleton animation="gradient" rowCol="{{[{ width: '96rpx', height: '96rpx', borderRadius: '50%' }]}}" />
-      <view class="skeleton-member-info">
-        <view class="skeleton-name-row">
-          <t-skeleton animation="gradient" rowCol="{{[{ width: '110rpx', height: '32rpx' }]}}" />
-          <t-skeleton animation="gradient" rowCol="{{[{ width: '80rpx', height: '28rpx', borderRadius: '12rpx', marginLeft: '12rpx' }]}}" />
-        </view>
-        <t-skeleton animation="gradient" rowCol="{{[{ width: '280rpx', height: '26rpx', marginTop: '8rpx' }]}}" />
       </view>
     </view>
   </view>
 
-  <!-- 右侧字母索引条骨架 -->
-  <view class="skeleton-index-bar">
-    <view class="skeleton-index-letter" wx:for="{{10}}" wx:key="index">
-      <t-skeleton animation="gradient" rowCol="{{[{ width: '24rpx', height: '24rpx', borderRadius: '4rpx' }]}}" />
+  <view class="sk-fab">
+    <view class="sk-fab-btn">
+      <text class="sk-fab-icon">+</text>
     </view>
-  </view>
-
-  <!-- 添加按钮骨架 -->
-  <view class="skeleton-add-button">
-    <t-skeleton animation="gradient" rowCol="{{[{ width: '112rpx', height: '112rpx', borderRadius: '50%' }]}}" />
   </view>
 </view>
