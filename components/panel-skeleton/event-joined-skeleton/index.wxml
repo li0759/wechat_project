@@ -1,27 +1,74 @@
-<view class="popup-skeleton">
-  <!-- 活动状态头部 -->
-  <view style="padding: 20rpx 30rpx;">
-    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '200rpx', borderRadius: '16rpx' }]}}" />
+<!-- 已参加活动骨架：地图底层；info-card 透明，仅进度区白底（对齐真页叠层） -->
+<view class="sk-ej-root">
+  <view class="sk-ej-tabs">
+    <view class="sk-ej-tab sk-ej-tab--active">
+      <text class="sk-ej-tab-text sk-ej-tab-text--active">时间线</text>
+    </view>
+    <view class="sk-ej-tab">
+      <text class="sk-ej-tab-text">活动动态</text>
+    </view>
   </view>
-  
-  <!-- 选项卡 -->
-  <view style="padding: 0 30rpx 20rpx;">
-    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '80rpx', borderRadius: '16rpx' }]}}" />
+
+  <view class="sk-ej-body">
+    <view class="sk-ej-scroll">
+      <view class="sk-ej-step-content">
+        <view class="sk-ej-map-bg" aria-hidden="true">
+          <view class="sk-ej-map-stack"></view>
+          <view class="sk-ej-map-fade sk-ej-map-fade--left"></view>
+          <view class="sk-ej-map-fade sk-ej-map-fade--bottom"></view>
+          <view class="sk-ej-map-fade sk-ej-map-fade--corner"></view>
+        </view>
+
+        <view class="sk-ej-card">
+          <view class="sk-ej-info-card">
+            <view class="sk-ej-hero">
+              <view class="sk-ej-bar sk-ej-bar--title"></view>
+              <view class="sk-ej-hero-row">
+                <view class="sk-ej-hero-icon"></view>
+                <view class="sk-ej-bar sk-ej-bar--hero-sub"></view>
+              </view>
+              <view class="sk-ej-hero-row">
+                <view class="sk-ej-hero-icon"></view>
+                <view class="sk-ej-bar sk-ej-bar--hero-sub sk-ej-bar--hero-sub-short"></view>
+              </view>
+            </view>
+
+            <view class="sk-ej-steps-panel">
+              <view class="sk-ej-card-title">
+                <view class="sk-ej-card-title-accent"></view>
+                <view class="sk-ej-bar sk-ej-bar--section"></view>
+              </view>
+
+              <view class="sk-ej-steps">
+                <view
+                  class="sk-ej-step-item {{item.tall ? 'sk-ej-step-item--tall' : ''}} {{idx === steps.length - 1 ? 'sk-ej-step-item--last' : ''}}"
+                  wx:for="{{steps}}"
+                  wx:key="index"
+                  wx:for-index="idx"
+                >
+                  <view class="sk-ej-step-anchor">
+                    <view class="sk-ej-step-circle"></view>
+                    <view class="sk-ej-step-line" wx:if="{{idx < steps.length - 1}}"></view>
+                  </view>
+                  <view class="sk-ej-step-content-col">
+                    <view class="sk-ej-bar sk-ej-bar--step-title"></view>
+                    <view class="sk-ej-bar sk-ej-bar--step-desc {{item.tall ? 'sk-ej-bar--step-desc-wide' : ''}}"></view>
+                    <view class="sk-ej-step-extra" wx:if="{{item.tall}}">
+                      <view class="sk-ej-bar sk-ej-bar--step-extra"></view>
+                    </view>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="sk-ej-footer-space" />
+      </view>
+    </view>
   </view>
-  
-  <!-- 时间线步骤卡片 -->
-  <view style="padding: 0 30rpx 20rpx;">
-    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '600rpx', borderRadius: '16rpx' }]}}" />
-  </view>
-  
-  <!-- 动态列表骨架屏（3个动态项） -->
-  <view style="padding: 0 30rpx 20rpx;">
-    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '300rpx', borderRadius: '16rpx', marginBottom: '20rpx' }]}}" />
-  </view>
-  <view style="padding: 0 30rpx 20rpx;">
-    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '300rpx', borderRadius: '16rpx', marginBottom: '20rpx' }]}}" />
-  </view>
-  <view style="padding: 0 30rpx 20rpx;">
-    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '300rpx', borderRadius: '16rpx' }]}}" />
+
+  <view class="sk-ej-bottom">
+    <view class="sk-ej-btn-share"></view>
   </view>
 </view>

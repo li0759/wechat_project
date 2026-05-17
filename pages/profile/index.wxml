@@ -361,7 +361,7 @@
         <club-create-skeleton wx:if="{{globalPopup.type === 'club-create'}}" />
         <event-create-skeleton wx:if="{{globalPopup.type === 'event-create'}}" />
         <event-manage-skeleton wx:if="{{globalPopup.type === 'event-manage'}}" />
-        <event-manage-skeleton wx:if="{{globalPopup.type === 'event-joined'}}" />
+        <event-joined-skeleton wx:if="{{globalPopup.type === 'event-joined'}}" />
         <club-manage-skeleton wx:if="{{globalPopup.type === 'club-manage'}}" />
         <club-members-skeleton wx:if="{{globalPopup.type === 'club-members'}}" />
         <events-skeleton wx:if="{{globalPopup.type === 'events'}}" />
@@ -414,7 +414,8 @@
         <event-joined-panel 
           wx:if="{{globalPopup.type === 'event-joined'}}"
           id="profileEventJoinedPanel" 
-          event-id="{{globalPopup.id}}" 
+          event-id="{{globalPopup.id}}"
+          style="flex: 1; min-height: 0; height: 100%; width: 100%;"
           bind:update="onManagePanelUpdate"
           bind:loaded="onGlobalPopupLoaded"
         />
@@ -434,7 +435,8 @@
         <club-members-panel 
           wx:if="{{globalPopup.type === 'club-members'}}"
           id="clubMembersPanel" 
-          club-id="{{globalPopup.id}}" 
+          club-id="{{globalPopup.id}}"
+          style="flex: 1; min-height: 0; height: 100%; width: 100%;"
           bind:loaded="onGlobalPopupLoaded"
           bind:close="closeGlobalPopup"
         />
@@ -465,6 +467,7 @@
           wx:if="{{globalPopup.type === 'club-applications'}}"
           id="clubApplicationsPanel" 
           club-id="{{globalPopup.id}}"
+          style="flex: 1; min-height: 0; height: 100%; width: 100%;"
           bind:loaded="onGlobalPopupLoaded"
           bind:update="onManagePanelUpdate"
           bind:close="closeGlobalPopup"

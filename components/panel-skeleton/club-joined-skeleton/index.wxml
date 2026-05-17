@@ -1,37 +1,130 @@
-<view class="popup-skeleton">
-  <!-- 1. 协会基本信息区域 - 白色背景 -->
-  <view class="skeleton-club-info">
-    <!-- 会员头像 - 单行居中 -->
-    <view class="skeleton-members-row">
-      <t-skeleton wx:for="{{[1,2,3,4,5,6,7,8]}}" wx:key="*this" animation="gradient" rowCol="{{[{ width: '72rpx', height: '72rpx', borderRadius: '50%' }]}}" />
-    </view>
-    
-    <!-- 协会人数框 -->
-    <view class="skeleton-member-count">
-      <t-skeleton animation="gradient" rowCol="{{[{ width: '120rpx', height: '48rpx', borderRadius: '24rpx' }]}}" />
-    </view>
-  </view>
-  
-  <!-- 2. 最近活动区域 - 白色背景 -->
-  <view class="skeleton-featured-section">
-    <!-- 最近活动卡片 -->
-    <view class="skeleton-featured-card">
-      <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '280rpx', borderRadius: '16rpx' }]}}" />
-    </view>
-  </view>
-  
-  <!-- 3. 活动列表区域 - 白色背景 -->
-  <view class="skeleton-events-section">
-    <!-- 活动列表项 -->
-    <view wx:for="{{[1,2,3]}}" wx:key="*this" class="skeleton-event-item">
-      <!-- 左边封面 -->
-      <t-skeleton animation="gradient" rowCol="{{[{ width: '150rpx', height: '150rpx', borderRadius: '8rpx' }]}}" />
-      <!-- 右边信息 -->
-      <view class="skeleton-event-info">
-        <t-skeleton animation="gradient" rowCol="{{[{ width: '200rpx', height: '28rpx', marginBottom: '8rpx' }]}}" />
-        <t-skeleton animation="gradient" rowCol="{{[{ width: '180rpx', height: '22rpx', marginBottom: '8rpx' }]}}" />
-        <t-skeleton animation="gradient" rowCol="{{[{ width: '250rpx', height: '22rpx' }]}}" />
+<!-- 协会已加入骨架：对齐 club-joined-panel 大框架 -->
+<view class="sk-cj-root">
+  <scroll-view class="sk-cj-scroll" scroll-y="{{false}}">
+    <!-- 1. 成员信息区 -->
+    <view class="sk-cj-club-info">
+      <view class="sk-cj-member-self">
+        <view class="sk-cj-bar sk-cj-bar--kicker"></view>
+        <view class="sk-cj-self-columns">
+          <view class="sk-cj-self-left">
+            <view class="sk-cj-self-row">
+              <view class="sk-cj-avatar sk-cj-avatar--lg"></view>
+              <view class="sk-cj-self-meta">
+                <view class="sk-cj-bar sk-cj-bar--name"></view>
+                <view class="sk-cj-bar sk-cj-bar--line"></view>
+                <view class="sk-cj-bar sk-cj-bar--line sk-cj-bar--line-short"></view>
+              </view>
+            </view>
+          </view>
+          <view class="sk-cj-last-event">
+            <view class="sk-cj-bar sk-cj-bar--kicker"></view>
+            <view class="sk-cj-last-event-body">
+              <view class="sk-cj-thumb"></view>
+              <view class="sk-cj-last-event-texts">
+                <view class="sk-cj-bar sk-cj-bar--line"></view>
+                <view class="sk-cj-bar sk-cj-bar--line sk-cj-bar--line-xs"></view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="sk-cj-members-grid">
+        <view class="sk-cj-grid-cell sk-cj-grid-cell--president">
+          <view class="sk-cj-officer-tile sk-cj-officer-tile--president">
+            <view class="sk-cj-bar sk-cj-bar--kicker"></view>
+            <view class="sk-cj-officer-head">
+              <view class="sk-cj-avatar sk-cj-avatar--md"></view>
+              <view class="sk-cj-bar sk-cj-bar--officer-name"></view>
+            </view>
+            <view class="sk-cj-bar sk-cj-bar--line sk-cj-bar--line-xs"></view>
+            <view class="sk-cj-bar sk-cj-bar--line sk-cj-bar--line-xs"></view>
+          </view>
+        </view>
+        <view class="sk-cj-grid-cell sk-cj-grid-cell--2x2">
+          <view class="sk-cj-officer-tile">
+            <view class="sk-cj-bar sk-cj-bar--kicker"></view>
+            <view class="sk-cj-officer-head">
+              <view class="sk-cj-avatar sk-cj-avatar--sm"></view>
+              <view class="sk-cj-bar sk-cj-bar--officer-name sk-cj-bar--officer-name-short"></view>
+            </view>
+            <view class="sk-cj-bar sk-cj-bar--line sk-cj-bar--line-xs"></view>
+          </view>
+        </view>
+        <view class="sk-cj-grid-cell sk-cj-grid-cell--2x2">
+          <view class="sk-cj-officer-tile">
+            <view class="sk-cj-bar sk-cj-bar--kicker"></view>
+            <view class="sk-cj-officer-head">
+              <view class="sk-cj-avatar sk-cj-avatar--sm"></view>
+              <view class="sk-cj-bar sk-cj-bar--officer-name sk-cj-bar--officer-name-short"></view>
+            </view>
+            <view class="sk-cj-bar sk-cj-bar--line sk-cj-bar--line-xs"></view>
+          </view>
+        </view>
+        <view class="sk-cj-grid-cell sk-cj-grid-cell--1x1" wx:for="{{memberDots}}" wx:key="*this">
+          <view class="sk-cj-avatar sk-cj-avatar--xs"></view>
+        </view>
+      </view>
+
+      <view class="sk-cj-member-count">
+        <view class="sk-cj-bar sk-cj-bar--count"></view>
       </view>
     </view>
+
+    <!-- 2. 特色活动海报（地图 + 渐隐 + 底部文案） -->
+    <view class="sk-cj-featured-section">
+      <view class="sk-cj-poster-card">
+        <view class="sk-cj-poster-hero">
+          <view class="sk-cj-map-bg" aria-hidden="true">
+            <view class="sk-cj-map-stack"></view>
+            <view class="sk-cj-map-fade sk-cj-map-fade--left"></view>
+            <view class="sk-cj-map-fade sk-cj-map-fade--bottom"></view>
+            <view class="sk-cj-map-fade sk-cj-map-fade--corner"></view>
+          </view>
+          <view class="sk-cj-isotope-strip">
+            <view class="sk-cj-iso-block" wx:for="{{isoBlocks}}" wx:key="*this"></view>
+          </view>
+          <view class="sk-cj-hero-bottom-read" aria-hidden="true"></view>
+          <view class="sk-cj-event-content">
+            <view class="sk-cj-bar sk-cj-bar--event-title"></view>
+            <view class="sk-cj-bar sk-cj-bar--event-desc"></view>
+            <view class="sk-cj-bar sk-cj-bar--meta"></view>
+            <view class="sk-cj-bar sk-cj-bar--meta sk-cj-bar--meta-short"></view>
+            <view class="sk-cj-action-row">
+              <view class="sk-cj-bar sk-cj-bar--status"></view>
+              <view class="sk-cj-bar sk-cj-bar--address"></view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 3. 活动分页网格 -->
+    <view class="sk-cj-events-section">
+      <view class="sk-cj-page-bar">
+        <view class="sk-cj-page-btn"></view>
+        <view class="sk-cj-bar sk-cj-bar--page-label"></view>
+        <view class="sk-cj-page-btn"></view>
+      </view>
+      <view class="sk-cj-events-grid">
+        <view class="sk-cj-event-slot" wx:for="{{eventSlots}}" wx:key="*this">
+          <view class="sk-cj-event-cell">
+            <view class="sk-cj-event-cover"></view>
+            <view class="sk-cj-event-body">
+              <view class="sk-cj-bar sk-cj-bar--grid-line"></view>
+              <view class="sk-cj-bar sk-cj-bar--grid-line sk-cj-bar--grid-line-xs"></view>
+              <view class="sk-cj-bar sk-cj-bar--grid-line sk-cj-bar--grid-line-xs"></view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="sk-cj-footer-space" />
+  </scroll-view>
+
+  <view class="sk-cj-bottom">
+    <view class="sk-cj-btn sk-cj-btn--primary"></view>
+    <view class="sk-cj-btn sk-cj-btn--outline"></view>
   </view>
 </view>

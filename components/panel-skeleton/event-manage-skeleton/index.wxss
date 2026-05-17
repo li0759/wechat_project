@@ -1,5 +1,353 @@
-.popup-skeleton {
+/* 活动管理骨架：对齐 event-manage-panel 布局尺寸 */
+
+.sk-em-root {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: #f8f9fb;
+  box-sizing: border-box;
+}
+
+.sk-em-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sk-em-rows {
+  padding: 16rpx 16rpx 24rpx;
+  box-sizing: border-box;
+}
+
+/* —— 顶部时间线预览（560rpx） —— */
+.sk-em-timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 560rpx;
+  margin-bottom: 12rpx;
+  padding: 8rpx 16rpx 12rpx;
+  background: #fff;
+  border-radius: 16rpx;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.sk-em-timeline-hd {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12rpx;
+  margin-bottom: 12rpx;
+  border-bottom: 1rpx solid #eceef2;
+}
+
+.sk-em-timeline-body {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  padding-right: 120rpx;
+  box-sizing: border-box;
+}
+
+.sk-em-tl-row {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  padding-bottom: 16rpx;
+}
+
+.sk-em-tl-left {
+  width: 96rpx;
+  flex-shrink: 0;
+  padding-right: 6rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6rpx;
+}
+
+.sk-em-tl-rail {
+  width: 28rpx;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sk-em-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: #d1d5db;
+  border: 3rpx solid #fff;
+  box-shadow: 0 0 0 1rpx rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+  margin-top: 4rpx;
+}
+
+.sk-em-vline {
+  width: 2rpx;
+  flex: 1;
+  min-height: 28rpx;
+  margin-top: 4rpx;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.14) 0%, rgba(0, 0, 0, 0.04) 100%);
+  border-radius: 1rpx;
+}
+
+.sk-em-tl-main {
+  flex: 1;
+  min-width: 0;
+  padding: 0 4rpx 8rpx 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.sk-em-avatar-col {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(4, 42rpx);
+  gap: 5rpx;
+  align-content: start;
+  padding: 8rpx 8rpx 8rpx 0;
+  box-sizing: border-box;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.78) 72rpx,
+    rgba(255, 255, 255, 0.94) 100%
+  );
+}
+
+.sk-em-avatar {
+  width: 42rpx;
+  height: 42rpx;
+  border-radius: 50%;
+  background: #eceef2;
+}
+
+.sk-em-timeline-mask {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 90%;
+  bottom: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.88) 60%,
+    #ffffff 100%
+  );
+}
+
+/* 灰色占位条 */
+.sk-em-bar {
+  border-radius: 8rpx;
+  background: linear-gradient(90deg, #eceef2 25%, #f5f6f8 50%, #eceef2 75%);
+  background-size: 200% 100%;
+  animation: skEmShimmer 1.2s ease-in-out infinite;
+}
+
+.sk-em-bar--xs {
+  width: 44rpx;
+  height: 18rpx;
+}
+
+.sk-em-bar--sm {
+  width: 52rpx;
+  height: 20rpx;
+}
+
+.sk-em-bar--md {
+  width: 48%;
+  height: 24rpx;
+}
+
+.sk-em-bar--lg {
+  width: 72%;
+  height: 20rpx;
+}
+
+.sk-em-bar--label {
+  width: 96rpx;
+  height: 28rpx;
+}
+
+.sk-em-bar--value {
+  width: 55%;
+  height: 24rpx;
+  margin-top: 12rpx;
+}
+
+.sk-em-bar--line {
   width: 100%;
-  min-height: 100vh;
-  background-color: #f7f8fa;
+  height: 24rpx;
+  margin-bottom: 12rpx;
+}
+
+.sk-em-bar--short {
+  width: 60%;
+}
+
+@keyframes skEmShimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* —— 2×2 元信息 —— */
+.sk-em-meta-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
+}
+
+.sk-em-meta-cell {
+  width: calc((100% - 12rpx) / 2);
+  flex: 0 0 calc((100% - 12rpx) / 2);
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.sk-em-meta-card {
+  height: 100rpx;
+  padding: 18rpx 20rpx;
+  background: #fff;
+  border: 1rpx solid #e5e7eb;
+  border-radius: 16rpx;
+  box-sizing: border-box;
+}
+
+/* —— 双列面板（300rpx） —— */
+.sk-em-split {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+  justify-content: space-between;
+}
+
+.sk-em-panel {
+  flex: 1;
+  min-width: 0;
+  max-width: calc((100% - 16rpx) / 2);
+  height: 300rpx;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1rpx solid #e5e7eb;
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.sk-em-panel--wide {
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 16rpx;
+}
+
+.sk-em-panel-hd {
+  flex-shrink: 0;
+  padding: 16rpx 16rpx 10rpx;
+}
+
+.sk-em-panel-body {
+  flex: 1;
+  min-height: 0;
+  margin: 0 16rpx 16rpx;
+  border-radius: 12rpx;
+  background: #eceef2;
+}
+
+.sk-em-panel-body--lines {
+  background: #fff;
+  padding: 8rpx 0 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sk-em-panel-body--moment {
+  background: #fff;
+  display: flex;
+  flex-direction: row;
+  gap: 12rpx;
+  padding: 0;
+}
+
+.sk-em-thumb {
+  width: 120rpx;
+  height: 120rpx;
+  flex-shrink: 0;
+  border-radius: 12rpx;
+  background: #eceef2;
+}
+
+.sk-em-moment-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-top: 8rpx;
+}
+
+.sk-em-footer-space {
+  height: 280rpx;
+}
+
+/* —— 底部三按钮 —— */
+.sk-em-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(50rpx + var(--tab-bar-visual-gap, 0rpx));
+  z-index: 10;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  padding: 12rpx 24rpx;
+  padding-bottom: calc(12rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(247, 248, 250, 0.88) 45%, rgba(247, 248, 250, 0.98) 100%);
+  pointer-events: none;
+}
+
+.sk-em-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 72rpx;
+  border-radius: 999rpx;
+  background: #eceef2;
+}
+
+.sk-em-btn--primary {
+  background: #d8dce3;
+}
+
+.sk-em-btn--light {
+  background: #e8ebf0;
+}
+
+.sk-em-btn--outline {
+  background: #fff;
+  border: 2rpx solid #e5e7eb;
+  box-sizing: border-box;
 }

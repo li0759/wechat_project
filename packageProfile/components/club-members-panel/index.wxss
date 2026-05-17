@@ -1,6 +1,16 @@
 /* pages/profile/club-members/index.wxss — 勿用 .container：与 profile 页根节点同名且 styleIsolation:shared 会污染整页导致关弹窗后白屏 */
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+}
+
 .cmp-panel-root {
   /* 全屏弹层内勿用 100vh：比 sheet 可视区更高会产生「外层滚 + 列表滚」双滚动条 */
+  flex: 1;
   height: 100%;
   min-height: 0;
   max-height: 100%;
@@ -405,7 +415,7 @@
   text-align: center;
 }
 
-.current-user-tip text {
+.current-user-tip-text {
   font-size: 24rpx;
   color: #999999;
 }

@@ -1,3 +1,4 @@
+<view class="cap-app-panel-host">
 <view class="tl-modal-root cap-tl-root">
   <view class="tl-modal-header">
     <text class="tl-modal-h-title">入会审批</text>
@@ -122,3 +123,4 @@
     />
   </view>
 </t-dialog>
+</view>

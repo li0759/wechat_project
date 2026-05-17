@@ -17,7 +17,6 @@ Component({
   },
 
   data: {
-    clubId: null,
     members: [],
     filteredMembers: [],
     memberListTab: '0',

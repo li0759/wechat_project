@@ -1,4 +1,4 @@
-﻿<view class="event-joind-panel">
+<view class="event-joind-panel">
   <!-- 灰色蒙层 - 当活动被取消或协会被删除时显示 -->
   <view wx:if="{{featuredEvent && (featuredEvent.is_cancelled || featuredEvent.club_deleted)}}" class="disabled-overlay">
     <view class="disabled-overlay-content">
@@ -15,7 +15,6 @@
     <!-- 选项卡（恢复 t-tabs） -->
     <t-tabs
       class="joined-tabs-host"
-      animation="{{ { duration: 0.6 } }}"
       value="{{currentTab}}"
       bind:change="onTabChange"
       swipeable="{{true}}"

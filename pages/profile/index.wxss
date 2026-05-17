@@ -438,6 +438,8 @@ page {
   border-radius: 30rpx 30rpx 0 0;
   overflow: hidden;
   background: #f7f8fa;
+  display: flex;
+  flex-direction: column;
   /* 本页为 Tab 页：底栏需整体上移，避开 custom-tab-bar（变量供各 panel 内 .bottom-actions 继承） */
   --tab-bar-visual-gap: 64rpx;
 }

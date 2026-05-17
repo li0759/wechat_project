@@ -1,5 +1,387 @@
-.popup-skeleton {
+/* 已参加活动骨架：尺寸对齐 event-joined-panel；地图区复用 animated-map 边缘渐变（灰底） */
+
+.sk-ej-root {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: #fff;
+  box-sizing: border-box;
+  --tab-bar-visual-gap: 120rpx;
+}
+
+/* —— t-tabs —— */
+.sk-ej-tabs {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: row;
   width: 100%;
-  min-height: 100vh;
-  background-color: #f7f8fa;
+  background: #fff;
+  border-bottom: 1rpx solid #eceef2;
+}
+
+.sk-ej-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24rpx 0 20rpx;
+  box-sizing: border-box;
+}
+
+.sk-ej-tab-text {
+  font-size: 28rpx;
+  line-height: 44rpx;
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.sk-ej-tab-text--active {
+  color: rgba(0, 0, 0, 0.55);
+  font-weight: 600;
+  position: relative;
+}
+
+.sk-ej-tab--active::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 8rpx;
+  width: 32rpx;
+  height: 6rpx;
+  margin-left: -16rpx;
+  border-radius: 3rpx;
+  background: #d1d5db;
+}
+
+.sk-ej-tab {
+  position: relative;
+}
+
+.sk-ej-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: #fff;
+}
+
+/* .main-scroll */
+.sk-ej-scroll {
+  height: 100%;
+  padding: 0 20rpx;
+  padding-bottom: 24rpx;
+  box-sizing: border-box;
+}
+
+/* .step-content：全透明，地图 + 渐隐在 hero 区可见；白底仅 steps-panel */
+.sk-ej-step-content {
+  position: relative;
+  overflow: hidden;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  border-radius: 0 0 24rpx 24rpx;
+  background: transparent;
+  box-sizing: border-box;
+  min-height: calc(100% - 24rpx);
+}
+
+/* .timeline-map-bg：绝对定位底层 */
+.sk-ej-map-bg {
+  position: absolute;
+  top: -50rpx;
+  right: -200rpx;
+  z-index: 0;
+  opacity: 0.8;
+  pointer-events: none;
+  width: 900rpx;
+  height: 600rpx;
+  overflow: hidden;
+}
+
+/* 灰底代替地图瓦片 */
+.sk-ej-map-stack {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #d8dce3 0%, #e4e7ec 45%, #cdd2d9 100%);
+}
+
+/* 与 components/animated-map/index.wxss 三层淡出一致 */
+.sk-ej-map-fade {
+  position: absolute;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.sk-ej-map-fade--left {
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 250rpx;
+  z-index: 3;
+  background: linear-gradient(
+    90deg,
+    rgb(255, 255, 255) 0%,
+    rgba(248, 248, 248, 0.85) 35%,
+    rgba(248, 248, 248, 0.4) 70%,
+    rgba(248, 248, 248, 0) 100%
+  );
+}
+
+.sk-ej-map-fade--bottom {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 250rpx;
+  z-index: 3;
+  background: linear-gradient(
+    0deg,
+    rgb(255, 255, 255) 0%,
+    rgba(248, 248, 248, 0.85) 35%,
+    rgba(248, 248, 248, 0.4) 70%,
+    rgba(248, 248, 248, 0) 100%
+  );
+}
+
+.sk-ej-map-fade--corner {
+  left: -60rpx;
+  bottom: -60rpx;
+  width: 400rpx;
+  height: 400rpx;
+  z-index: 4;
+  background: radial-gradient(
+    closest-side,
+    rgb(255, 255, 255) 0%,
+    rgba(248, 248, 248, 0.85) 45%,
+    rgba(248, 248, 248, 0.35) 75%,
+    rgba(248, 248, 248, 0) 100%
+  );
+}
+
+.sk-ej-card {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 12rpx;
+}
+
+/* .info-card.steps-card：透明外壳，不挡地图渐变 */
+.sk-ej-info-card {
+  background: transparent;
+  border-radius: 0;
+  padding: 16rpx;
+  box-shadow: none;
+  box-sizing: border-box;
+}
+
+/* .timeline-hero：透明，直接叠在地图 + 渐隐上 */
+.sk-ej-hero {
+  height: 200rpx;
+  box-sizing: border-box;
+  padding: 24rpx 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10rpx;
+  background: transparent;
+  position: relative;
+  z-index: 1;
+}
+
+/* 活动进度区：透明底，不挡底层地图渐变（骨架条自身仍为灰色） */
+.sk-ej-steps-panel {
+  position: relative;
+  z-index: 1;
+  margin-top: 0;
+  padding: 16rpx 0;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  box-sizing: border-box;
+}
+
+.sk-ej-hero-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8rpx;
+  min-width: 0;
+}
+
+.sk-ej-hero-icon {
+  width: 20rpx;
+  height: 20rpx;
+  flex-shrink: 0;
+  border-radius: 4rpx;
+  background: #eceef2;
+}
+
+/* .card-title */
+.sk-ej-card-title {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: 24rpx;
+  padding-left: 8rpx;
+  gap: 8rpx;
+}
+
+.sk-ej-card-title-accent {
+  width: 6rpx;
+  height: 32rpx;
+  border-radius: 3rpx;
+  background: #d1d5db;
+  flex-shrink: 0;
+}
+
+/* 骨架条 */
+.sk-ej-bar {
+  border-radius: 6rpx;
+  background: linear-gradient(90deg, #eceef2 25%, #f5f6f8 50%, #eceef2 75%);
+  background-size: 200% 100%;
+  animation: skEjShimmer 1.2s ease-in-out infinite;
+}
+
+.sk-ej-bar--title {
+  width: 68%;
+  height: 42rpx;
+}
+
+.sk-ej-bar--hero-sub {
+  flex: 1;
+  min-width: 0;
+  height: 26rpx;
+  max-width: 320rpx;
+}
+
+.sk-ej-bar--hero-sub-short {
+  max-width: 200rpx;
+}
+
+.sk-ej-bar--section {
+  width: 128rpx;
+  height: 32rpx;
+}
+
+.sk-ej-bar--step-title {
+  width: 120rpx;
+  height: 28rpx;
+}
+
+.sk-ej-bar--step-desc {
+  width: 72%;
+  height: 24rpx;
+  margin-top: 8rpx;
+}
+
+.sk-ej-bar--step-desc-wide {
+  width: 88%;
+}
+
+.sk-ej-bar--step-extra {
+  width: 55%;
+  height: 56rpx;
+  margin-top: 12rpx;
+}
+
+@keyframes skEjShimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* 对齐 t-steps layout=vertical */
+.sk-ej-steps {
+  display: flex;
+  flex-direction: column;
+}
+
+.sk-ej-step-item {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.sk-ej-step-anchor {
+  position: relative;
+  width: 44rpx;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sk-ej-step-circle {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background: #e2e5ea;
+  flex-shrink: 0;
+}
+
+.sk-ej-step-line {
+  position: absolute;
+  left: 50%;
+  top: 60rpx;
+  bottom: -16rpx;
+  width: 1rpx;
+  transform: translateX(-50%);
+  background: #dcdcdc;
+}
+
+.sk-ej-step-content-col {
+  flex: 1;
+  min-width: 0;
+  margin-left: 16rpx;
+  padding-bottom: 32rpx;
+  box-sizing: border-box;
+}
+
+.sk-ej-step-item--last .sk-ej-step-content-col {
+  padding-bottom: 0;
+}
+
+.sk-ej-step-item--tall .sk-ej-step-content-col {
+  min-height: 100rpx;
+}
+
+.sk-ej-step-extra {
+  margin-top: 16rpx;
+}
+
+.sk-ej-footer-space {
+  position: relative;
+  z-index: 1;
+  height: 160rpx;
+}
+
+.sk-ej-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(50rpx + var(--tab-bar-visual-gap, 0rpx));
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  padding: 12rpx 24rpx;
+  padding-bottom: calc(12rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(247, 248, 250, 0.88) 45%,
+    rgba(247, 248, 250, 0.98) 100%
+  );
+  pointer-events: none;
+}
+
+.sk-ej-btn-share {
+  width: 420rpx;
+  max-width: 100%;
+  height: 80rpx;
+  border-radius: 999rpx;
+  background: #d8dce3;
 }

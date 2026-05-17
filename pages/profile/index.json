@@ -43,7 +43,7 @@
     "event-create-panel": "event-create-skeleton",
     "club-manage-panel": "club-manage-skeleton",
     "event-manage-panel": "event-manage-skeleton",
-    "event-joined-panel": "event-manage-skeleton",
+    "event-joined-panel": "event-joined-skeleton",
     "club-members-panel": "club-members-skeleton",
     "events-panel": "events-skeleton",
     "clubs-panel": "clubs-skeleton",

@@ -1,38 +1,117 @@
-<view class="popup-skeleton">
-  <!-- 标题行 -->
-  <view style="padding: 20rpx 30rpx;">
-    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '100rpx', borderRadius: '16rpx' }]}}" />
+<!-- 活动管理骨架：对齐 event-manage-panel 大框架 -->
+<view class="sk-em-root">
+  <view class="sk-em-scroll">
+    <view class="sk-em-rows">
+      <!-- 顶部：活动状态 + 时间线预览 -->
+      <view class="sk-em-timeline">
+        <view class="sk-em-timeline-hd">
+          <t-skeleton
+            animation="gradient"
+            rowCol="{{[{ width: '160rpx', height: '32rpx', borderRadius: '8rpx' }]}}"
+          />
+          <t-skeleton
+            animation="gradient"
+            rowCol="{{[{ width: '88rpx', height: '36rpx', borderRadius: '999rpx' }]}}"
+          />
+        </view>
+        <view class="sk-em-timeline-body">
+          <view
+            class="sk-em-tl-row"
+            wx:for="{{timelineRows}}"
+            wx:key="index"
+            wx:for-index="idx"
+          >
+            <view class="sk-em-tl-left">
+              <view class="sk-em-bar sk-em-bar--sm"></view>
+              <view class="sk-em-bar sk-em-bar--xs"></view>
+            </view>
+            <view class="sk-em-tl-rail">
+              <view class="sk-em-dot"></view>
+              <view class="sk-em-vline" wx:if="{{idx < timelineRows.length - 1}}"></view>
+            </view>
+            <view class="sk-em-tl-main">
+              <view class="sk-em-bar sk-em-bar--md"></view>
+              <view class="sk-em-bar sk-em-bar--lg"></view>
+            </view>
+          </view>
+          <view class="sk-em-avatar-col">
+            <view class="sk-em-avatar" wx:for="{{avatarDots}}" wx:key="*this"></view>
+          </view>
+        </view>
+        <view class="sk-em-timeline-mask"></view>
+      </view>
+
+      <!-- 标题 / 简介 / 预计开始·结束：2×2 -->
+      <view class="sk-em-meta-grid">
+        <view class="sk-em-meta-cell" wx:for="{{metaCells}}" wx:key="index">
+          <view class="sk-em-meta-card">
+            <view class="sk-em-bar sk-em-bar--label"></view>
+            <view class="sk-em-bar sk-em-bar--value"></view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 封面 + 地址 -->
+      <view class="sk-em-split">
+        <view class="sk-em-panel sk-em-panel--tall">
+          <view class="sk-em-panel-hd">
+            <view class="sk-em-bar sk-em-bar--label"></view>
+          </view>
+          <view class="sk-em-panel-body"></view>
+        </view>
+        <view class="sk-em-panel sk-em-panel--tall">
+          <view class="sk-em-panel-hd">
+            <view class="sk-em-bar sk-em-bar--label"></view>
+          </view>
+          <view class="sk-em-panel-body"></view>
+        </view>
+      </view>
+
+      <!-- 活动人员 + 动态 -->
+      <view class="sk-em-split">
+        <view class="sk-em-panel sk-em-panel--tall">
+          <view class="sk-em-panel-hd">
+            <view class="sk-em-bar sk-em-bar--label"></view>
+          </view>
+          <view class="sk-em-panel-body sk-em-panel-body--lines">
+            <view class="sk-em-bar sk-em-bar--line"></view>
+            <view class="sk-em-bar sk-em-bar--line"></view>
+            <view class="sk-em-bar sk-em-bar--line sk-em-bar--short"></view>
+          </view>
+        </view>
+        <view class="sk-em-panel sk-em-panel--tall">
+          <view class="sk-em-panel-hd">
+            <view class="sk-em-bar sk-em-bar--label"></view>
+          </view>
+          <view class="sk-em-panel-body sk-em-panel-body--moment">
+            <view class="sk-em-thumb"></view>
+            <view class="sk-em-moment-text">
+              <view class="sk-em-bar sk-em-bar--line"></view>
+              <view class="sk-em-bar sk-em-bar--line sk-em-bar--short"></view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 日程管理（通栏） -->
+      <view class="sk-em-panel sk-em-panel--wide sk-em-panel--tall">
+        <view class="sk-em-panel-hd">
+          <view class="sk-em-bar sk-em-bar--label"></view>
+        </view>
+        <view class="sk-em-panel-body sk-em-panel-body--lines">
+          <view class="sk-em-bar sk-em-bar--line"></view>
+          <view class="sk-em-bar sk-em-bar--line sk-em-bar--short"></view>
+        </view>
+      </view>
+
+      <view class="sk-em-footer-space" />
+    </view>
   </view>
-  <!-- 简介行 -->
-  <view style="padding: 0 30rpx 20rpx;">
-    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '120rpx', borderRadius: '16rpx' }]}}" />
-  </view>
-  <!-- 预计开始/结束行 -->
-  <view style="padding: 0 30rpx 20rpx;">
-    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '100rpx', borderRadius: '16rpx' }]}}" />
-  </view>
-  <view style="padding: 0 30rpx 20rpx;">
-    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '100rpx', borderRadius: '16rpx' }]}}" />
-  </view>
-  <!-- 实际开始/结束文本行 -->
-  <view style="padding: 0 30rpx 16rpx;">
-    <t-skeleton animation="gradient" rowCol="{{[{ width: '200rpx', height: '40rpx' }]}}" />
-  </view>
-  <view style="padding: 0 30rpx 20rpx;">
-    <t-skeleton animation="gradient" rowCol="{{[{ width: '200rpx', height: '40rpx' }]}}" />
-  </view>
-  <!-- 封面+地址 双卡片 -->
-  <view style="padding: 0 30rpx 20rpx; display: flex; gap: 20rpx;">
-    <t-skeleton animation="gradient" rowCol="{{[{ width: '335rpx', height: '300rpx', borderRadius: '16rpx' }]}}" />
-    <t-skeleton animation="gradient" rowCol="{{[{ width: '335rpx', height: '300rpx', borderRadius: '16rpx' }]}}" />
-  </view>
-  <!-- 日程管理卡片 -->
-  <view style="padding: 0 30rpx 20rpx;">
-    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '300rpx', borderRadius: '16rpx' }]}}" />
-  </view>
-  <!-- 活动人员+动态 双卡片 -->
-  <view style="padding: 0 30rpx 20rpx; display: flex; gap: 20rpx;">
-    <t-skeleton animation="gradient" rowCol="{{[{ width: '335rpx', height: '300rpx', borderRadius: '16rpx' }]}}" />
-    <t-skeleton animation="gradient" rowCol="{{[{ width: '335rpx', height: '300rpx', borderRadius: '16rpx' }]}}" />
+
+  <!-- 底部三按钮 -->
+  <view class="sk-em-bottom">
+    <view class="sk-em-btn sk-em-btn--primary"></view>
+    <view class="sk-em-btn sk-em-btn--light"></view>
+    <view class="sk-em-btn sk-em-btn--outline"></view>
   </view>
 </view>
