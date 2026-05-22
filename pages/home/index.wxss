@@ -1,3 +1,5 @@
+@import "../../styles/clockin-signature-overlay.wxss";
+
 /* 与 drawer 分离的全屏宿主（仅结构层，子组件内仍用 fixed 超高 z-index） */
 .home-outer {
   display: block;
@@ -46,6 +48,7 @@
 .drawer-main {
   width: 750rpx;
   height: 100vh;
+  padding-top: 30rpx;
   background: #f7f8fa;
   flex-shrink: 0;
   overflow: hidden;
@@ -420,7 +423,7 @@
   display: flex;
   flex-direction: row;
   position: relative;
-  height: 80rpx;
+  height: 60rpx;
   background-color: #ffffff;
   border-bottom: 1rpx solid #f0f0f0;
 }
@@ -558,7 +561,7 @@ t-grid,
   height: 0;
   background-color: #f0f2f5;
   border-radius: 8rpx 8rpx 0 0;
-  margin-bottom: 2rpx;
+  margin-bottom: 0;
 }
 
 .card-image {
@@ -594,7 +597,7 @@ t-grid,
 
 /* 卡片内容区域 */
 .card-content {
-  padding: 60rpx 10rpx 8rpx;
+  padding: 8rpx 10rpx 8rpx;
   overflow: hidden;
 }
 
@@ -749,11 +752,11 @@ t-grid,
 
 /* 热门活动轮播区域 */
 .hot-events-container {
-  padding: 20rpx;
+  padding: 5rpx 20rpx 5rpx 20rpx;
 }
 
 .hot-events-swiper {
-  height: 460rpx;
+  height: 420rpx;
   border-radius: 16rpx;
   overflow: hidden;
   box-shadow: 0 2rpx 16rpx rgba(0, 0, 0, 0.1);
@@ -775,7 +778,7 @@ t-grid,
   flex-direction: column;
   height: 100%;
   position: relative;
-  padding: 15rpx;
+  padding: 10rpx;
 }
 
 /* 热门活动地图背景 */
@@ -990,11 +993,11 @@ t-grid,
 
 /* 热门协会轮播区域 - 海报式设计 */
 .hot-clubs-container {
-  padding: 20rpx;
+  padding: 5rpx 20rpx 5rpx 20rpx;
 }
 
 .hot-clubs-swiper {
-  height: 460rpx;
+  height: 420rpx;
   overflow: hidden;
   border-radius: 20rpx;
 }
@@ -1011,7 +1014,7 @@ t-grid,
 /* 热门协会触发器 */
 .hot-club-trigger {
   width: 100%;
-  height: 450rpx;
+  height: 420rpx;
   position: relative;
   overflow: hidden;
   border-radius: 20rpx;
@@ -1033,8 +1036,8 @@ t-grid,
   left: 0;
   width: 100%;
   height: 450rpx;
-  background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(5rpx);
+  background: rgba(73, 59, 69, 0.1);
+  backdrop-filter: blur(2rpx);
   z-index: 3;
 }
 

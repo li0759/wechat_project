@@ -333,6 +333,16 @@ Component({
       return 0;
     },
 
+    /** 从 properties.items 取当前展示分组（支持二维分组） */
+    _itemsForActiveGroup(raw) {
+      if (!Array.isArray(raw) || !raw.length) return [];
+      if (Array.isArray(raw[0])) {
+        const gi = this.data.activeGroupIndex || 0;
+        return raw[gi] || [];
+      }
+      return raw;
+    },
+
     /**
      * items 改变时重新初始化
      */
@@ -344,7 +354,7 @@ Component({
       
       // 如果已经?itemsWithPosition，且?items 只是数量变化（可能是动态添加删除），
       // 则只同步数据，不重新初始化，避免全部飞出
-    const newItems = Array.isArray(newVal) ? newVal : [];
+    const newItems = this._itemsForActiveGroup(newVal);
       const currentItems = this.data.itemsWithPosition || [];
       
       // 如果当前?items，且?items 数量相同，检查是否只是属性变数
@@ -356,26 +366,41 @@ Component({
     const idsMatch = currentIds.size === newIds.size && 
                          Array.from(currentIds).every(id => newIds.has(id));
         
-        if (idsMatch) {          // 更新现有 items 的属性，保持位置信息
-    const updatedItems = currentItems.map(currentItem => {
-            const newItem = newItems.find(ni => String(ni.id) === String(currentItem.id));
+        if (idsMatch) {
+          const newOrder = newItems.map((i) => String(i.id)).join(',');
+          const curOrder = currentItems.map((i) => String(i.id)).join(',');
+          if (newOrder !== curOrder) {
+            this.initializeItems();
+            return;
+          }
+          // 更新现有 items 的属性，保持位置与已算好的 masonry 尺寸
+          const updatedItems = currentItems.map((currentItem) => {
+            const newItem = newItems.find((ni) => String(ni.id) === String(currentItem.id));
             if (newItem) {
-              // 保留位置信息，更新其他属性
-  return {
+              const imageChanged = !!newItem.image && newItem.image !== currentItem.image;
+              return {
                 ...currentItem,
                 ...newItem,
                 x: currentItem.x,
                 y: currentItem.y,
-                loaded: currentItem.loaded,
-                opacity: currentItem.opacity,
+                width: imageChanged ? (newItem.ini_width || currentItem.width) : currentItem.width,
+                height: imageChanged ? (newItem.ini_height || currentItem.height) : currentItem.height,
+                loaded: imageChanged ? false : currentItem.loaded,
+                opacity: imageChanged ? 0 : currentItem.opacity,
+                actualWidth: imageChanged ? null : currentItem.actualWidth,
+                actualHeight: imageChanged ? null : currentItem.actualHeight,
                 translateX: currentItem.translateX,
                 translateY: currentItem.translateY
               };
             }
             return currentItem;
           });
-          
-          this.setData({ itemsWithPosition: updatedItems });
+
+          this.setData({ itemsWithPosition: updatedItems }, () => {
+            if (updatedItems.some((it) => it.image && !it.loaded)) {
+              this._syncImageSizesFromCache();
+            }
+          });
           return;
         }
       }
@@ -527,7 +552,8 @@ Component({
       }, () => {
         this.resetLayout();
         this.layoutItems();
-        
+        this._syncImageSizesFromCache();
+
         // 触发高度变化事件
     if (this.properties.autoHeight) {
           this.triggerEvent('heightChange', {
@@ -585,6 +611,20 @@ Component({
       this.groupTimer = setTimeout(() => {
         this.handleGroupTransition();
       }, interval);
+    },
+
+    /** 外部调用：从第一组重新开始分组轮播（swiper 切换等场景） */
+    restartGroupCarousel() {
+      this.clearGroupTimer();
+      const groupedItems = this.data.groupedItems || [];
+      if (!this.data.isGroupMode || groupedItems.length <= 1) {
+        if (groupedItems.length === 1) {
+          this.loadGroupItems(0, false);
+        }
+        return;
+      }
+      this.loadGroupItems(0, false);
+      this.startGroupTimer();
     },
 
     /**
@@ -872,6 +912,61 @@ Component({
     },
 
     /**
+     * 缓存图可能不触发 bindload，用 getImageInfo 补算 masonry 宽高
+     */
+    _syncImageSizesFromCache() {
+      if (this.properties.useCustomSlot) return;
+      const layoutMode = this.properties.layoutMode || 'masonryHorizontal';
+      if (layoutMode === 'fitRows') return;
+
+      const items = this.data.itemsWithPosition || [];
+      items.forEach((item, index) => {
+        if (!item.image) return;
+        wx.getImageInfo({
+          src: item.image,
+          success: (res) => {
+            const cur = this.data.itemsWithPosition?.[index];
+            if (!cur || String(cur.id) !== String(item.id)) return;
+            if (cur.loaded && cur.width && cur.width !== cur.ini_width) return;
+            this._applyMasonryImageSize(index, res.width, res.height);
+          }
+        });
+      });
+    },
+
+    _applyMasonryImageSize(index, imgWidth, imgHeight) {
+      const item = this.data.itemsWithPosition[index];
+      if (!item) return;
+
+      let actualWidth = item.ini_width;
+      let actualHeight = item.ini_height;
+      if (imgWidth && imgHeight) {
+        actualWidth = actualHeight * (imgWidth / imgHeight);
+      }
+
+      const itemsWithPosition = [...this.data.itemsWithPosition];
+      itemsWithPosition[index] = {
+        ...item,
+        width: actualWidth,
+        height: actualHeight,
+        actualWidth: imgWidth,
+        actualHeight: imgHeight,
+        loaded: true,
+        opacity: 1,
+        translateX: 0,
+        translateY: 0
+      };
+
+      this.setData({
+        itemsWithPosition,
+        loadedCount: this.data.loadedCount + 1
+      }, () => {
+        this.resetLayout();
+        this.layoutItems();
+      });
+    },
+
+    /**
      * 图片加载成功
      */
     onImageLoad(e) {
@@ -897,35 +992,7 @@ Component({
         return;
       }
 
-      // masonryHorizontal 模式：根据图片实际宽高比调整宽度并重新布局
-    const itemsWithPosition = [...this.data.itemsWithPosition];
-      let actualWidth = item.ini_width;
-      let actualHeight = item.ini_height;
-
-      if (imgWidth && imgHeight) {
-        const aspectRatio = imgWidth / imgHeight;
-        actualWidth = actualHeight * aspectRatio;
-      }
-
-      itemsWithPosition[index] = {
-        ...item,
-        width: actualWidth,
-        height: actualHeight,
-        actualWidth: imgWidth,
-        actualHeight: imgHeight,
-        loaded: true,
-        opacity: 1,
-        translateX: 0,
-        translateY: 0
-      };
-
-      this.setData({
-        itemsWithPosition,
-        loadedCount: this.data.loadedCount + 1
-      });
-
-      this.resetLayout();
-      this.layoutItems();
+      this._applyMasonryImageSize(index, imgWidth, imgHeight);
     },
 
     /**

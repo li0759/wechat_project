@@ -527,6 +527,42 @@
   white-space: nowrap;
 }
 
+/* 协会海报预览 */
+.panel-post {
+  width: 100%;
+  height: 500rpx;
+  box-sizing: border-box;
+  margin-bottom: 20rpx;
+}
+
+.post-preview-box {
+  flex: 1;
+  min-height: 0;
+  margin-top: 12rpx;
+  border-radius: 12rpx;
+  background: var(--md-sys-color-surface-variant);
+  overflow: hidden;
+}
+
+.post-isotope-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 12rpx;
+  overflow: hidden;
+}
+
+.post-thumb-empty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  color: #999;
+  font-size: 26rpx;
+}
+
 /* cover */
 .cover-preview {
   flex: 1;

@@ -31,7 +31,9 @@
     shellEventId: { type: String, value: '' },
     shellClubId: { type: String, value: '' },
     /** 是否显示左上角全屏返回（嵌套全屏时可由宿主关掉，避免与内层返回叠在一起） */
-    showFullscreenBack: { type: Boolean, value: true }
+    showFullscreenBack: { type: Boolean, value: true },
+    /** 展开完成后将宿主 panel 置为空白；收起结束后骨架屏并重载（需宿主实现 suspendContentToBlank / resumeContentWithSkeletonReload） */
+    clearParent: { type: Boolean, value: false }
   },
 
   data: {
@@ -76,10 +78,71 @@
         this.__expandTo3 = null
       }
       this.unregisterGlobalFullscreenCloser()
+      this._restoreClearParentHostIfNeeded()
     }
   },
 
   methods: {
+    /** 向上查找实现了 suspendContentToBlank 的宿主 panel */
+    _findClearParentHost() {
+      let node = this.selectOwnerComponent()
+      while (node) {
+        if (
+          typeof node.suspendContentToBlank === 'function' &&
+          typeof node.resumeContentWithSkeletonReload === 'function'
+        ) {
+          return node
+        }
+        node = typeof node.selectOwnerComponent === 'function' ? node.selectOwnerComponent() : null
+      }
+      return null
+    },
+
+    _applyClearParentOnExpandSettled() {
+      if (!this.properties.clearParent) return
+      const host = this._findClearParentHost()
+      if (!host) return
+      try {
+        host.suspendContentToBlank()
+      } catch (e) {}
+      this.__didClearParent = true
+      this.__clearParentHost = host
+      this.__parentRestoreDone = false
+    },
+
+    _resetClearParentHostFallback(host) {
+      if (!host || typeof host.setData !== 'function') return
+      try {
+        host.setData({ contentSuspended: false, contentSuspendMode: '' })
+      } catch (e) {}
+    },
+
+    _restoreClearParentHostIfNeeded() {
+      if (this.__parentRestoreDone) return
+      if (!this.__didClearParent) return
+
+      const host = this.__clearParentHost || this._findClearParentHost()
+      this.__didClearParent = false
+      this.__clearParentHost = null
+      this.__parentRestoreDone = true
+
+      if (!host) return
+
+      if (typeof host.resumeContentWithSkeletonReload !== 'function') {
+        this._resetClearParentHostFallback(host)
+        return
+      }
+
+      try {
+        const ret = host.resumeContentWithSkeletonReload()
+        if (ret && typeof ret.then === 'function') {
+          ret.catch(() => this._resetClearParentHostFallback(host))
+        }
+      } catch (e) {
+        this._resetClearParentHostFallback(host)
+      }
+    },
+
     // ---------- 可展开栈 / 系统返回与遮罩 ----------
     getGlobalData() {
       try {
@@ -466,6 +529,7 @@
           this.__expandTo3 = setTimeout(() => {
             if (runId !== this.__expandRunId) return
             this.setData({ fsContentClass: 'fs-entered' })
+            this._applyClearParentOnExpandSettled()
             this.triggerEvent('expandsettled', {})
           }, slideDur + 30)
         }, Math.floor(dur * 0.7))
@@ -498,6 +562,7 @@
       try {
         this.removeFromStack()
       } catch (e) {}
+      this._restoreClearParentHostIfNeeded()
       this.setData({
         isExpanding: false,
         isExpanded: false,
@@ -517,6 +582,9 @@
       }
       if (!this.data.isExpanded) return
       if (this.data.fsGestureDismissing) return
+
+      // 收起开始即恢复父级（避免动画结束/手势收起漏调导致父级一直空白）
+      this._restoreClearParentHostIfNeeded()
 
       this.__expandRunId = (this.__expandRunId || 0) + 1
       if (this.__expandTo1) {
@@ -555,6 +623,7 @@
         const animDur = this.playCollapseRippleShrink(dur)
         setTimeout(() => {
           this.setData({ rippleVisible: false, rippleStyle: '' })
+          this._restoreClearParentHostIfNeeded()
           this.triggerEvent('collapsed', {})
         }, animDur + 20)
       }, Math.floor(slideDur * 0.7))
@@ -680,6 +749,7 @@
 
     gestureDismissFullscreen() {
       if (!this.data.isExpanded || this.data.fsGestureDismissing) return
+      this._restoreClearParentHostIfNeeded()
       const dur = Number(this.properties.animationDuration || 300)
       const slideDur = 220
       let windowHeight = 667

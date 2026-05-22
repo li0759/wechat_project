@@ -12,6 +12,7 @@
     "t-loading": "tdesign-miniprogram/loading/loading",
     "t-upload": "tdesign-miniprogram/upload/upload",
     "t-popup": "tdesign-miniprogram/popup/popup",
+    "signature-pad": "/components/signature-pad/index",
     "t-image-viewer": "tdesign-miniprogram/image-viewer/image-viewer",
     "ripple": "/components/ripple/index",
     "animated-map": "/components/animated-map/index"

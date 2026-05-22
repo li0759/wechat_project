@@ -1,0 +1,62 @@
+<view class="post-panel {{editMode ? 'post-panel--edit' : ''}}">
+  <view class="post-panel-header">
+    <text class="post-panel-title">协会海报</text>
+    <view class="post-panel-actions">
+      <text class="post-action-btn {{editMode ? '' : 'post-action-btn--hidden'}}" catchtap="onExitEdit">退出编辑</text>
+    </view>
+  </view>
+
+  <scroll-view
+    class="post-scroll {{editMode ? 'post-scroll--edit' : ''}}"
+    scroll-y="{{true}}"
+    enhanced
+    show-scrollbar="{{false}}"
+  >
+    <view wx:if="{{postList.length > 0}}" class="post-grid">
+      <view
+        wx:for="{{postList}}"
+        wx:key="key"
+        class="post-item {{editMode ? 'post-item--edit' : ''}} {{draggingIndex === index ? 'post-item--dragging' : ''}}"
+        style="{{draggingIndex === index ? dragStyle : ''}}"
+        data-index="{{index}}"
+        bindtouchstart="onItemTouchStart"
+        catchtouchmove="onItemTouchMove"
+        bindtouchend="onItemTouchEnd"
+        bindtouchcancel="onItemTouchEnd"
+        bindtap="onItemTap"
+      >
+        <view class="post-item-inner {{editShaking ? 'post-item-inner--shake' : ''}}">
+          <image
+            class="post-img"
+            src="{{item.displaySrc || item.url}}"
+            mode="aspectFill"
+            lazy-load="{{false}}"
+            show-menu-by-longpress="{{false}}"
+            binderror="onImageError"
+            data-index="{{index}}"
+          />
+          <view
+            class="post-delete-badge {{editMode ? '' : 'post-delete-badge--hidden'}}"
+            catchtap="onDeleteBadge"
+            data-index="{{index}}"
+          >
+            <text class="post-delete-x">×</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view wx:else class="post-empty">
+      <t-empty description="暂无海报，点击右下角添加" />
+    </view>
+  </scroll-view>
+
+  <view class="post-fab {{editMode ? 'post-fab--hidden' : ''}}">
+    <view class="post-fab-btn" bindtap="onAddTap">
+      <t-icon name="add" size="28" color="#fff" />
+    </view>
+  </view>
+
+  <view wx:if="{{saving}}" class="post-saving-mask">
+    <t-loading theme="circular" size="48rpx" text="保存中..." />
+  </view>
+</view>

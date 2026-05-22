@@ -545,8 +545,18 @@ def update_message(event_id):
 
 
 
-# 活动打卡
-@bp.route('/clockin/<int:event_id>', methods=['GET'])
+def _clockin_img_url(event_join):
+    if not event_join or not event_join.clockimgID:
+        return None
+    img = getattr(event_join, 'clock_img', None)
+    if img and img.fileUrl:
+        return img.fileUrl
+    file_rec = File.query.filter_by(fileID=event_join.clockimgID).first()
+    return file_rec.fileUrl if file_rec else None
+
+
+# 活动打卡（POST 需携带签名图 file_id）
+@bp.route('/clockin/<int:event_id>', methods=['GET', 'POST'])
 @jwt_required()
 def clockin(event_id):
     # 权限检查
@@ -557,7 +567,15 @@ def clockin(event_id):
     user_id = get_jwt_identity()
     cur_user = User.query.filter_by(userID=user_id).first()
 
-    event_clockin = Event.query.filter_by(eventID=event_id).first() 
+    event_record = Event.query.filter_by(eventID=event_id).first()
+    if not event_record:
+        return jsonify({'Flag': '4001', 'message': '活动不存在'}), 200
+    if event_record.is_cancelled:
+        return jsonify({'Flag': '4001', 'message': '活动已取消'}), 200
+    if not event_record.actual_startTime:
+        return jsonify({'Flag': '4001', 'message': '活动尚未开始'}), 200
+    if event_record.actual_endTime:
+        return jsonify({'Flag': '4001', 'message': '活动已结束'}), 200
 
     # 查找用户在该活动的参与记录
     event_join = EventJoin.query.filter_by(
@@ -568,13 +586,38 @@ def clockin(event_id):
     if not event_join:
         return jsonify({'Flag': '4001', 'message': '未参加该活动或已退出'}), 200
 
-    # 更新打卡时间
+    clockimg_id = None
+    if request.method == 'POST':
+        payload = request.get_json(silent=True) or {}
+        clockimg_id = payload.get('clockimg_id') or payload.get('clockimgID')
+        try:
+            clockimg_id = int(clockimg_id) if clockimg_id is not None else None
+        except (TypeError, ValueError):
+            clockimg_id = None
+        if not clockimg_id:
+            return jsonify({'Flag': '4001', 'message': '请先完成手写签名'}), 200
+        file_rec = File.query.filter_by(fileID=clockimg_id).first()
+        if not file_rec:
+            return jsonify({'Flag': '4001', 'message': '签名图片不存在'}), 200
+        if file_rec.uploaderID != cur_user.userID:
+            return jsonify({'Flag': '4002', 'message': '签名图片无效'}), 200
+        if file_rec.fileType and not str(file_rec.fileType).startswith('image'):
+            return jsonify({'Flag': '4001', 'message': '签名须为图片文件'}), 200
+        event_join.clockimgID = clockimg_id
+    else:
+        return jsonify({'Flag': '4001', 'message': '请完成手写签名后打卡'}), 200
+
     event_join.clockinDate = datetime.now(ZoneInfo('Asia/Shanghai'))
     db.session.commit()
-    
+
     return jsonify({
-        'Flag':'4000',
+        'Flag': '4000',
         'message': '活动打卡成功',
+        'data': {
+            'clockin_date': event_join.clockinDate.isoformat(),
+            'clockimg_id': event_join.clockimgID,
+            'clockin_img_url': _clockin_img_url(event_join),
+        },
     })
 
 
@@ -767,6 +810,7 @@ def get_event(event_id):
             'cur_user_is_joined': user_join is not None,  # 优化后的加入状态判断
             'cur_user_managed': any(manager.userID == cur_user.userID for manager in event_show.club.managers),
             'cur_user_clockin_date': user_join.clockinDate.isoformat() if user_join and isinstance(user_join.clockinDate, datetime) else (user_join.clockinDate if user_join else None),
+            'cur_user_clockin_img_url': _clockin_img_url(user_join) if user_join else None,
             'is_ended': event_show.actual_endTime is not None,
             'is_cancelled': event_show.is_cancelled,
             'club_deleted': event_show.club.isDelete,  # 保留协会删除状态
@@ -806,6 +850,8 @@ def get_event_members(event_id):
             'avatar': user.avatar.fileUrl if user.avatar else None,
             'join_date': ej.joinDate.isoformat() if ej.joinDate else None,
             'clockin_date': ej.clockinDate.isoformat() if ej.clockinDate else None,
+            'clockin_img_id': ej.clockimgID,
+            'clockin_img_url': _clockin_img_url(ej),
             'is_current_user': user.userID == cur_user.userID,
         }
         members.append(member_info)
@@ -972,6 +1018,8 @@ def get_event_participation(event_id):
             'join_time_display': _fmt(ej.joinDate) or '—',
             'clockin_time': ej.clockinDate.isoformat() if ej.clockinDate else None,
             'clockin_time_display': _fmt(ej.clockinDate) or '未打卡',
+            'clockin_img_id': ej.clockimgID,
+            'clockin_img_url': _clockin_img_url(ej),
             'moment_count': len(user_moments),
             'moments_text': '；'.join(moment_lines) if moment_lines else '无',
             'moments': _serialize_moments(user_moments),

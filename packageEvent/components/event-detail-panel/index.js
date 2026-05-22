@@ -149,12 +149,15 @@ Component({
 
     async resumeContentWithSkeletonReload() {
       this.setData({ contentSuspended: true, contentSuspendMode: 'skeleton' });
-      if (this.data.eventId && this.loadEventData) {
-        try {
+      try {
+        if (this.data.eventId && typeof this.loadEventData === 'function') {
           await this.loadEventData();
-        } catch (e) {}
+        }
+      } catch (e) {
+        console.error('[event-detail-panel] resumeContentWithSkeletonReload failed:', e);
+      } finally {
+        this.setData({ contentSuspended: false, contentSuspendMode: '' });
       }
-      this.setData({ contentSuspended: false, contentSuspendMode: '' });
     },
 
     async processEventData(event) {
@@ -389,10 +392,6 @@ Component({
       });
     },
 
-    onNestedClubDetailExpandSettled() {
-      this.suspendContentToBlank();
-    },
-
     closeNestedClubDetail() {
       const popup = this.selectComponent('#nestedClubDetailPopup');
       if (popup && popup.collapse) popup.collapse();
@@ -403,7 +402,6 @@ Component({
     },
 
     onNestedClubDetailCollapsed() {
-      this.resumeContentWithSkeletonReload();
       setTimeout(() => {
         this.setData({
           nestedClubDetail: {

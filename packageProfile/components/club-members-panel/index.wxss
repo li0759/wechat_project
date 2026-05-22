@@ -212,6 +212,11 @@
   color: #2196f3;
 }
 
+.member-role-chip.exited {
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
 .member-role-chip.member {
   background: rgba(158, 158, 158, 0.15);
   color: #9e9e9e;
@@ -1586,6 +1591,28 @@
 .am-tag-role.director {
   color: #2196f3;
   background: rgba(33, 150, 243, 0.14);
+}
+
+.am-tag-role.exited {
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
+.am-added--exited {
+  color: #6b7280;
+  font-size: 26rpx;
+}
+
+.am-icon-exited {
+  background: transparent !important;
+  width: auto !important;
+  min-width: 0 !important;
+  padding: 0 8rpx !important;
+}
+
+.am-icon-exited-text {
+  font-size: 22rpx;
+  color: #6b7280;
 }
 
 .am-tag-role.member {

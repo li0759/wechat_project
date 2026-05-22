@@ -45,6 +45,14 @@ class EventJoin(db.Model):
     userID = db.Column(db.Integer, db.ForeignKey('user.userID'))
     joinDate = db.Column(db.DateTime, default=datetime.utcnow)
     clockinDate = db.Column(db.DateTime)
+    clockimgID = db.Column(db.Integer, db.ForeignKey('file.fileID'), nullable=True)
+    clock_img = db.relationship(
+        'File',
+        foreign_keys=[clockimgID],
+        backref='clockin_ref_eventjoin',
+        lazy=True,
+        uselist=False,
+    )
     evaluate = db.Column(db.Text)
     rate = db.Column(db.Integer)
     # 用户主动退出活动 / 退出协会时对该协会未结束活动的参与记录软删除

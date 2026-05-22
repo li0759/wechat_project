@@ -8,10 +8,10 @@
 >
   <view
     class="cif-panel__gesture"
-    catchtouchstart="onPanelTouchStart"
+    bindtouchstart="onPanelTouchStart"
     catchtouchmove="onPanelTouchMove"
-    catchtouchend="onPanelTouchEnd"
-    catchtouchcancel="onPanelTouchCancel"
+    bindtouchend="onPanelTouchEnd"
+    bindtouchcancel="onPanelTouchCancel"
   >
     <scroll-view
       class="cif-panel__scroll"

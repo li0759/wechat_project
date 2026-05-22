@@ -1,0 +1,19 @@
+<view class="signature-pad">
+  <view class="signature-pad__hint">请在下方空白处手写签名</view>
+  <view class="signature-pad__canvas-wrap">
+    <canvas
+      canvas-id="handwritingSignature"
+      class="signature-pad__canvas"
+      style="width: {{canvasW}}px; height: {{canvasH}}px;"
+      disable-scroll="true"
+      catchtouchstart="onTouchStart"
+      catchtouchmove="onTouchMove"
+      catchtouchend="onTouchEnd"
+      catchtouchcancel="onTouchEnd"
+    />
+  </view>
+  <view class="signature-pad__actions">
+    <t-button theme="default" variant="outline" size="medium" bind:tap="onClear">清除</t-button>
+    <t-button theme="primary" size="medium" loading="{{submitting}}" disabled="{{submitting}}" bind:tap="onConfirm">确认签名</t-button>
+  </view>
+</view>

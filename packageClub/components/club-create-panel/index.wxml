@@ -59,6 +59,57 @@
               </view>
       </expandable-container>
       
+      <!-- 协会海报 -->
+      <view class="panel panel-post" bindtap="onPosterBoxTap">
+        <view class="panel-header">
+          <view class="panel-title">
+            <t-icon name="image" color="var(--md-sys-color-primary)" />
+            <text>协会海报</text>
+          </view>
+          <text class="panel-hint">{{postIsotopeItems.length}} 张 · 点击管理</text>
+        </view>
+        <view class="post-preview-box">
+          <view wx:if="{{postIsotopeItems.length > 0}}" class="post-isotope-wrap">
+            <isotope
+              wx:key="{{postIsotopeRev}}"
+              id="ccPostIsotope"
+              items="{{postIsotopeItems}}"
+              layoutMode="masonryHorizontal"
+              masonryHorizontal="{{postMasonryConfig}}"
+              width="714rpx"
+              height="400rpx"
+              gutter="{{10}}"
+              transitionDuration="0.8s"
+              backgroundColor="rgba(122, 54, 92, 0.66)"
+            />
+          </view>
+          <view wx:else class="post-thumb-empty">
+            <t-icon name="image" size="48" color="#bbb" />
+            <text>点击添加协会海报</text>
+          </view>
+        </view>
+      </view>
+
+      <expandable-container_fullscreen
+        id="cc-post-picker"
+        expanded-width="750"
+        expanded-height="1800"
+        bg-color="rgba(223, 118, 176, 0.8)"
+        fullscreen-sheet-bg-color="#f7f8fa"
+        fullscreen-top-padding="{{0}}"
+        bind:expand="onPosterPanelExpand"
+      >
+        <view slot="trigger" style="display: none;" />
+        <view slot="content" class="popup-shell fullscreen-popup" style="height: 100%;">
+          <club-post-panel
+            id="ccClubPostPanel"
+            mode="create"
+            initial-posts="{{postFiles}}"
+            bind:change="onPosterPanelChange"
+          />
+        </view>
+      </expandable-container_fullscreen>
+
       <!-- 封面 + 简介：同一行；简介为方形框展示文本 -->
       <view class="split-row">
         <view class="split-half">

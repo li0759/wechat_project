@@ -53,7 +53,7 @@
                   <view class="member-trigger-info {{selectedMemberId ? 'member-trigger-info--focus' : ''}}">
                     <view class="member-trigger-name-row {{selectedMemberId ? 'member-trigger-name-row--focus' : ''}}">
                       <text class="member-name">{{member.user_name}}</text>
-                      <view wx:if="{{!selectedMemberId}}" class="member-role-chip {{member.role}}">{{roleNames[member.role]}}</view>
+                      <view wx:if="{{!selectedMemberId}}" class="member-role-chip {{member.is_deleted ? 'exited' : member.role}}">{{member.is_deleted ? '已退出协会' : roleNames[member.role]}}</view>
                       <view wx:if="{{!selectedMemberId && member.is_current_user}}" class="current-badge">我</view>
                     </view>
                     <view class="member-extra {{selectedMemberId ? 'member-extra--hidden' : ''}}">
@@ -126,7 +126,7 @@
               <view class="am-detail-main">
                 <view class="am-detail-name">{{member.user_name}}</view>
                 <view class="am-detail-tags">
-                  <text class="am-tag am-tag-role {{member.role}}">{{roleNames[member.role]}}</text>
+                  <text class="am-tag am-tag-role {{member.is_deleted ? 'exited' : member.role}}">{{member.is_deleted ? '已退出协会' : roleNames[member.role]}}</text>
                   <text wx:if="{{member.department}}" class="am-tag am-tag-dept">{{member.department}}</text>
                   <text wx:if="{{member.position}}" class="am-tag am-tag-pos">{{member.position}}</text>
                 </view>
@@ -153,7 +153,7 @@
                 <t-icon name="check-circle-filled" size="18" color="#52c41a" />
                 <text>这是您的账户</text>
               </view>
-              <view wx:elif="{{!member.is_current_user && isPresident && roleOptions[member.role]}}" class="am-admin-actions">
+              <view wx:elif="{{!member.is_deleted && !member.is_current_user && isPresident && roleOptions[member.role]}}" class="am-admin-actions">
                 <view
                   class="am-btn am-btn-ghost"
                   wx:for="{{roleOptions[member.role].availableRoles}}"
@@ -188,9 +188,10 @@
                   </text>
                 </view>
                 <view
+                  wx:if="{{!member.is_deleted}}"
                   class="cmb-member-activity__export {{detailExporting ? 'cmb-member-activity__export--loading' : ''}}"
                   hover-class="cmb-member-activity__export--hover"
-                  bindtap="onExportMemberDetail"
+                  catchtap="onExportMemberDetail"
                   data-userid="{{member.user_id}}"
                 >
                   <t-icon name="send" size="24" color="#667eea" />

@@ -13,6 +13,7 @@ import subprocess
 import zipfile
 from collections import defaultdict
 from sqlalchemy import case
+from sqlalchemy.orm import joinedload
 from minio import Minio
 from minio.error import S3Error
 from flask import current_app
@@ -360,28 +361,35 @@ def export_club_member_activity_wecom_media(club_id):
     if not picked_ids:
         return jsonify({'code': 4001, 'message': 'user_ids 参数无效'}), 200
 
-    members = (
+    member_join_null_last = case((ClubMember.joinDate.is_(None), 1), else_=0)
+    sorted_members = (
         ClubMember.query.filter(
             ClubMember.clubID == club_id,
             ClubMember.userID.in_(picked_ids),
             ClubMember.isDelete == False,
         )
+        .options(joinedload(ClubMember.user))
+        .order_by(member_join_null_last.asc(), ClubMember.joinDate.asc(), ClubMember.userID.asc())
         .all()
     )
-    if not members:
+    if not sorted_members:
         return jsonify({'code': 4004, 'message': '未找到可导出的成员'}), 200
 
-    member_by_uid = {m.userID: m for m in members}
-    sorted_user_ids = [uid for uid in picked_ids if uid in member_by_uid]
+    member_by_uid = {m.userID: m for m in sorted_members}
+    sorted_user_ids = [m.userID for m in sorted_members]
 
     event_joins = (
         EventJoin.query.join(Event, Event.eventID == EventJoin.eventID)
+        .options(
+            joinedload(EventJoin.event),
+            joinedload(EventJoin.user),
+            joinedload(EventJoin.clock_img),
+        )
         .filter(
             Event.clubID == club_id,
             EventJoin.userID.in_(sorted_user_ids),
             EventJoin.isDelete == False,
         )
-        .order_by(EventJoin.joinDate.desc(), EventJoin.joinID.desc())
         .all()
     )
 
@@ -408,90 +416,246 @@ def export_club_member_activity_wecom_media(club_id):
             key = (m.creatorID, m.ref_event_ID)
             moment_map[key].append(m)
 
-    def _fmt(dt):
-        if not dt:
-            return ''
-        return dt.strftime('%Y-%m-%d %H:%M')
-
-    headers = ['用户姓名', '活动名称', '参加时间', '打卡时间', '人员发布的动态']
-    data_rows = []
-    moment_files_per_row = []
-    avatar_file_per_row = []
-    cover_file_per_row = []
-    for uid in sorted_user_ids:
-        member = member_by_uid[uid]
-        user_name = member.user.userName if member.user else str(uid)
-        user_avatar = member.user.avatar if member.user else None
-        joins = join_map.get(uid, [])
-        if not joins:
-            data_rows.append([user_name, '无活动记录', '', '', ''])
-            moment_files_per_row.append([])
-            avatar_file_per_row.append(user_avatar)
-            cover_file_per_row.append(None)
-            continue
-        for ej in joins:
-            event_title = ej.event.title if ej.event else '未知活动'
-            event_cover = ej.event.cover if ej.event else None
-            user_moments = moment_map.get((uid, ej.eventID), [])
-            moment_lines = []
-            for m in user_moments:
-                desc = (m.description or '').strip() or '（无文字）'
-                t = _fmt(m.createDate)
-                moment_lines.append(f'{desc}（{t}）' if t else desc)
-            data_rows.append([
-                user_name,
-                event_title,
-                _fmt(ej.joinDate),
-                _fmt(ej.clockinDate) or '未打卡',
-                '；'.join(moment_lines) if moment_lines else '无',
-            ])
-            moment_files_per_row.append(collect_moment_files_from_moments(user_moments))
-            avatar_file_per_row.append(user_avatar)
-            cover_file_per_row.append(event_cover)
-
-    if not PILLOW_AVAILABLE:
-        return jsonify({'code': 5000, 'message': '服务器未安装图片处理库，无法打包动态原图'}), 200
-
+    temp_root = None
+    wb = None
     try:
-        export_resp = create_participation_export_archive(
-            headers=headers,
-            data_rows=data_rows,
-            moment_files_per_row=moment_files_per_row,
-            filename_prefix=f'club_{club_id}_member_activity',
-            excel_basename='成员活动明细',
-            sheet_title='成员活动明细',
-            avatar_file_per_row=avatar_file_per_row,
-            cover_file_per_row=cover_file_per_row,
-            export_layout='member_activity',
-        )
-        export_payload = export_resp.get_json(silent=True) or {}
-        if export_payload.get('code') != 200:
-            return jsonify({
-                'code': export_payload.get('code', 5000),
-                'message': export_payload.get('message', '导出失败'),
-            }), 200
+        headers = [
+            '会员姓名', '活动名称', '活动实际开始时间', '参加活动时间',
+            '打卡时间', '打卡签名图片', '活动动态',
+        ]
+        data_rows = []
+        signature_thumb_per_row = []
+        moment_link_per_row = []
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename_prefix = f'club_{club_id}_member_activity'
+        package_name = f'{filename_prefix}_{timestamp}'
+        temp_root = tempfile.mkdtemp(prefix='club_member_activity_')
+        package_root = os.path.join(temp_root, package_name)
+        os.makedirs(package_root, exist_ok=True)
+        excel_path = os.path.join(package_root, '成员活动明细.xlsx')
+        asset_root = os.path.join(package_root, '导出资源')
+        os.makedirs(asset_root, exist_ok=True)
 
-        file_data = export_payload.get('data') or {}
-        object_path = file_data.get('file_path')
-        file_name = file_data.get('filename') or f"club_{club_id}_member_activity_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+        used_user_folders = set()
+        moment_image_count = 0
+
+        def _dt_sort_key(dt):
+            if dt is None:
+                return (1, 0.0)
+            try:
+                return (0, dt.timestamp())
+            except Exception:
+                return (0, 0.0)
+
+        for uid in sorted_user_ids:
+            member = member_by_uid[uid]
+            user_name = member.user.userName if member.user else str(uid)
+            user_label = sanitize_filename(user_name or f'用户{uid}')
+            base_folder = user_label or f'用户{uid}'
+            folder_name = base_folder
+            dup = 1
+            while folder_name in used_user_folders:
+                dup += 1
+                folder_name = f'{base_folder}_{dup}'
+            used_user_folders.add(folder_name)
+            user_folder = os.path.join(asset_root, folder_name)
+            os.makedirs(user_folder, exist_ok=True)
+            folder_rel = os.path.relpath(user_folder, os.path.dirname(excel_path)).replace('\\', '/')
+
+            joins = join_map.get(uid, [])
+            if not joins:
+                data_rows.append([user_name, '无活动记录', '', '', '', '', '无'])
+                signature_thumb_per_row.append(None)
+                moment_link_per_row.append(None)
+                continue
+
+            joins_sorted = sorted(
+                joins,
+                key=lambda ej: (
+                    _dt_sort_key(ej.event.actual_startTime if ej.event else None),
+                    ej.eventID or 0,
+                    ej.joinID or 0,
+                ),
+            )
+            rows_before_user = len(data_rows)
+            for ej in joins_sorted:
+                event = ej.event
+                event_title = event.title if event else '未知活动'
+                event_label = sanitize_filename(event_title) or '未知活动'
+                actual_start = (
+                    event.actual_startTime.strftime('%Y-%m-%d %H:%M')
+                    if event and event.actual_startTime else ''
+                )
+
+                signature_text = ''
+                signature_thumb_path = None
+                clock_img = ej.clock_img
+                if ej.clockinDate and clock_img and getattr(clock_img, 'fileUrl', None):
+                    sig_bytes = download_image_from_minio(clock_img.fileUrl)
+                    if sig_bytes:
+                        origin_path = extract_file_path_from_download_url(clock_img.fileUrl)
+                        sig_ext = os.path.splitext(origin_path)[1] if origin_path else '.png'
+                        if not sig_ext:
+                            sig_ext = '.png'
+                        thumb_bytes = generate_thumbnail_bytes(sig_bytes, minlength=48) if PILLOW_AVAILABLE else None
+                        embed_bytes = thumb_bytes or sig_bytes
+                        embed_suffix = '.jpg' if thumb_bytes else sig_ext
+                        fd, signature_thumb_path = tempfile.mkstemp(
+                            prefix='member_clock_sig_', suffix=embed_suffix, dir=temp_root,
+                        )
+                        os.close(fd)
+                        with open(signature_thumb_path, 'wb') as f:
+                            f.write(embed_bytes)
+
+                saved = 0
+                user_moments = sorted(
+                    moment_map.get((uid, ej.eventID), []),
+                    key=lambda m: (_dt_sort_key(m.createDate), m.momentID or 0),
+                )
+                for moment in user_moments:
+                    moment_files = collect_moment_files_from_moments([moment])
+                    if not moment_files:
+                        continue
+                    time_part = moment.createDate.strftime('%m月%d日%H时%M分') if moment.createDate else '未知时间'
+                    for img_idx, file_obj in enumerate(moment_files, 1):
+                        if not file_obj or not getattr(file_obj, 'fileUrl', None):
+                            continue
+                        image_bytes = download_image_from_minio(file_obj.fileUrl)
+                        if not image_bytes:
+                            continue
+                        origin_path = extract_file_path_from_download_url(file_obj.fileUrl)
+                        ext = os.path.splitext(origin_path)[1] if origin_path else '.jpg'
+                        if not ext:
+                            ext = '.jpg'
+                        image_name = f'{time_part}在{event_label}发布动态图_{img_idx}{ext}'
+                        image_abs = os.path.join(user_folder, image_name)
+                        if os.path.exists(image_abs):
+                            stem, ext_only = os.path.splitext(image_name)
+                            name_dup = 1
+                            while os.path.exists(image_abs):
+                                name_dup += 1
+                                image_name = f'{stem}_{name_dup}{ext_only}'
+                                image_abs = os.path.join(user_folder, image_name)
+                        with open(image_abs, 'wb') as f:
+                            f.write(image_bytes)
+                        saved += 1
+                        moment_image_count += 1
+
+                join_time = ej.joinDate.strftime('%Y-%m-%d %H:%M') if ej.joinDate else ''
+                clock_time = ej.clockinDate.strftime('%Y-%m-%d %H:%M') if ej.clockinDate else '未打卡'
+                if saved > 0:
+                    moment_text = f'共{saved}张，见文件夹'
+                    moment_link = folder_rel
+                else:
+                    moment_text = '无'
+                    moment_link = None
+                data_rows.append([
+                    user_name,
+                    event_title,
+                    actual_start,
+                    join_time,
+                    clock_time,
+                    signature_text,
+                    moment_text,
+                ])
+                signature_thumb_per_row.append(signature_thumb_path)
+                moment_link_per_row.append(moment_link)
+
+            if joins and len(data_rows) == rows_before_user:
+                data_rows.append([user_name, '无活动记录', '', '', '', '', '无'])
+                signature_thumb_per_row.append(None)
+                moment_link_per_row.append(None)
+
+        if not data_rows:
+            return jsonify({'code': 4004, 'message': '没有可导出的成员活动数据'}), 200
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = sanitize_sheet_title('成员活动明细')
+        header_font = Font(bold=True, size=12)
+        header_fill = PatternFill(start_color='D9D9D9', end_color='D9D9D9', fill_type='solid')
+        header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        data_font = Font(size=11)
+        data_alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+        ws.row_dimensions[1].height = 25
+        ws.column_dimensions['F'].width = 22
+        sig_col_letter = get_excel_column_name(6)
+        link_font = Font(size=11, color='0563C1', underline='single')
+        center_alignment = Alignment(horizontal='center', vertical='center')
+        for row_idx, row_data in enumerate(data_rows, 2):
+            row_i = row_idx - 2
+            sig_thumb = signature_thumb_per_row[row_i] if row_i < len(signature_thumb_per_row) else None
+            moment_link = moment_link_per_row[row_i] if row_i < len(moment_link_per_row) else None
+            ws.row_dimensions[row_idx].height = 72 if sig_thumb else 28
+            for col, value in enumerate(row_data, 1):
+                cell = ws.cell(row=row_idx, column=col, value=value)
+                cell.font = data_font
+                cell.alignment = center_alignment if col == 6 else data_alignment
+                if col == 7 and moment_link:
+                    cell.hyperlink = moment_link
+                    cell.style = 'Hyperlink'
+                    cell.font = link_font
+            if sig_thumb:
+                sig_cell = ws.cell(row=row_idx, column=6, value='')
+                sig_cell.alignment = center_alignment
+                excel_sig = ExcelImage(sig_thumb)
+                excel_sig.anchor = f'{sig_col_letter}{row_idx}'
+                ws.add_image(excel_sig)
+        for letter, width in {'A': 14, 'B': 28, 'C': 20, 'D': 18, 'E': 16, 'F': 22, 'G': 24}.items():
+            ws.column_dimensions[letter].width = width
+        ws.freeze_panes = 'A2'
+        wb.save(excel_path)
+        wb.close()
+        wb = None
+
+        archive_info = create_export_archive(
+            source_dir=package_root,
+            output_dir=temp_root,
+            package_name=package_name,
+        )
+        minio_response = upload_local_file_to_minio(
+            local_file_path=archive_info['archive_path'],
+            object_path=f"statistics/{archive_info['archive_filename']}",
+            content_type=archive_info['content_type'],
+        )
+        object_path = minio_response.get('file_path')
+        file_name = minio_response.get('filename') or f'{package_name}.zip'
         if not object_path:
             return jsonify({'code': 5000, 'message': '导出结果缺少文件路径'}), 200
 
         media_id = upload_minio_object_to_wecom_media(object_path=object_path, file_name=file_name)
         return jsonify({
             'code': 200,
-            'message': '已生成企业微信文件素材（含动态原图压缩包）',
+            'message': '已生成企业微信文件素材（Excel嵌入签名图+按会员分文件夹动态原图）',
             'data': {
                 'media_id': media_id,
                 'filename': file_name,
-                'archive_format': file_data.get('archive_format', 'zip'),
+                'archive_format': archive_info.get('archive_format', 'zip'),
                 'club_id': club_id,
                 'selected_user_count': len(sorted_user_ids),
-                'moment_image_count': file_data.get('moment_image_count', 0),
+                'row_count': len(data_rows),
+                'moment_image_count': moment_image_count,
             },
         }), 200
     except Exception as e:
+        current_app.logger.exception('export_club_member_activity_wecom_media failed')
         return jsonify({'code': 5000, 'message': f'生成企业微信会话文件失败: {str(e)}'}), 200
+    finally:
+        if wb:
+            try:
+                wb.close()
+            except Exception:
+                pass
+        if temp_root:
+            try:
+                shutil.rmtree(temp_root, ignore_errors=True)
+            except Exception:
+                pass
 
 @bp.route('/export/club/<int:club_id>/event_participation/wecom_media', methods=['GET'])
 @jwt_required()
@@ -526,111 +690,240 @@ def export_club_event_participation_wecom_media(club_id):
     if not picked_ids:
         return jsonify({'code': 4001, 'message': 'event_ids 参数无效'}), 200
 
-    events = Event.query.filter(Event.clubID == club_id, Event.eventID.in_(picked_ids)).all()
-    if not events:
+    pre_start_null_last = case((Event.pre_startTime.is_(None), 1), else_=0)
+    sorted_events = (
+        Event.query.filter(Event.clubID == club_id, Event.eventID.in_(picked_ids))
+        .order_by(pre_start_null_last.asc(), Event.pre_startTime.asc(), Event.eventID.asc())
+        .all()
+    )
+    if not sorted_events:
         return jsonify({'code': 4004, 'message': '未找到可导出的活动'}), 200
 
-    event_by_id = {e.eventID: e for e in events}
-    sorted_events = [event_by_id[eid] for eid in picked_ids if eid in event_by_id]
-
-    headers = ['活动名称', '参与人员', '参加时间', '打卡时间', '人员发布的动态']
-    data_rows = []
-    moment_files_per_row = []
-    avatar_file_per_row = []
-    cover_file_per_row = []
-
-    def _fmt(dt):
-        if not dt:
-            return ''
-        return dt.strftime('%Y-%m-%d %H:%M')
-
-    join_date_null_last = case((EventJoin.joinDate.is_(None), 1), else_=0)
-    for ev in sorted_events:
-        event_cover = ev.cover
-        event_joins = (
-            EventJoin.query.filter_by(eventID=ev.eventID, isDelete=False)
-            .order_by(join_date_null_last.asc(), EventJoin.joinDate.desc(), EventJoin.joinID.desc())
-            .all()
-        )
-        moments = Moment.query.filter_by(ref_event_ID=ev.eventID).order_by(
-            Moment.createDate.desc(), Moment.momentID.desc()
-        ).all()
-        moments_by_user = defaultdict(list)
-        for m in moments:
-            if m.creatorID is not None:
-                moments_by_user[m.creatorID].append(m)
-
-        if not event_joins:
-            data_rows.append([ev.title or '', '无参与人员', '', '', ''])
-            moment_files_per_row.append([])
-            cover_file_per_row.append(event_cover)
-            avatar_file_per_row.append(None)
-            continue
-
-        for ej in event_joins:
-            user = ej.user
-            if not user:
-                continue
-            user_moments = moments_by_user.get(user.userID, [])
-            moment_lines = []
-            for m in user_moments:
-                desc = (m.description or '').strip() or '（无文字）'
-                t = _fmt(m.createDate)
-                moment_lines.append(f'{desc}（{t}）' if t else desc)
-            data_rows.append([
-                ev.title or '',
-                user.userName or '',
-                _fmt(ej.joinDate),
-                _fmt(ej.clockinDate) or '未打卡',
-                '；'.join(moment_lines) if moment_lines else '无',
-            ])
-            moment_files_per_row.append(collect_moment_files_from_moments(user_moments))
-            cover_file_per_row.append(event_cover)
-            avatar_file_per_row.append(user.avatar)
-
-    if not PILLOW_AVAILABLE:
-        return jsonify({'code': 5000, 'message': '服务器未安装图片处理库，无法打包动态原图'}), 200
-
+    temp_root = None
+    wb = None
     try:
-        export_resp = create_participation_export_archive(
-            headers=headers,
-            data_rows=data_rows,
-            moment_files_per_row=moment_files_per_row,
-            filename_prefix=f'club_{club_id}_event_participation',
-            excel_basename='活动参与明细',
-            sheet_title='活动参与明细',
-            avatar_file_per_row=avatar_file_per_row,
-            cover_file_per_row=cover_file_per_row,
-            export_layout='event_participation',
-        )
-        export_payload = export_resp.get_json(silent=True) or {}
-        if export_payload.get('code') != 200:
-            return jsonify({
-                'code': export_payload.get('code', 5000),
-                'message': export_payload.get('message', '导出失败'),
-            }), 200
+        headers = ['活动名称', '参加用户名称', '参加活动时间', '打卡时间', '打卡签名', '活动动态图片']
+        data_rows = []
+        signature_thumb_per_row = []
+        moment_link_per_row = []
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename_prefix = f'club_{club_id}_event_participation'
+        package_name = f'{filename_prefix}_{timestamp}'
+        temp_root = tempfile.mkdtemp(prefix='club_event_participation_')
+        package_root = os.path.join(temp_root, package_name)
+        os.makedirs(package_root, exist_ok=True)
+        excel_path = os.path.join(package_root, '活动参与明细.xlsx')
+        asset_root = os.path.join(package_root, '导出资源')
+        os.makedirs(asset_root, exist_ok=True)
 
-        file_data = export_payload.get('data') or {}
-        object_path = file_data.get('file_path')
-        file_name = file_data.get('filename') or f"club_{club_id}_event_participation_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+        used_event_folders = set()
+        moment_image_count = 0
+        join_date_null_last = case((EventJoin.joinDate.is_(None), 1), else_=0)
+
+        for ev in sorted_events:
+            base_folder = sanitize_filename(ev.title or f'活动{ev.eventID}') or f'活动{ev.eventID}'
+            folder_name = base_folder
+            dup = 1
+            while folder_name in used_event_folders:
+                dup += 1
+                folder_name = f'{base_folder}_{dup}'
+            used_event_folders.add(folder_name)
+            event_folder = os.path.join(asset_root, folder_name)
+            os.makedirs(event_folder, exist_ok=True)
+            folder_rel = os.path.relpath(event_folder, os.path.dirname(excel_path)).replace('\\', '/')
+
+            event_joins = (
+                EventJoin.query.filter_by(eventID=ev.eventID, isDelete=False)
+                .order_by(join_date_null_last.asc(), EventJoin.joinDate.desc(), EventJoin.joinID.desc())
+                .all()
+            )
+            moments = Moment.query.filter_by(ref_event_ID=ev.eventID).order_by(
+                Moment.createDate.desc(), Moment.momentID.desc()
+            ).all()
+            moments_by_user = defaultdict(list)
+            for m in moments:
+                if m.creatorID is not None:
+                    moments_by_user[m.creatorID].append(m)
+
+            if not event_joins:
+                data_rows.append([ev.title or '', '无参与人员', '', '', '', '无'])
+                signature_thumb_per_row.append(None)
+                moment_link_per_row.append(None)
+                continue
+
+            for ej in event_joins:
+                user = ej.user
+                if not user:
+                    continue
+                user_label = sanitize_filename(user.userName or f'用户{user.userID}')
+                signature_text = ''
+                signature_thumb_path = None
+                clock_img = ej.clock_img
+                if ej.clockinDate and clock_img and getattr(clock_img, 'fileUrl', None):
+                    sig_bytes = download_image_from_minio(clock_img.fileUrl)
+                    if sig_bytes:
+                        origin_path = extract_file_path_from_download_url(clock_img.fileUrl)
+                        sig_ext = os.path.splitext(origin_path)[1] if origin_path else '.png'
+                        if not sig_ext:
+                            sig_ext = '.png'
+                        thumb_bytes = generate_thumbnail_bytes(sig_bytes, minlength=48) if PILLOW_AVAILABLE else None
+                        embed_bytes = thumb_bytes or sig_bytes
+                        embed_suffix = '.jpg' if thumb_bytes else sig_ext
+                        fd, signature_thumb_path = tempfile.mkstemp(
+                            prefix='clock_sig_thumb_', suffix=embed_suffix, dir=temp_root,
+                        )
+                        os.close(fd)
+                        with open(signature_thumb_path, 'wb') as f:
+                            f.write(embed_bytes)
+                        signature_text = ''
+
+                saved = 0
+                user_moments = sorted(
+                    moments_by_user.get(user.userID, []),
+                    key=lambda m: (m.createDate is None, m.createDate or datetime.min, m.momentID or 0),
+                )
+                for moment in user_moments:
+                    moment_files = collect_moment_files_from_moments([moment])
+                    if not moment_files:
+                        continue
+                    time_part = moment.createDate.strftime('%m月%d日%H时%M分') if moment.createDate else '未知时间'
+                    for img_idx, file_obj in enumerate(moment_files, 1):
+                        if not file_obj or not getattr(file_obj, 'fileUrl', None):
+                            continue
+                        image_bytes = download_image_from_minio(file_obj.fileUrl)
+                        if not image_bytes:
+                            continue
+                        origin_path = extract_file_path_from_download_url(file_obj.fileUrl)
+                        ext = os.path.splitext(origin_path)[1] if origin_path else '.jpg'
+                        if not ext:
+                            ext = '.jpg'
+                        image_name = f'{user_label}_{time_part}发布动态图_{img_idx}{ext}'
+                        image_abs = os.path.join(event_folder, image_name)
+                        if os.path.exists(image_abs):
+                            stem, ext_only = os.path.splitext(image_name)
+                            name_dup = 1
+                            while os.path.exists(image_abs):
+                                name_dup += 1
+                                image_name = f'{stem}_{name_dup}{ext_only}'
+                                image_abs = os.path.join(event_folder, image_name)
+                        with open(image_abs, 'wb') as f:
+                            f.write(image_bytes)
+                        saved += 1
+                        moment_image_count += 1
+
+                join_time = ej.joinDate.strftime('%Y-%m-%d %H:%M') if ej.joinDate else ''
+                clock_time = ej.clockinDate.strftime('%Y-%m-%d %H:%M') if ej.clockinDate else '未打卡'
+                if saved > 0:
+                    moment_text = f'共{saved}张，见文件夹'
+                    moment_link = folder_rel
+                else:
+                    moment_text = '无'
+                    moment_link = None
+                data_rows.append([
+                    ev.title or '',
+                    user.userName or '',
+                    join_time,
+                    clock_time,
+                    signature_text,
+                    moment_text,
+                ])
+                signature_thumb_per_row.append(signature_thumb_path)
+                moment_link_per_row.append(moment_link)
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = sanitize_sheet_title('活动参与明细')
+        header_font = Font(bold=True, size=12)
+        header_fill = PatternFill(start_color='D9D9D9', end_color='D9D9D9', fill_type='solid')
+        header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        data_font = Font(size=11)
+        data_alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+        ws.row_dimensions[1].height = 25
+        ws.column_dimensions['E'].width = 22
+        sig_col_letter = get_excel_column_name(5)
+        link_font = Font(size=11, color='0563C1', underline='single')
+        center_alignment = Alignment(horizontal='center', vertical='center')
+        for row_idx, row_data in enumerate(data_rows, 2):
+            row_i = row_idx - 2
+            sig_thumb = signature_thumb_per_row[row_i] if row_i < len(signature_thumb_per_row) else None
+            moment_link = moment_link_per_row[row_i] if row_i < len(moment_link_per_row) else None
+            ws.row_dimensions[row_idx].height = 72 if sig_thumb else 28
+            for col, value in enumerate(row_data, 1):
+                cell = ws.cell(row=row_idx, column=col, value=value)
+                cell.font = data_font
+                cell.alignment = center_alignment if col == 5 else data_alignment
+                if col == 6 and moment_link:
+                    cell.hyperlink = moment_link
+                    cell.style = 'Hyperlink'
+                    cell.font = link_font
+            if sig_thumb:
+                sig_cell = ws.cell(row=row_idx, column=5, value='')
+                sig_cell.alignment = center_alignment
+                excel_sig = ExcelImage(sig_thumb)
+                excel_sig.anchor = f'{sig_col_letter}{row_idx}'
+                ws.add_image(excel_sig)
+        for column in ws.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    cell_length = len(str(cell.value or ''))
+                    if cell_length > max_length:
+                        max_length = cell_length
+                except Exception:
+                    pass
+            ws.column_dimensions[column_letter].width = min(max(max_length + 2, 10), 40)
+        ws.freeze_panes = 'A2'
+        wb.save(excel_path)
+        wb.close()
+        wb = None
+
+        archive_info = create_export_archive(
+            source_dir=package_root,
+            output_dir=temp_root,
+            package_name=package_name,
+        )
+        minio_response = upload_local_file_to_minio(
+            local_file_path=archive_info['archive_path'],
+            object_path=f"statistics/{archive_info['archive_filename']}",
+            content_type=archive_info['content_type'],
+        )
+        object_path = minio_response.get('file_path')
+        file_name = minio_response.get('filename') or f'{package_name}.zip'
         if not object_path:
             return jsonify({'code': 5000, 'message': '导出结果缺少文件路径'}), 200
 
         media_id = upload_minio_object_to_wecom_media(object_path=object_path, file_name=file_name)
         return jsonify({
             'code': 200,
-            'message': '已生成企业微信文件素材（含动态原图压缩包）',
+            'message': '已生成企业微信文件素材（Excel嵌入签名图+按活动分文件夹动态原图）',
             'data': {
                 'media_id': media_id,
                 'filename': file_name,
-                'archive_format': file_data.get('archive_format', 'zip'),
+                'archive_format': archive_info.get('archive_format', 'zip'),
                 'club_id': club_id,
                 'selected_event_count': len(sorted_events),
-                'moment_image_count': file_data.get('moment_image_count', 0),
+                'moment_image_count': moment_image_count,
             },
         }), 200
     except Exception as e:
         return jsonify({'code': 5000, 'message': f'生成企业微信会话文件失败: {str(e)}'}), 200
+    finally:
+        if wb:
+            try:
+                wb.close()
+            except Exception:
+                pass
+        if temp_root:
+            try:
+                shutil.rmtree(temp_root, ignore_errors=True)
+            except Exception:
+                pass
 
 @bp.route('/show/all_club/users', methods=['GET'])
 @jwt_required()

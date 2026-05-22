@@ -1,11 +1,17 @@
 const app = getApp();
+const { submitClockIn } = require('../../../utils/event-clockin');
 
 Component({
   properties: {
     eventId: {
       type: String,
       value: ''
-    }
+    },
+    /** profile/home 全屏弹层内为 true，签名由页面根级 overlay 渲染 */
+    delegateSignatureToHost: {
+      type: Boolean,
+      value: false,
+    },
   },
 
   data: {
@@ -33,6 +39,8 @@ Component({
     },
     canClockIn: false,
     canPay: false,
+    showSignaturePopup: false,
+    clockinSubmitting: false,
     
     // 动态相数
       momentsList: [],
@@ -257,8 +265,7 @@ Component({
         // 活动未开始且用户未参数-> 自动参加
         await this.autoJoinEvent();
       } else if (hasStarted && !hasClockedIn) {
-        // 活动已开始且用户未打开-> 自动打卡
-        await this.autoClockIn();
+        wx.showToast({ title: '请点击打卡并完成签名', icon: 'none', duration: 2500 });
       }
     } catch (error) {    }
   },
@@ -300,43 +307,6 @@ Component({
     }
   },
 
-  // 自动打卡
-  async autoClockIn() {
-    try {
-      const res = await new Promise((resolve, reject) => {
-        wx.request({
-          url: getApp().globalData.request_url + `/event/clockin/${this.data.eventId}`,
-          method: 'GET',
-          header: {
-            'Authorization': 'Bearer ' + wx.getStorageSync('token'),
-            'Content-Type': 'application/json'
-          },
-          success: resolve,
-          fail: reject
-        });
-      });
-
-      if (res.data.Flag === '4000') {
-        wx.showToast({
-          title: '打卡成功',
-          icon: 'success',
-          duration: 2000
-        });
-        
-        // 重新加载数据
-        setTimeout(() => {
-          this.loadEventData();
-        }, 1000);
-      } else {
-        throw new Error(res.data.message || '打卡失败');
-      }
-    } catch (error) {      wx.showToast({
-        title: error.message || '打卡失败',
-        icon: 'none'
-      });
-    }
-  },
-
   // 选项卡切数
       onTabChange(e) {
     const value = e?.detail?.value || e?.currentTarget?.dataset?.value;
@@ -354,44 +324,45 @@ Component({
     }
   },
 
-  // 打卡
-  async onClockIn() {
-    if (!this.data.canClockIn) return;
+  // 打卡：打开签名板
+  onClockIn() {
+    if (!this.data.canClockIn || this.data.clockinSubmitting) return;
+    if (this.properties.delegateSignatureToHost) {
+      this.triggerEvent('clockin-signature', { eventId: this.data.eventId });
+      return;
+    }
+    this.setData({ showSignaturePopup: true }, () => {
+      const pad = this.selectComponent('#clockinSignaturePad');
+      if (pad && pad.prepare) pad.prepare();
+    });
+  },
 
+  preventTouchMove() {},
+
+  closeSignaturePopup() {
+    this.setData({ showSignaturePopup: false });
+    const pad = this.selectComponent('#clockinSignaturePad');
+    if (pad && pad.reset) pad.reset();
+  },
+
+  async onSignatureConfirm(e) {
+    const fileId = e.detail && e.detail.fileId;
+    if (!fileId || !this.data.eventId) return;
+    if (this.data.clockinSubmitting) return;
+
+    this.setData({ clockinSubmitting: true });
     try {
-      wx.showLoading({ title: '打卡?..' });
-      
-      const res = await new Promise((resolve, reject) => {
-        wx.request({
-          url: app.globalData.request_url + `/event/clockin/${this.data.eventId}`,
-          method: 'GET',
-          header: {
-            'Authorization': 'Bearer ' + wx.getStorageSync('token'),
-            'Content-Type': 'application/json'
-          },
-          success: resolve,
-          fail: reject
-        });
-      });
-
+      wx.showLoading({ title: '打卡中...' });
+      await submitClockIn(this.data.eventId, fileId);
       wx.hideLoading();
-
-      if (res.data.Flag === '4000') {
-        wx.showToast({
-          title: '打卡成功',
-          icon: 'success'
-        });
-        
-        // 重新加载数据
-    this.loadEventData();
-      } else {
-        throw new Error(res.data.message || '打卡失败');
-      }
+      this.setData({ showSignaturePopup: false });
+      wx.showToast({ title: '打卡成功', icon: 'success' });
+      this.loadEventData();
     } catch (error) {
-      wx.hideLoading();      wx.showToast({
-        title: error.message || '打卡失败',
-        icon: 'none'
-      });
+      wx.hideLoading();
+      wx.showToast({ title: error.message || '打卡失败', icon: 'none' });
+    } finally {
+      this.setData({ clockinSubmitting: false });
     }
   },
 

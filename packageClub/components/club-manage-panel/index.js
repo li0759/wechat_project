@@ -86,6 +86,10 @@ Component({
     },
     uploadAPI: '',
     isUploading: false,
+    postIsotopeItems: [],
+    postIsotopeHasContent: false,
+    postPosterCount: 0,
+    postMasonryConfig: { rowHeight: 10 },
 
     // 嵌套的event-create弹窗状态
     nestedEventCreate: {
@@ -254,6 +258,7 @@ Component({
           // 同时设置club字段供遮罩层使用
           club: clubDetail
         }, () => {
+          this.updatePostPreview(clubDetail.post_files || [])
           this.updatePeoplePanel()
           // 如果协会已删除，立即隐藏骨架屏并触发loaded事件
           // 因为遮罩层会阻止用户交互，不需要等待isotope布局完成
@@ -451,13 +456,70 @@ Component({
       })
     },
 
+    updatePostPreview(postFiles) {
+      const clubId = this.data.clubId
+      const detail = this.data.clubDetail || {}
+      const files = postFiles != null ? postFiles : (detail.post_files || [])
+      const items = app.buildClubPosterIsotopeData(
+        {
+          club_id: clubId,
+          cover_url: detail.cover_url,
+          post_files: files
+        },
+        { clubKey: String(clubId), postersOnly: true }
+      )
+      const flatCount = items.reduce((n, g) => n + (g ? g.length : 0), 0)
+
+      // 与首页热门协会一致：只 setData，由 isotope 的 items observer 增量更新（勿手动 initializeItems，否则会全部回到 ini 正方形且缓存图不触发 bindload）
+      this.setData({
+        postIsotopeItems: items,
+        postIsotopeHasContent: flatCount > 0,
+        postPosterCount: files.length
+      })
+    },
+
+    onPosterBoxTap(e) {
+      const { tapX, tapY } = resolveTapClientXY(e)
+      setTimeout(() => {
+        const popup = this.selectComponent('#cm-post-picker')
+        if (popup && popup.expand) popup.expand(tapX, tapY)
+      }, 50)
+    },
+
+    onPosterPanelExpand() {
+      const panel = this.selectComponent('#clubPostPanel')
+      if (panel && panel.setPostFiles) {
+        panel.setPostFiles(this.data.clubDetail?.post_files || [])
+      }
+    },
+
+    onPosterPanelUpdated(e) {
+      const postFiles = e.detail?.post_files || []
+      this.updatePostPreview(postFiles)
+      if (this.data.clubDetail) {
+        this.setData({
+          'clubDetail.post_files': postFiles,
+          'clubDetail.post_ids': (e.detail?.post_ids || []).slice()
+        })
+      }
+      app.recordChange(this.data.clubId, 'update', {
+        type: 'club',
+        club_id: this.data.clubId,
+        post_files: postFiles
+      }, this)
+    },
+
     async uploadCoverImage(filePath) {
       this.setData({ isUploading: true })
       try {
         const result = await this.uploadImage(filePath, 'club_img')
         const updateResult = await this.updateClubCover(result.file_id)
         const newCoverUrl = updateResult?.data?.new_cover_url
-        if (newCoverUrl) this.setData({ 'clubDetail.cover_url': newCoverUrl })
+        if (newCoverUrl) {
+          this.setData({ 'clubDetail.cover_url': newCoverUrl }, () => {
+            this.updatePostPreview(this.data.clubDetail?.post_files || [])
+          })
+        }
         wx.showToast({ title: '封面更新成功', icon: 'success' })
         
         // 记录变更到本地缓存（自动触发 triggerEvent）

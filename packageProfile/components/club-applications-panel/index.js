@@ -48,12 +48,12 @@ Component({
 
   methods: {
     onApproveOpinionChange(e) {
-      const v = e?.detail?.value ?? e?.detail ?? ''
+      const v = e?.detail?.value ?? e?.detail?.value ?? e?.detail ?? ''
       this.setData({ approveOpinion: v })
     },
 
     onRejectOpinionChange(e) {
-      const v = e?.detail?.value ?? e?.detail ?? ''
+      const v = e?.detail?.value ?? e?.detail?.value ?? e?.detail ?? ''
       this.setData({ rejectOpinion: v })
     },
 
@@ -87,6 +87,22 @@ Component({
       }
     },
 
+    buildUserProfileLine(item) {
+      const parts = []
+      if (item.appliced_user_department) parts.push(item.appliced_user_department)
+      if (item.appliced_user_position) parts.push(item.appliced_user_position)
+      const gender = item.appliced_user_gender || this.formatGenderLabel(item.appliced_user_gender_code)
+      if (gender) parts.push(gender)
+      return parts.join(' · ')
+    },
+
+    formatGenderLabel(gender) {
+      if (gender === 1 || gender === '1') return '男'
+      if (gender === 2 || gender === '2') return '女'
+      if (gender === 0 || gender === '0') return '其他'
+      return ''
+    },
+
     formatApplicationItem(item) {
       const rawAppDate = item.applicatedDate
       const axis = this.decorateApplicationAxis(rawAppDate)
@@ -96,14 +112,16 @@ Component({
       const mainClass = processed
         ? item.approved
           ? 'tl-modal-main--milestone-start'
-          : 'tl-modal-main--milestone-end'
-        : ''
+          : 'tl-modal-main--milestone-rejected'
+        : 'tl-modal-main--milestone-pending'
+      const userProfileLine = this.buildUserProfileLine(item)
       return {
         ...item,
         applicatedDate,
         processedDate,
         axis_date: axis.axis_date,
         axis_time: axis.axis_time,
+        userProfileLine,
         mainClass,
       }
     },
@@ -272,11 +290,16 @@ Component({
     async handleReject() {
       if (!this.data.currentProcessingId) return;
       const applicationId = this.data.currentProcessingId;
-      if (!this.data.rejectOpinion || !String(this.data.rejectOpinion).trim()) {
-        wx.showToast({ title: '请输入拒绝理由', icon: 'none' })
-        return
+      const reason = String(this.data.rejectOpinion || '').trim();
+      if (!reason) {
+        wx.showToast({ title: '请输入拒绝理由', icon: 'none' });
+        // t-dialog 点确定会自动关闭，校验失败时重新打开
+        setTimeout(() => {
+          this.setData({ showRejectDialog: true, currentProcessingId: applicationId });
+        }, 0);
+        return;
       }
-      await this.processApplication(applicationId, 'rejected', this.data.rejectOpinion);
+      await this.processApplication(applicationId, 'rejected', reason);
     },
 
     // 处理申请（批准/拒绝）

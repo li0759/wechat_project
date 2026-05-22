@@ -22,6 +22,11 @@ Component({
     // 封面上传相关数据
     uploadFiles: [],
     coverFile: null, // 保存确认后的封面文件
+    postFiles: [], // 协会海报 [{ fileId, url }]
+    postIsotopeItems: [],
+    postIsotopeRev: 0,
+    postThumbMinLength: 150,
+    postMasonryConfig: { rowHeight: 10 },
     gridConfig: {column: 1, width: 500, height: 450},
 
     // 人员管理相关数据
@@ -280,6 +285,48 @@ Component({
   },
 
   // ========== 封面上传相关方法 ==========
+  updatePostPreview(postFiles) {
+    const thumbMin = this.data.postThumbMinLength || 150
+    const items = (postFiles || []).map((f, i) => {
+      const url = f.url || f.fileUrl || f.file_url || ''
+      if (!url) return null
+      const fileId = f.fileId || f.fileID || i
+      return {
+        id: `club-post-${fileId}-${i}`,
+        image: app.convertToThumbnailUrl(url, thumbMin),
+        ini_width: thumbMin,
+        ini_height: thumbMin,
+        type: 'club_post',
+        fileId
+      }
+    }).filter(Boolean)
+    this.setData({
+      postIsotopeItems: items,
+      postIsotopeRev: (this.data.postIsotopeRev || 0) + 1
+    })
+  },
+
+  onPosterBoxTap(e) {
+    const popup = this.selectComponent('#cc-post-picker')
+    if (popup && popup.expand) popup.expand()
+  },
+
+  onPosterPanelExpand() {
+    const panel = this.selectComponent('#ccClubPostPanel')
+    if (panel && panel.setPostFiles) {
+      const list = (this.data.postFiles || []).map((f) => ({
+        fileID: f.fileId,
+        fileUrl: f.url
+      }))
+      panel.setPostFiles(list)
+    }
+  },
+
+  onPosterPanelChange(e) {
+    const posts = e.detail?.posts || []
+    this.setData({ postFiles: posts }, () => this.updatePostPreview(posts))
+  },
+
   // 直接选择封面（不再先弹窗）
   chooseCoverDirect() {
     wx.chooseMedia({
@@ -1169,12 +1216,17 @@ Component({
   async createClub(coverId) {
     const { formData } = this.data;
     
+    const post_ids = (this.data.postFiles || [])
+      .map((p) => p.fileId)
+      .filter((id) => id != null)
+
     const clubData = {
       club_name: formData.club_name.trim(),
       description: formData.description.trim(),
       charter: formData.charter.trim(),
       president_id: parseInt(formData.president_id),
-      cover_id: coverId
+      cover_id: coverId,
+      post_ids
     };
     
     const apiPromise = this.request({

@@ -26,7 +26,8 @@
     "event-create-panel": "/packageEvent/components/event-create-panel/index",
     "event-create-skeleton": "/components/panel-skeleton/event-create-skeleton/index",
     "event-manage-panel": "/packageEvent/components/event-manage-panel/index",
-    "event-manage-skeleton": "/components/panel-skeleton/event-manage-skeleton/index"
+    "event-manage-skeleton": "/components/panel-skeleton/event-manage-skeleton/index",
+    "club-post-panel": "/packageClub/components/club-post-panel/index"
   },
   "componentPlaceholder": {
     "event-create-panel": "event-create-skeleton",

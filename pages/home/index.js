@@ -1,5 +1,7 @@
 // 引入API请求工具
 const app = getApp();
+const { submitClockIn } = require('../../utils/event-clockin');
+const panelLazy = require('../../utils/panel-lazy-load');
 
 Page({
   data: {
@@ -75,6 +77,9 @@ Page({
     messagesEmptyEvent: false,
     messagesEmptySystem: false,
     messagesPanelExpanded: false,
+    /** 通知列表被 clear-parent 子级盖住时的挂起态 */
+    messagesContentSuspended: false,
+    messagesContentSuspendMode: '',
 
     // 通知中心全屏弹窗（头像点击打开）
     messagesFs: {
@@ -88,8 +93,9 @@ Page({
       visible: false,
       loading: true,
       renderPanel: false,  // 是否渲染 panel 组件
-      type: '', // 'event-detail', 'event-joined', 'event-manage', 'club-detail', 'club-manage'
+      type: '', // 'event-detail', 'event-joined', 'event-manage', 'club-detail', 'club-manage', ...
       id: '',
+      data: {},
       tapX: 0,
       tapY: 0
     },
@@ -109,7 +115,13 @@ Page({
     fsBackInterceptShow: false,
 
     /** 全局全屏 expandable 左上角返回：添加成员嵌套全屏打开时由 club-manage-panel 置为 false */
-    hostExpandableBackShow: true
+    hostExpandableBackShow: true,
+
+    clockinSignature: {
+      visible: false,
+      eventId: '',
+      submitting: false,
+    },
   },
 
   onFsBackInterceptBeforeLeave() {
@@ -281,6 +293,7 @@ Page({
       this.setData({
         userInfo: wx.getStorageSync('userInfo')
       });
+      panelLazy.preloadAllPanelSubpackages();
       // 智能检查：超过5分钟才整体刷新，否则只做局部变更
     this.smartCheckAndUpdate();
       // 加载通知数据
@@ -411,14 +424,18 @@ Page({
         updated = true;
       }
       if (hotClubs.some(c => c && (c.club_id == id || c.id == id))) {
-        const nextHot = hotClubs.map(c => {
+        const nextHot = hotClubs.map((c, hotIndex) => {
           if (c && (c.club_id == id || c.id == id)) {
-            const updatedClub = { ...c, ...data };
-            // 如果封面更新了，需要更新缩略图
-    if (data.cover_url) {
-              updatedClub.cover_url_thumb = app.convertToThumbnailUrl(data.cover_url, 200);
+            const patch = { ...data };
+            delete patch.type;
+            const merged = { ...c, ...patch };
+            if (patch.cover_url) {
+              merged.cover_url_thumb = app.convertToThumbnailUrl(patch.cover_url, 400);
             }
-            return updatedClub;
+            if (patch.cover_url || patch.post_files) {
+              return this.prepareClubForPoster(merged, hotIndex);
+            }
+            return merged;
           }
           return c;
         });
@@ -1278,6 +1295,31 @@ Page({
     this.setData({ messagesActiveTab: isFinite(idx) ? idx : 0 });
   },
 
+  /** 供 expandable clear-parent：子级全屏展开时清空通知列表 */
+  suspendContentToBlank() {
+    this.setData({
+      messagesContentSuspended: true,
+      messagesContentSuspendMode: 'blank'
+    });
+  },
+
+  /** 供 expandable clear-parent：子级收起后骨架屏并重载通知列表 */
+  resumeContentWithSkeletonReload() {
+    this.setData({
+      messagesContentSuspended: true,
+      messagesContentSuspendMode: 'skeleton'
+    });
+    return new Promise((resolve) => {
+      this.fetchMessagesForPanel(() => {
+        this.setData({
+          messagesContentSuspended: false,
+          messagesContentSuspendMode: ''
+        });
+        resolve();
+      }, { silent: true });
+    });
+  },
+
   /**
    * 加载通知数据
    */
@@ -1389,15 +1431,105 @@ Page({
     };
   },
 
+  /** 解析通知 URL 查询串 */
+  _parseNoticeUrlParams(qs) {
+    const params = {};
+    (qs || '').split('&').filter(Boolean).forEach((kv) => {
+      const eq = kv.indexOf('=');
+      const k = eq >= 0 ? kv.slice(0, eq) : kv;
+      const v = eq >= 0 ? kv.slice(eq + 1) : '';
+      if (k) {
+        try {
+          params[decodeURIComponent(k)] = decodeURIComponent(v || '');
+        } catch (e) {
+          params[k] = v || '';
+        }
+      }
+    });
+    return params;
+  },
+
   /**
-   * 点击通知项
+   * 将通知 URL / operation 映射为 globalPopup 配置；无法映射返回 null
+   */
+  _resolveNoticeUrlToPopup(url, operation) {
+    const raw = (url || '').trim();
+    if (!raw && !operation) return null;
+
+    const qIdx = raw.indexOf('?');
+    const basePath = (qIdx >= 0 ? raw.slice(0, qIdx) : raw).replace(/\/+$/, '') || '';
+    const params = this._parseNoticeUrlParams(qIdx >= 0 ? raw.slice(qIdx + 1) : '');
+    const clubId = params.clubId || params.club_id || '';
+    const eventId = params.eventId || params.event_id || '';
+    const userId = params.id || params.userId || params.user_id || '';
+
+    const matchPath = (...paths) => paths.includes(basePath);
+
+    if (matchPath('/packageClub/club-manage/index') && clubId) {
+      return { type: 'club-manage', id: String(clubId), data: {} };
+    }
+    if (matchPath('/packageClub/club-detail/index') && clubId) {
+      return { type: 'club-detail', id: String(clubId), data: {} };
+    }
+    if (matchPath('/packageClub/club-joined/index') && clubId) {
+      return { type: 'club-joined', id: String(clubId), data: {} };
+    }
+    if (matchPath('/packageEvent/event-manage/index') && eventId) {
+      return { type: 'event-manage', id: String(eventId), data: {} };
+    }
+    if (matchPath('/packageEvent/event-detail/index') && eventId) {
+      return { type: 'event-detail', id: String(eventId), data: {} };
+    }
+    if (matchPath('/packageEvent/event-joined/index') && eventId) {
+      return { type: 'event-joined', id: String(eventId), data: {} };
+    }
+    if (
+      matchPath('/packageClub/club-applications/index', '/packageProfile/club-applications/index') &&
+      clubId
+    ) {
+      return { type: 'club-applications', id: String(clubId), data: {} };
+    }
+    if (matchPath('/packageClub/my-applications/index', '/packageProfile/my-applications/index')) {
+      return { type: 'my-applications', id: '', data: {} };
+    }
+    if (matchPath('/packageMoney/paypersonal/index', '/pages/money/paypersonal/index')) {
+      return { type: 'paypersonal', id: '', data: {} };
+    }
+    if (basePath.indexOf('user-info') !== -1 && userId) {
+      return { type: 'user-info', id: String(userId), data: {} };
+    }
+
+    if (operation === 'user_applicated' && clubId) {
+      return { type: 'club-applications', id: String(clubId), data: {} };
+    }
+
+    return null;
+  },
+
+  _extractTapPointFromEvent(e) {
+    const t = (e?.changedTouches && e.changedTouches[0]) ||
+      (e?.touches && e.touches[0]) ||
+      (e?.detail?.changedTouches && e.detail.changedTouches[0]) ||
+      (e?.detail?.touches && e.detail.touches[0]);
+    const sys = wx.getSystemInfoSync();
+    return {
+      tapX: t ? t.clientX : sys.windowWidth / 2,
+      tapY: t ? t.clientY : sys.windowHeight / 2
+    };
+  },
+
+  /**
+   * 点击通知项：优先叠 globalPopup（通知层 clear-parent 变空白），否则 navigateTo
    */
   onMessageItemTap: function(e) {
     const messageId = e.currentTarget.dataset.message_id;
     const url = (e.currentTarget.dataset.url || '').trim();
+    const operation = e.currentTarget.dataset.operation || '';
     const token = wx.getStorageSync('token');
 
     if (!messageId) return;
+
+    const { tapX, tapY } = this._extractTapPointFromEvent(e);
 
     wx.request({
       url: app.globalData.request_url + `/message/${messageId}/read`,
@@ -1410,53 +1542,13 @@ Page({
         this.fetchMessagesForPanel(undefined, { silent: true });
       },
       success: () => {
+        const target = this._resolveNoticeUrlToPopup(url, operation);
+        if (target && target.type) {
+          this.openGlobalPopupByType(target.type, target.id, tapX, tapY, { data: target.data });
+          return;
+        }
         if (!url) return;
 
-        // 通知点击：优先在首页直接弹出对应全屏弹窗（不收回通知弹窗）
-        const basePath = url.split('?')[0] || '';
-        const qs = url.split('?')[1] || '';
-        const params = {};
-        qs.split('&').filter(Boolean).forEach(kv => {
-          const [k, v] = kv.split('=');
-          if (k) params[decodeURIComponent(k)] = decodeURIComponent(v || '');
-        });
-
-        // 触摸坐标：用于弹窗从点击点展开
-        const t = (e?.changedTouches && e.changedTouches[0]) || (e?.touches && e.touches[0]) || (e?.detail?.changedTouches && e.detail.changedTouches[0]) || (e?.detail?.touches && e.detail.touches[0]);
-        const sys = wx.getSystemInfoSync();
-        const tapX = t ? t.clientX : sys.windowWidth / 2;
-        const tapY = t ? t.clientY : sys.windowHeight / 2;
-
-        // 协会弹窗
-        if (basePath === '/packageClub/club-manage/index' && params.clubId) {
-          this.openGlobalPopupByType('club-manage', String(params.clubId), tapX, tapY);
-          return;
-        }
-        if (basePath === '/packageClub/club-detail/index' && params.clubId) {
-          this.openGlobalPopupByType('club-detail', String(params.clubId), tapX, tapY);
-          return;
-        }
-        // 已加入协会视图（通知/企微等历史 URL 常指向该路径，与子包内占位页一致）
-        if (basePath === '/packageClub/club-joined/index' && params.clubId) {
-          this.openGlobalPopupByType('club-joined', String(params.clubId), tapX, tapY);
-          return;
-        }
-
-        // 活动弹窗
-        if (basePath === '/packageEvent/event-manage/index' && params.eventId) {
-          this.openGlobalPopupByType('event-manage', String(params.eventId), tapX, tapY);
-          return;
-        }
-        if (basePath === '/packageEvent/event-detail/index' && params.eventId) {
-          this.openGlobalPopupByType('event-detail', String(params.eventId), tapX, tapY);
-          return;
-        }
-        if (basePath === '/packageEvent/event-joined/index' && params.eventId) {
-          this.openGlobalPopupByType('event-joined', String(params.eventId), tapX, tapY);
-          return;
-        }
-
-        // 兜底：仍按 URL 进行跳转（如果项目里存在该页面）
         wx.navigateTo({
           url,
           fail: (err) => {
@@ -1471,12 +1563,20 @@ Page({
     });
   },
 
-  // 通知点击：在首页直接打开对应全屏弹窗（用于兼容历史 URL）
-  openGlobalPopupByType(type, id, tapX, tapY) {
+  /** 通知内打开的 panel 有变更时刷新列表 */
+  onGlobalPopupPanelUpdate: function() {
+    this.fetchMessagesForPanel(undefined, { silent: true });
+    this.fetchNoticeBadge();
+  },
+
+  // 通知 / 列表点击：在首页直接打开对应全屏弹窗（不收回通知弹窗）
+  openGlobalPopupByType(type, id, tapX, tapY, extra) {
     const sys = wx.getSystemInfoSync();
     const safeX = (typeof tapX === 'number' && !Number.isNaN(tapX)) ? tapX : sys.windowWidth / 2;
     const safeY = (typeof tapY === 'number' && !Number.isNaN(tapY)) ? tapY : sys.windowHeight / 2;
-    this._openGlobalPopupRoot(type, id, safeX, safeY);
+    panelLazy.preloadForPanelType(type).then(() => {
+      this._openGlobalPopupRoot(type, id, safeX, safeY, extra);
+    });
   },
 
   /**
@@ -1595,6 +1695,25 @@ Page({
 
   /** 协会详情内嵌活动变更等 */
   onClubDetailPanelUpdate: function() {
+    this.applyLocalChanges();
+  },
+
+  /** 协会管理面板变更（封面/海报/简介等，由 recordChange 写入 changes） */
+  onClubManagePanelUpdate: function(e) {
+    const { club } = e.detail || {};
+    const clubId = club?.club_id || club?.id;
+    if (club && clubId) {
+      this.updateInCache('club', clubId, club);
+    }
+    this.applyLocalChanges();
+  },
+
+  /** 活动管理面板变更 */
+  onEventManagePanelUpdate: function(e) {
+    const { event } = e.detail || {};
+    if (event?.event_id) {
+      this.updateInCache('event', event.event_id, event);
+    }
     this.applyLocalChanges();
   },
 
@@ -1770,18 +1889,13 @@ Page({
    * 为协会数据准备海报展示数据
    */
   prepareClubForPoster(club, index) {
-    // 准备 isotope 背景数据（二维数组，每一组是一个 item 数组）
-    const coverGroup = this.prepareClubForIsotope_cover(club, index) || [];
-    const memberGroup = this.prepareClubForIsotope_members(club, index) || [];
-    const isotopeData = [coverGroup, memberGroup].filter(group => Array.isArray(group) && group.length > 0);
+    const isotopeData = this.prepareClubForIsotope_coverAndPosts(club, index);
 
-    // 提取社长信息
     const president = club.president_info ? {
       avatar: app.convertToThumbnailUrl(club.president_info.avatar, 120),
       name: club.president_info.user_name || club.president_info.name
     } : null;
 
-    // 提取成员头像（前5个）
     const members = (club.recent_members || [])
       .slice(0, 5)
       .map(member => ({
@@ -1789,15 +1903,14 @@ Page({
         name: member.user_name
       }));
 
-    // 生成协会标签（基于协会名称和描述提取关键词）
-
-    // 计算统计数据
     const memberCount = club.member_count || 0;
-    const eventCount = (club.recent_events || []).length;
+    const eventCount = club.recent_event_count != null
+      ? club.recent_event_count
+      : (club.recent_events || []).length;
 
     return {
       ...club,
-      isotopeData: isotopeData, // isotope背景数据
+      isotopeData,
       posterData: {
         president,
         members,
@@ -1808,63 +1921,13 @@ Page({
     };
   },
 
-
   /**
-   * 为协会数据添加 isotope 组件需要的尺寸信息，并将图片URL转换为缩略图URL（背景版）
+   * 热门协会 isotope：封面一组 → 全部海报拼贴一组(150) → 每张海报单独一组(400)
    */
-  prepareClubForIsotope_cover(club, index) {
-    // 只保留协会封面和活动封面，放大尺寸作为背景
-
-    // 为协会封面创建数据（放大尺寸）
-    const clubCoverData = {
-      id: `${club.club_id || `club-${index}`}-cover`,
-      image: app.convertToThumbnailUrl(club.cover_url, 200), // 300rpx高度，更大作为主要背景
-      type: 'club_cover',
-      ini_height: 200, // 调整为更合理的尺寸
-      ini_width: 200,
-      club_id: club.club_id,
-      club_name: club.club_name
-    };
-
-    // 为活动封面创建数据（取前几个，放大尺寸）
-    const eventImagesData = [];
-    (club.recent_events || []).slice(0, 3).forEach((event, eventIndex) => { // 限制活动数量
-      (event.event_imgs || []).slice(0, 2).forEach((event_img, imgIndex) => { // 每个活动最多2张图片
-    if (eventImagesData.length < 6) { // 总共最多6张活动图片
-          eventImagesData.push({
-            id: `${club.club_id || `club-${index}`}-event-${eventIndex}-${imgIndex}`,
-            image: app.convertToThumbnailUrl(event_img, 150), // 250rpx高度，放大尺寸
-            type: 'event_image',
-            club_id: club.club_id,
-            title: event.title,
-            ini_height: 150, // 调整为更合理的尺寸
-            ini_width: 150,
-            event_title: event.title
-          });
-        }
-      });
+  prepareClubForIsotope_coverAndPosts(club, index) {
+    return app.buildClubPosterIsotopeData(club, {
+      clubKey: club.club_id || `club-${index}`
     });
-
-    // 只保留协会封面和活动图片
-    const allImagesData = [
-      clubCoverData,
-      ...eventImagesData
-    ].filter(Boolean);
-
-    return allImagesData; // 只返回图片数据数组，不包装在club对象中
-  },
-
-  prepareClubForIsotope_members(club, index) {
-    // 只保留协会成员头像，放大尺寸
-    const members = club.recent_members || [];
-    const memberImagesData = members.map((member, memberIndex) => ({
-      id: `${club.club_id || `club-${index}`}-member-${member.user_id || memberIndex}`,
-      image: app.convertToThumbnailUrl(member.avatar, 100),
-      type: 'member_image',
-      ini_height: 100,
-      ini_width: 100
-    }));
-    return memberImagesData;
   },
 
   // ========= 活动管理弹窗相关方法 =========
@@ -1912,11 +1975,19 @@ Page({
   onPanelContentReady: function(e) {
     const panelId = e.currentTarget?.dataset?.panelId;
     if (panelId) {
-      const panel = this.selectComponent(`#${panelId}`);
-      if (panel && typeof panel.loadData === 'function') {
-        panel.loadData();
-      }
+      panelLazy.invokePanelLoadData(this, `#${panelId}`);
     }
+  },
+
+  _onGlobalPopupPanelLoadTimeout(panelSelector) {
+    console.warn('[home] panel load timeout:', panelSelector);
+    if (this.data.globalPopup && this.data.globalPopup.loading) {
+      this.setData({ 'globalPopup.loading': false });
+    }
+    if (this.data.globalPopupOverlay && this.data.globalPopupOverlay.loading) {
+      this.setData({ 'globalPopupOverlay.loading': false });
+    }
+    wx.showToast({ title: '加载较慢，请重试', icon: 'none' });
   },
 
   // ========= 全局弹窗相关方法 =========
@@ -1928,7 +1999,11 @@ Page({
       'event-manage': '#globalEventManagePanel',
       'club-detail': '#globalClubDetailPanel',
       'club-joined': '#globalClubJoinedPanel',
-      'club-manage': '#globalClubManagePanel'
+      'club-manage': '#globalClubManagePanel',
+      'club-applications': '#globalClubApplicationsPanel',
+      'my-applications': '#globalMyApplicationsPanel',
+      'paypersonal': '#globalPaypersonalPanel',
+      'user-info': '#globalUserInfoPanel'
     };
     return map[type] || '';
   },
@@ -1948,13 +2023,14 @@ Page({
   _renderGlobalPopupOverlayPanel() {
     const ov = this.data.globalPopupOverlay;
     if (!ov) return;
-    this.setData({ 'globalPopupOverlay.renderPanel': true }, () => {
-      setTimeout(() => {
+    panelLazy.preloadForPanelType(ov.type).then(() => {
+      this.setData({ 'globalPopupOverlay.renderPanel': true }, () => {
         const panelId = this._overlayPanelIdForType(ov.type);
         if (!panelId) return;
-        const panel = this.selectComponent(panelId);
-        if (panel && panel.loadData) panel.loadData();
-      }, 50);
+        panelLazy.invokePanelLoadData(this, panelId, {
+          onTimeout: () => this._onGlobalPopupPanelLoadTimeout(panelId)
+        });
+      });
     });
   },
 
@@ -1982,8 +2058,11 @@ Page({
       if (this.data.globalPopup.renderPanel && !this.data.globalPopup.loading) return;
       if (this.data.globalPopup.renderPanel) {
         const panelId = this._panelIdForGlobalPopupType(pending.type);
-        const panel = panelId ? this.selectComponent(panelId) : null;
-        if (panel && panel.loadData) panel.loadData();
+        if (panelId) {
+          panelLazy.invokePanelLoadData(this, panelId, {
+            onTimeout: () => this._onGlobalPopupPanelLoadTimeout(panelId)
+          });
+        }
       } else {
         this._renderGlobalPopupPanel();
       }
@@ -1996,13 +2075,15 @@ Page({
   },
 
   _renderGlobalPopupPanel() {
-    this.setData({ 'globalPopup.renderPanel': true }, () => {
-      setTimeout(() => {
-        const panelId = this._panelIdForGlobalPopupType(this.data.globalPopup.type);
+    const type = this.data.globalPopup.type;
+    panelLazy.preloadForPanelType(type).then(() => {
+      this.setData({ 'globalPopup.renderPanel': true }, () => {
+        const panelId = this._panelIdForGlobalPopupType(type);
         if (!panelId) return;
-        const panel = this.selectComponent(panelId);
-        if (panel && panel.loadData) panel.loadData();
-      }, 100);
+        panelLazy.invokePanelLoadData(this, panelId, {
+          onTimeout: () => this._onGlobalPopupPanelLoadTimeout(panelId)
+        });
+      });
     });
   },
 
@@ -2043,18 +2124,21 @@ Page({
   },
 
   /** 首次打开全屏（带涟漪展开） */
-  _openGlobalPopupRoot(type, id, tapX, tapY) {
+  _openGlobalPopupRoot(type, id, tapX, tapY, extra) {
     const bgColor = 'rgba(223, 118, 176, 0.8)';
     const sheetBgColor = '#f7f8fa';
+    const popupData = (extra && extra.data) ? extra.data : {};
+    const safeId = String(id || '');
     this.setData({
-      globalPopupStack: [{ type, id: String(id), tapX, tapY }],
+      globalPopupStack: [{ type, id: safeId, tapX, tapY, data: popupData }],
       globalPopupDeferBack: false,
       globalPopup: {
         visible: true,
         loading: true,
         renderPanel: false,
         type,
-        id: String(id),
+        id: safeId,
+        data: popupData,
         bgColor,
         sheetBgColor,
         tapX,
@@ -2215,7 +2299,9 @@ Page({
       console.log('使用屏幕中心坐标:', tapX, tapY);
     }
     
-    this._openGlobalPopupRoot(type, id, tapX, tapY);
+    panelLazy.preloadForPanelType(type).then(() => {
+      this._openGlobalPopupRoot(type, id, tapX, tapY);
+    });
   },
 
   // 关闭全局弹窗
@@ -2247,6 +2333,7 @@ Page({
         'globalPopup.renderPanel': false,  // 重置 renderPanel
         'globalPopup.type': '',
         'globalPopup.id': '',
+        'globalPopup.data': {},
         globalPopupStack: [],
         globalPopupDeferBack: false,
         globalPopupStackAnim: '',
@@ -2305,5 +2392,55 @@ Page({
       title: '来看看这个小程序',
       path: '/pages/home/index'
     };
-  }
+  },
+
+  onHostClockinSignature(e) {
+    const eventId = e.detail && e.detail.eventId;
+    if (!eventId) return;
+    this.setData({
+      clockinSignature: {
+        visible: true,
+        eventId: String(eventId),
+        submitting: false,
+      },
+    }, () => {
+      setTimeout(() => {
+        const pad = this.selectComponent('#hostClockinSignaturePad');
+        if (pad && pad.prepare) pad.prepare();
+      }, 320);
+    });
+  },
+
+  preventClockinTouchMove() {},
+
+  closeHostClockinSignature() {
+    this.setData({
+      'clockinSignature.visible': false,
+      'clockinSignature.eventId': '',
+    });
+    const pad = this.selectComponent('#hostClockinSignaturePad');
+    if (pad && pad.reset) pad.reset();
+  },
+
+  async onHostSignatureConfirm(e) {
+    const fileId = e.detail && e.detail.fileId;
+    const eventId = this.data.clockinSignature.eventId;
+    if (!fileId || !eventId || this.data.clockinSignature.submitting) return;
+
+    this.setData({ 'clockinSignature.submitting': true });
+    try {
+      wx.showLoading({ title: '打卡中...' });
+      await submitClockIn(eventId, fileId);
+      wx.hideLoading();
+      this.closeHostClockinSignature();
+      wx.showToast({ title: '打卡成功', icon: 'success' });
+      const panel = this.selectComponent('#globalEventJoinedPanel');
+      if (panel && panel.loadEventData) panel.loadEventData();
+    } catch (err) {
+      wx.hideLoading();
+      wx.showToast({ title: err.message || '打卡失败', icon: 'none' });
+    } finally {
+      this.setData({ 'clockinSignature.submitting': false });
+    }
+  },
 }) 

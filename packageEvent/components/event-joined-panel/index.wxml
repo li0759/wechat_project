@@ -417,13 +417,37 @@
   </view>
 
   <!-- 底部操作栏（统一样式 styles/panel-bottom-actions.wxss，与 club-manage 双按钮行一致；底栏在 content-container 外避免被 tabs 裁切） -->
-  <block wx:if="{{featuredEvent && !featuredEvent.is_cancelled && !featuredEvent.club_deleted}}">
+  <block wx:if="{{featuredEvent && !featuredEvent.is_cancelled && !featuredEvent.club_deleted && !showSignaturePopup}}">
     <!-- 已结束（actual_endTime 已有）：不允许退出，与后端 quit 校验一致；仅分享时不加 --row 避免单按钮被 max-width:48% 压窄 -->
     <view class="bottom-actions {{featuredEvent.actual_endTime ? '' : 'bottom-actions--row'}}">
       <t-button class="bottom-action-btn" size="large" shape="round" theme="primary" open-type="share">分享</t-button>
       <t-button wx:if="{{!featuredEvent.actual_endTime}}" class="bottom-action-btn" size="large" shape="round" theme="danger" variant="outline" bindtap="quitEvent">退出活动</t-button>
     </view>
   </block>
+
+  <!-- 打卡签名：自定义 fixed 层，避免 profile 全屏弹层 + t-popup + canvas 触摸失效 -->
+  <view
+    wx:if="{{showSignaturePopup}}"
+    class="clockin-signature-overlay"
+    catchtouchmove="preventTouchMove"
+  >
+    <view class="clockin-signature-mask" catchtap="closeSignaturePopup"></view>
+    <view class="signature-popup clockin-signature-sheet">
+      <view class="signature-popup__title">活动打卡签名</view>
+      <signature-pad
+        id="clockinSignaturePad"
+        active="{{showSignaturePopup}}"
+        bind:confirm="onSignatureConfirm"
+      />
+      <t-button
+        theme="default"
+        variant="text"
+        size="medium"
+        bind:tap="closeSignaturePopup"
+        disabled="{{clockinSubmitting}}"
+      >取消</t-button>
+    </view>
+  </view>
 
 </view>
 

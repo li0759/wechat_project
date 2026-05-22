@@ -136,10 +136,22 @@
   margin-bottom: 8rpx;
 }
 
+/* 待审批：浅灰背景 */
+.tl-modal-main--milestone-pending {
+  background: linear-gradient(90deg, rgba(156, 163, 175, 0.16) 0%, rgba(156, 163, 175, 0.06) 52%, rgba(255, 255, 255, 0) 100%);
+  border-left: 6rpx solid #9ca3af;
+  border-right: 2rpx dashed rgba(156, 163, 175, 0.38);
+  border-radius: 14rpx;
+  padding: 18rpx 20rpx 22rpx 16rpx;
+  margin-bottom: 8rpx;
+}
+
+/* 已拒绝：深灰背景，与待审批区分 */
+.tl-modal-main--milestone-rejected,
 .tl-modal-main--milestone-end {
-  background: linear-gradient(90deg, rgba(107, 114, 128, 0.2) 0%, rgba(107, 114, 128, 0.07) 52%, rgba(255, 255, 255, 0) 100%);
-  border-left: 6rpx solid #6b7280;
-  border-right: 2rpx dashed rgba(107, 114, 128, 0.42);
+  background: linear-gradient(90deg, rgba(55, 65, 81, 0.3) 0%, rgba(75, 85, 99, 0.14) 52%, rgba(255, 255, 255, 0) 100%);
+  border-left: 6rpx solid #374151;
+  border-right: 2rpx dashed rgba(55, 65, 81, 0.55);
   border-radius: 14rpx;
   padding: 18rpx 20rpx 22rpx 16rpx;
   margin-bottom: 8rpx;
@@ -153,7 +165,13 @@
   margin-bottom: 12rpx;
 }
 
+.tl-milestone-title--pending {
+  color: #6b7280;
+}
+
 .tl-modal-main--milestone-start .tl-op-row,
+.tl-modal-main--milestone-pending .tl-op-row,
+.tl-modal-main--milestone-rejected .tl-op-row,
 .tl-modal-main--milestone-end .tl-op-row {
   align-items: flex-start;
 }
@@ -210,23 +228,34 @@
   height: 200rpx;
 }
 
-/* 待审批：主内容非里程碑卡片，操作按钮与时间线里「一行多列」并排 */
-.cap-app-pending-row {
-  align-items: flex-start;
+.cap-app-pending-card {
+  position: relative;
+  box-sizing: border-box;
 }
 
+.cap-app-pending-row {
+  align-items: flex-start;
+  width: 100%;
+}
+
+/* 批准/拒绝：与卡片内容完全解耦的右上角浮层 */
 .cap-app-pending-actions {
-  flex-shrink: 0;
+  position: absolute;
+  top: 10rpx;
+  right: 10rpx;
+  z-index: 3;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   gap: 12rpx;
-  width: 132rpx;
-  padding-top: 2rpx;
+  pointer-events: auto;
 }
 
 .cap-btn {
-  width: 100% !important;
-  min-width: 0 !important;
+  width: auto !important;
+  min-width: 128rpx !important;
+  margin: 0 !important;
+  height: 56rpx !important;
 }
 
 .cap-btn-approve {
@@ -234,6 +263,35 @@
   border-color: rgb(223, 118, 176) !important;
 }
 
+.cap-btn-reject {
+  background-color: #4b5563 !important;
+  border-color: #4b5563 !important;
+  color: #fff !important;
+}
+
 .dialog-body {
-  padding: 16rpx 0 0;
+  padding: 8rpx 0 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cap-dialog-textarea {
+  width: 100%;
+  min-height: 160rpx;
+  padding: 16rpx 20rpx;
+  box-sizing: border-box;
+  font-size: 28rpx;
+  line-height: 1.45;
+  color: var(--md-sys-color-on-surface);
+  background: #f3f4f6;
+  border-radius: 12rpx;
+  border: 1rpx solid #e5e7eb;
+}
+
+.cap-dialog-counter {
+  display: block;
+  margin-top: 8rpx;
+  text-align: right;
+  font-size: 22rpx;
+  color: #9ca3af;
 }

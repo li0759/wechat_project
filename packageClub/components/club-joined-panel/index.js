@@ -5,7 +5,7 @@ Component({
     clubId: {
       type: String,
       value: ''
-    }
+    },
   },
 
   data: {
@@ -26,7 +26,6 @@ Component({
     eventsEmpty: false,
     eventsPage: 1,
     eventsTotalPages: 1,
-    
     // 嵌套弹窗状态 - event-detail-panel
     nestedEventDetail: {
       visible: false,
@@ -570,11 +569,10 @@ Component({
     },
 
     // 设置活动状态和按钮
-  setEventStatus(event) {
+    setEventStatus(event) {
       const hasStarted = !!event.actual_startTime;
       const hasEnded = !!event.actual_endTime;
-      const hasClockedIn = !!event.cur_user_clockin_date;
-      
+
       if (hasEnded) {
         event.statusText = '已结';
         event.statusClass = 'status-ended';
@@ -582,14 +580,7 @@ Component({
       } else if (hasStarted) {
         event.statusText = '正在进行';
         event.statusClass = 'status-ongoing';
-        if (!hasClockedIn) {
-          event.showButton = true;
-          event.buttonText = '打卡';
-          event.buttonTheme = 'primary';
-          event.buttonAction = 'clockin';
-        } else {
-          event.showButton = false;
-        }
+        event.showButton = false;
       } else {
         event.statusText = '预计开';
         event.statusClass = 'status-upcoming';
@@ -649,7 +640,7 @@ Component({
       }
     },
 
-    // 活动操作（打卡或参加）
+    // 活动操作（仅参加；打卡请进入 event-joined-panel）
     async onEventAction(e) {
       // 安全检查：确保 stopPropagation 方法存在
       if (e && typeof e.stopPropagation === 'function') {
@@ -657,30 +648,9 @@ Component({
       }
       const eventId = e.currentTarget.dataset.eventId;
       const action = e.currentTarget.dataset.action;
-      
-      if (action === 'clockin') {
-        await this.clockIn(eventId);
-      } else if (action === 'join') {
-        await this.joinEvent(eventId);
-      }
-    },
 
-    // 打卡
-    async clockIn(eventId) {
-      try {
-        wx.showLoading({ title: '打卡?..' });
-        const res = await this.request({ url: `/event/clockin/${eventId}` });
-        wx.hideLoading();
-        
-        if (this._apiOk(res)) {
-          wx.showToast({ title: '打卡成功', icon: 'success' });
-          this.loadClubData();
-        } else {
-          throw new Error(res.message || '打卡失败');
-        }
-      } catch (error) {
-        wx.hideLoading();
-        wx.showToast({ title: error.message || '打卡失败', icon: 'none' });
+      if (action === 'join') {
+        await this.joinEvent(eventId);
       }
     },
 

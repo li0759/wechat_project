@@ -1,4 +1,5 @@
 /* pages/profile/index.wxss */
+@import "../../styles/clockin-signature-overlay.wxss";
 
 /* CSS Variables - Design System */
 page {
@@ -42,95 +43,24 @@ page {
 
 /* 头部用户信息 */
 .header {
-  background: linear-gradient(135deg, #DF76B0 0%, #C85A9E 100%);
-  width: 500rpx;
-  margin-left: 100rpx;
+  margin-left: 10rpx;
   margin-top: 10rpx;
-  color: #FFFFFF;
-  border-radius: 30rpx;
-  box-shadow: 0 4rpx 12rpx rgba(223, 118, 176, 0.25);
 }
 
 .user-card {
   display: flex;
   flex-direction: row; /* 显式指定flex-direction */
-  padding-left:100rpx;
+  padding-left:0rpx;
   padding-top: 5rpx;
   padding-bottom: 5rpx;
   align-items: center;
 }
 
 .avatar {
-  width: 120rpx;
-  height: 120rpx;
+  width: 80rpx;
+  height: 80rpx;
   border-radius: 50%;
   border: 4rpx solid rgba(255, 255, 255, 0.5);
-}
-
-.user-info {
-  flex: 1;
-  margin-left: 20rpx;
-}
-
-.name {
-  font-size: 36rpx;
-  font-weight: 500;
-  margin-bottom: 6rpx;
-  color: #FFFFFF;
-}
-
-.role {
-  font-size: 24rpx;
-  opacity: 0.9;
-  color: #FFFFFF;
-}
-
-.edit-btn {
-  padding: 10rpx;
-}
-
-/* 数据概览 */
-.statistics {
-  display: flex;
-  flex-direction: row; /* 显式指定flex-direction */
-  justify-content: space-between;
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 20rpx;
-  padding: 5rpx;
-}
-
-.stat-item {
-  flex: 1;
-  text-align: center;
-  position: relative;
-}
-
-/* 使用真实视图替代伪元素 */
-.stat-item-divider {
-  position: absolute;
-  right: 0;
-  top: 15%;
-  height: 70%;
-  width: 1rpx;
-  background-color: rgba(255, 255, 255, 0.2);
-}
-
-/* 最后一个元素的分隔线不显示，使用JS控制 */
-.stat-item-last .stat-item-divider {
-  display: none;
-}
-
-.stat-num {
-  font-size: 32rpx;
-  font-weight: bold;
-  margin-bottom: 6rpx;
-  color: #FFFFFF;
-}
-
-.stat-label {
-  font-size: 24rpx;
-  opacity: 0.9;
-  color: #FFFFFF;
 }
 
 /* 功能列表 */

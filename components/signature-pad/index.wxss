@@ -1,0 +1,37 @@
+.signature-pad {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.signature-pad__hint {
+  font-size: 28rpx;
+  color: rgba(0, 0, 0, 0.55);
+  text-align: center;
+}
+
+.signature-pad__canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: 360rpx;
+  min-height: 360rpx;
+  border: 2rpx dashed #dcdcdc;
+  border-radius: 16rpx;
+  background: #fff;
+  overflow: hidden;
+}
+
+.signature-pad__canvas {
+  display: block;
+  background: #fff;
+}
+
+.signature-pad__actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 24rpx;
+}
+
+.signature-pad__actions t-button {
+  flex: 1;
+}

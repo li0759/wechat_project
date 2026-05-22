@@ -28,6 +28,7 @@
     "expandable-container": "/components/expandable-container/index",
     "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",
     "isotope": "/components/isotope/index",
-    "ripple": "/components/ripple/index"
+    "ripple": "/components/ripple/index",
+    "club-post-panel": "/packageClub/components/club-post-panel/index"
   }
 }

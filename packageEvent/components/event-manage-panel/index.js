@@ -852,15 +852,6 @@ Component({
           event.actual_startTime_display = formatTimeDisplay(actualStartTime);
           this.setData({ event });
 
-          // 开始活动后为当前用户调用打卡接口（需已参加活动；失败不阻断已开始）
-          try {
-            await this.request({
-              url: `/event/clockin/${this.data.eventId}`,
-              method: 'GET',
-            });
-          } catch (_) {
-            /* ignore */
-          }
           await this.loadEventMembers(this.data.eventId);
           await this.loadEventTimeline(this.data.eventId);
           await this.refreshTimelineModalIfOpen();

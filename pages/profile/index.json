@@ -21,6 +21,8 @@
     "club-financial-panel": "/packageProfile/components/club-financial-panel/index",
     "paypersonal-panel": "/packageProfile/components/paypersonal-panel/index",
     "user-info-panel": "/packageProfile/components/user-info-panel/index",
+    "signature-pad": "/components/signature-pad/index",
+    "t-button": "tdesign-miniprogram/button/button",
     "club-create-skeleton": "/components/panel-skeleton/club-create-skeleton/index",
     "event-create-skeleton": "/components/panel-skeleton/event-create-skeleton/index",
     "club-manage-skeleton": "/components/panel-skeleton/club-manage-skeleton/index",
@@ -38,6 +40,7 @@
     "paypersonal-skeleton": "/components/panel-skeleton/paypersonal-skeleton/index",
     "user-info-skeleton": "/components/panel-skeleton/user-info-skeleton/index"
   },
+  "navigationStyle": "custom",
   "componentPlaceholder": {
     "club-create-panel": "club-create-skeleton",
     "event-create-panel": "event-create-skeleton",

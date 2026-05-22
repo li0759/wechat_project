@@ -168,7 +168,10 @@ Component({
       if (this.data.detailExporting) return
       const eventId = String(e?.currentTarget?.dataset?.eventid || this.data.selectedEventId || '')
       const clubId = String(this.properties.clubId || '')
-      if (!clubId || !eventId) return
+      if (!clubId || !eventId) {
+        wx.showToast({ title: '无法导出，缺少协会或活动信息', icon: 'none' })
+        return
+      }
 
       this.setData({ detailExporting: true })
       wx.showLoading({ title: '生成文件中...' })
@@ -489,9 +492,6 @@ Component({
           actual_start_time: actual,
           actual_start_time_display: this.formatIsoDisplay(actual),
         })
-        try {
-          await this.requestEventApi({ url: `/event/clockin/${eventId}`, method: 'GET' })
-        } catch (_) {}
         wx.showToast({ title: '已开始', icon: 'success' })
       } catch (err) {
         wx.showToast({ title: err.message || '开始失败', icon: 'none' })
@@ -547,21 +547,6 @@ Component({
         wx.showToast({ title: '活动已取消', icon: 'success' })
       } catch (err) {
         wx.showToast({ title: err.message || '取消失败', icon: 'none' })
-      } finally {
-        wx.hideLoading()
-      }
-    },
-
-    async onClockIn(e) {
-      const eventId = String(e?.currentTarget?.dataset?.eventid || this.data.selectedEventId || '')
-      if (!eventId) return
-      try {
-        wx.showLoading({ title: '打卡中...' })
-        const res = await this.requestEventApi({ url: `/event/clockin/${eventId}`, method: 'GET' })
-        if (String(res.Flag) !== '4000') throw new Error(res.message || '打卡失败')
-        wx.showToast({ title: '打卡成功', icon: 'success' })
-      } catch (err) {
-        wx.showToast({ title: err.message || '打卡失败', icon: 'none' })
       } finally {
         wx.hideLoading()
       }

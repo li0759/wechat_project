@@ -1,5 +1,7 @@
 // pages/profile/index.js
 const app = getApp()
+const { submitClockIn } = require('../../utils/event-clockin')
+const panelLazy = require('../../utils/panel-lazy-load')
 
 Page({
 
@@ -11,26 +13,7 @@ Page({
     isClubAdmin: false,  // 是否为协会管理员
     isSuperUser: false,  // 是否为超级用数
       managedClubs: [],    // 用户管理的协会列数
-      statistics: {
-      joinedClubs: 0,     // 已加入协会数
-      joinedEvents: 0,    // 参加的活动数
-      unreadNotices: 0,   // 未读通知数
-      pendingApplications: 0,  // 待处理的我的申请
-      pendingClubApplications: 0,  // 待处理的入团申请（管理员数
-      unpaidPayments: 0,  // 未缴费的收款数量
-      pregoEvents: 0,     // 预计开始的活动数
-      goingEvents: 0,     // 正在进行的活动数
-      endedEvents: 0,      // 已结束的活动数（仅 actual_endTime）
-      cancelledEvents: 0,  // 已取消/已退出参与（未实际结束）
-      // Task 8.2: 我管理的活动统计
-      managedPregoEvents: 0,   // 我管理的预计开始活动数
-      managedGoingEvents: 0,   // 我管理的正在进行活动数
-      managedEndedEvents: 0,   // 我管理的已结束活动数
-      managedCancelledEvents: 0 // 我管理的已取消活动数
-  },
-    hasEverManaged: false,  // Task 8.2: 是否曾经管理过活数
-      currentlyManaging: false, // Task 8.2: 是否当前正在管理活动
-    
+
     // 全局弹窗状态管理（统一管理所?panel数
       globalPopup: {
       visible: false,
@@ -63,6 +46,12 @@ Page({
 
     /** 全局全屏左上角返回：添加成员嵌套全屏时由 club-manage-panel 关闭 */
     hostExpandableBackShow: true,
+
+    clockinSignature: {
+      visible: false,
+      eventId: '',
+      submitting: false,
+    },
 
     bd: {
       joined_clubs: { count: 0, seen: true },
@@ -103,6 +92,15 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onLoad(options) {
+    if (wx.onLazyLoadError) {
+      wx.onLazyLoadError(({ errMsg, mod }) => {
+        console.error('[profile] 分包组件加载失败:', mod, errMsg);
+        if (this.data.globalPopup && this.data.globalPopup.loading) {
+          this.setData({ 'globalPopup.loading': false });
+        }
+        wx.showToast({ title: '组件加载失败', icon: 'none' });
+      });
+    }
     // 组件验证将在第一次打开弹窗时进数
       // 检查是否需要自动弹出活动面数
       const { eventId, autoOpen } = options;
@@ -127,6 +125,7 @@ Page({
       this.setData({
         userInfo: wx.getStorageSync('userInfo')
       });
+      panelLazy.preloadAllPanelSubpackages();
       await this.fetchUserData();
       
       // 处理列表项的最后一个元素样数
@@ -170,24 +169,6 @@ Page({
           .fields({ node: true, size: true }, function(res) {
             if (res && res.node) {
               res.node.classList.add('tracking-item-last');
-            }
-          })
-          .exec();
-      }
-    }).exec();
-    
-    // 处理统计数据
-    query.selectAll('.stat-item').boundingClientRect(rects => {
-    if (rects && rects.length > 0) {
-        // 为最后一个元素添加特殊类
-    const lastIndex = rects.length - 1;
-        const lastItemSelector = `.stat-item:nth-child(${lastIndex + 1})`;
-        
-        wx.createSelectorQuery()
-          .select(lastItemSelector)
-          .fields({ node: true, size: true }, function(res) {
-            if (res && res.node) {
-              res.node.classList.add('stat-item-last');
             }
           })
           .exec();
@@ -440,7 +421,6 @@ Page({
 
   _applyProfileBadgePayload(data) {
     const badges = (data && data.badges) || {};
-    const ct = (data && data.counts_top) || {};
     const p = (k) => this._pickBadgeEnt(badges, k);
     const bd = {
       joined_clubs: p('joined_clubs'),
@@ -469,32 +449,9 @@ Page({
         pending_badge_seen: !!ent.seen
       };
     });
-    const jc = ct.joined_clubs != null ? Number(ct.joined_clubs) : bd.joined_clubs.count;
-    const je = ct.joined_events != null ? Number(ct.joined_events) : this.data.statistics.joinedEvents;
-    const up = ct.unpaid_payments != null ? Number(ct.unpaid_payments) : bd.unpaid_payments.count;
-    const hasEverManaged =
-      (bd.managed_events_prego.count +
-        bd.managed_events_going.count +
-        bd.managed_events_ended.count +
-        bd.managed_events_cancelled.count) > 0;
-    const currentlyManaging = bd.managed_events_prego.count + bd.managed_events_going.count > 0;
     this.setData({
       bd,
-      managedClubs,
-      hasEverManaged,
-      currentlyManaging,
-      'statistics.joinedClubs': jc,
-      'statistics.joinedEvents': je,
-      'statistics.unpaidPayments': up,
-      'statistics.pendingApplications': bd.pending_my_applications.count,
-      'statistics.pregoEvents': bd.my_events_prego.count,
-      'statistics.goingEvents': bd.my_events_going.count,
-      'statistics.endedEvents': bd.my_events_ended.count,
-      'statistics.cancelledEvents': bd.my_events_cancelled.count,
-      'statistics.managedPregoEvents': bd.managed_events_prego.count,
-      'statistics.managedGoingEvents': bd.managed_events_going.count,
-      'statistics.managedEndedEvents': bd.managed_events_ended.count,
-      'statistics.managedCancelledEvents': bd.managed_events_cancelled.count
+      managedClubs
     });
   },
 
@@ -598,13 +555,7 @@ Page({
       
 
       await Promise.allSettled([
-        this.fetchleadclubInfo(),
-        this.fetchUserJoinedClubs(),
-        this.fetchUserJoinedEvents(),
-        this.fetchPendingApplications(),
-        this.fetchUnpaidPayments(),   // 新增：获取未缴费的收款数数
-      this.fetchMyEventsCount(),      // 新增：获取我的活动各状态数数
-      this.fetchManagedEventsCount()  // Task 8.2: 获取我管理的活动各状态数数
+        this.fetchleadclubInfo()
       ]);
       await this.fetchProfileBadges();
     this.setData({
@@ -761,196 +712,6 @@ Page({
       });
     });
   },
-  
-  
-
-  /**
-   * 获取用户已加入的协会数量
-   */
-  async fetchUserJoinedClubs() {
-    return new Promise((resolve, reject) => {
-      wx.request({
-        url: app.globalData.request_url + `/club/user_joined/list`,
-        method: 'GET',
-        header: {
-          'Authorization': `Bearer ${wx.getStorageSync('token')}`,
-          'Content-Type': 'application/json'
-        },
-        success: (res) => {
-          if (res.data.Flag == 4000) {
-            const clubCount = res.data.data ? res.data.data.length : 0;
-            
-            // 确保 clubCount 是有效数数
-      if (typeof clubCount === 'number' && !isNaN(clubCount)) {
-    this.setData({
-                'statistics.joinedClubs': clubCount
-              });
-            }
-            
-            resolve(clubCount);
-          } else {
-            // 失败时设置为 0 而不?reject
-    this.setData({
-              'statistics.joinedClubs': 0
-            });
-            resolve(0);
-          }
-        },
-        fail: (err) => {
-          // 失败时设置为 0 而不?reject
-    this.setData({
-            'statistics.joinedClubs': 0
-          });
-          resolve(0);
-        }
-      });
-    });
-  },
-
-  /**
-   * 获取用户参加的还未结束的活动数量
-   */
-  async fetchUserJoinedEvents() {
-    // 角标/统计不计入“协会已删除”的活动
-    const all = await this.fetchAllEventsPaged('/event/user_joined/list/all');
-    const valid = all.filter(e => e && !e.club_deleted);
-    const goingCount = valid.filter(e => !e.join_is_delete && e.actual_startTime && !e.actual_endTime && !e.is_cancelled).length;
-    this.setData({ 'statistics.joinedEvents': goingCount });
-    return goingCount;
-  },
-
-  /**
-   * 获取我的活动各状态数据   */
-  async fetchMyEventsCount() {
-    // 预计开始/进行中：不计入协会已删除（与角标语义一致）
-    // 已结束/已取消：与列表接口一致，需计入协会已删除等仍返回在列表里的记录
-    const all = await this.fetchAllEventsPaged('/event/user_joined/list/all');
-    const valid = all.filter(e => e && !e.club_deleted);
-    const pregoCount = valid.filter(e => !e.join_is_delete && !e.actual_startTime && !e.is_cancelled).length;
-    const goingCount = valid.filter(e => !e.join_is_delete && e.actual_startTime && !e.actual_endTime && !e.is_cancelled).length;
-    const raw = (all || []).filter(e => !!e);
-    const endedCount = raw.filter(e => !!e.actual_endTime).length;
-    const cancelledCount = raw.filter(
-      e => !e.actual_endTime && (e.is_cancelled || e.join_is_delete)
-    ).length;
-    this.setData({
-      'statistics.pregoEvents': pregoCount,
-      'statistics.goingEvents': goingCount,
-      'statistics.endedEvents': endedCount,
-      'statistics.cancelledEvents': cancelledCount
-    });
-  },
-
-  /**
-   * 获取特定类型的活动数据   */
-  async fetchEventCountByType(type) {
-    return new Promise((resolve) => {
-      wx.request({
-        url: app.globalData.request_url + `/event/user_joined/list/${type}?mode=count`,
-        method: 'GET',
-        header: {
-          'Authorization': `Bearer ${wx.getStorageSync('token')}`,
-          'Content-Type': 'application/json'
-        },
-        success: (res) => {
-          if (res.data.Flag == 4000) {
-            resolve(res.data.data.count || 0);
-          } else {
-            resolve(0);
-          }
-        },
-        fail: () => {
-          resolve(0);
-        }
-      });
-    });
-  },
-
-  /**
-   * Task 8.2: 获取我管理的活动各状态数据   */
-  async fetchManagedEventsCount() {
-    // 角标/统计不计入“协会已删除”的活动
-    const all = await this.fetchAllEventsPaged('/event/user_manage/list/all');
-    const valid = all.filter(e => e && !e.club_deleted);
-    const pregoCount = valid.filter(e => !e.actual_startTime && !e.is_cancelled).length;
-    const goingCount = valid.filter(e => e.actual_startTime && !e.actual_endTime && !e.is_cancelled).length;
-    const endedCount = valid.filter(e => !!e.actual_endTime).length;
-    const cancelledCount = valid.filter(e => !!e.is_cancelled).length;
-
-    const hasEverManaged = (pregoCount + goingCount + endedCount + cancelledCount) > 0;
-    const currentlyManaging = (pregoCount + goingCount) > 0;
-
-    this.setData({
-      'statistics.managedPregoEvents': pregoCount,
-      'statistics.managedGoingEvents': goingCount,
-      'statistics.managedEndedEvents': endedCount,
-      'statistics.managedCancelledEvents': cancelledCount,
-      hasEverManaged,
-      currentlyManaging
-    });
-  },
-
-  async fetchAllEventsPaged(basePath) {
-    const token = wx.getStorageSync('token');
-    const all = [];
-    let page = 1;
-    let totalPages = 1;
-
-    while (page <= totalPages) {
-      // eslint-disable-next-line no-await-in-loop
-      const res = await new Promise((resolve) => {
-        wx.request({
-          url: app.globalData.request_url + `${basePath}?mode=page&page=${page}`,
-          method: 'GET',
-          header: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          success: (r) => resolve(r.data),
-          fail: () => resolve(null)
-        });
-      });
-
-      const flagOk = res && (res.Flag === '4000' || res.Flag === 4000 || String(res.Flag) === '4000');
-      if (!flagOk || !res.data) break;
-      const records = res.data.records || [];
-      all.push(...records);
-      totalPages = (res.data.pagination && res.data.pagination.total_pages) ? res.data.pagination.total_pages : 1;
-      page += 1;
-    }
-    return all;
-  },
-
-  /**
-   * 获取用户发起的待处理的入团申请数据   */
-  async fetchPendingApplications() {
-    return new Promise((resolve, reject) => {
-      wx.request({
-        url: app.globalData.request_url + '/club/application/user_applicated/list',
-        method: 'GET',
-        header: {
-          'Authorization': `Bearer ${wx.getStorageSync('token')}`,
-          'Content-Type': 'application/json'
-        },
-        success: (res) => {
-          if (res.data.Flag == 4000) {
-            const applications = res.data.data || [];
-            const pendingCount = applications.filter(app => !app.processedDate).length;
-            this.setData({
-              'statistics.pendingApplications': pendingCount
-            });
-            
-            resolve(pendingCount);
-          } else {
-            reject(new Error(res.data.message || '获取申请数量失败'));
-          }
-        },
-        fail: (err) => {
-          reject(err);
-        }
-      });
-    });
-  },
 
   /**
    * 获取单个协会的待处理申请数量
@@ -975,37 +736,6 @@ Page({
             const applications = res.data.data || [];
             const pendingCount = applications.filter(app => !app.processedDate).length;
             resolve(pendingCount);
-          } else {            resolve(0);
-          }
-        },
-        fail: (err) => {          resolve(0);
-        }
-      });
-    });
-  },
-
-  /**
-   * 获取用户未缴费的收款数量
-   */
-  async fetchUnpaidPayments() {
-    return new Promise((resolve, reject) => {
-      wx.request({
-        url: app.globalData.request_url + '/money/paypersonal/user_payable/list/unpaid?mode=count',
-        method: 'GET',
-        header: {
-          'Authorization': `Bearer ${wx.getStorageSync('token')}`,
-          'Content-Type': 'application/json'
-        },
-        success: (res) => {
-          if (res.data.Flag === '4000') {
-            // 统计未缴费的数量（pay_date为null的记录）
-    const unpaidCount = res.data.data.count;
-            
-            this.setData({
-              'statistics.unpaidPayments': unpaidCount
-            });
-            
-            resolve(unpaidCount);
           } else {            resolve(0);
           }
         },
@@ -1097,7 +827,9 @@ Page({
    */
   _openGlobalPopup(e, config) {
     const { tapX, tapY } = this._extractTapPoint(e);
-    this._openGlobalPopupRoot(config, tapX, tapY);
+    panelLazy.preloadForPanelType(config.type).then(() => {
+      this._openGlobalPopupRoot(config, tapX, tapY);
+    });
   },
 
   /**
@@ -1454,14 +1186,27 @@ Page({
     return entry;
   },
 
+  _onGlobalPopupPanelLoadTimeout(panelSelector) {
+    console.warn('[profile] panel load timeout:', panelSelector);
+    if (this.data.globalPopup && this.data.globalPopup.loading) {
+      this.setData({ 'globalPopup.loading': false });
+    }
+    if (this.data.globalPopupOverlay && this.data.globalPopupOverlay.loading) {
+      this.setData({ 'globalPopupOverlay.loading': false });
+    }
+    wx.showToast({ title: '加载较慢，请重试', icon: 'none' });
+  },
+
   _renderGlobalPopupPanel() {
-    this.setData({ 'globalPopup.renderPanel': true }, () => {
-      setTimeout(() => {
-        const panelId = this._panelIdForGlobalPopupType(this.data.globalPopup.type);
+    const type = this.data.globalPopup.type;
+    panelLazy.preloadForPanelType(type).then(() => {
+      this.setData({ 'globalPopup.renderPanel': true }, () => {
+        const panelId = this._panelIdForGlobalPopupType(type);
         if (!panelId) return;
-        const panel = this.selectComponent(panelId);
-        if (panel && panel.loadData) panel.loadData();
-      }, 100);
+        panelLazy.invokePanelLoadData(this, panelId, {
+          onTimeout: () => this._onGlobalPopupPanelLoadTimeout(panelId)
+        });
+      });
     });
   },
 
@@ -1498,13 +1243,14 @@ Page({
   _renderGlobalPopupOverlayPanel() {
     const ov = this.data.globalPopupOverlay;
     if (!ov) return;
-    this.setData({ 'globalPopupOverlay.renderPanel': true }, () => {
-      setTimeout(() => {
+    panelLazy.preloadForPanelType(ov.type).then(() => {
+      this.setData({ 'globalPopupOverlay.renderPanel': true }, () => {
         const panelId = this._overlayPanelIdForType(ov.type);
         if (!panelId) return;
-        const panel = this.selectComponent(panelId);
-        if (panel && panel.loadData) panel.loadData();
-      }, 50);
+        panelLazy.invokePanelLoadData(this, panelId, {
+          onTimeout: () => this._onGlobalPopupPanelLoadTimeout(panelId)
+        });
+      });
     });
   },
 
@@ -1535,8 +1281,11 @@ Page({
       if (this.data.globalPopup.renderPanel && !this.data.globalPopup.loading) return;
       if (this.data.globalPopup.renderPanel) {
         const panelId = this._panelIdForGlobalPopupType(pending.type);
-        const panel = panelId ? this.selectComponent(panelId) : null;
-        if (panel && panel.loadData) panel.loadData();
+        if (panelId) {
+          panelLazy.invokePanelLoadData(this, panelId, {
+            onTimeout: () => this._onGlobalPopupPanelLoadTimeout(panelId)
+          });
+        }
       } else {
         this._renderGlobalPopupPanel();
       }
@@ -1908,6 +1657,62 @@ Page({
       title: '来看看这个小程序',
       path: '/pages/home/index'
     };
-  }
+  },
+
+  onHostClockinSignature(e) {
+    const eventId = e.detail && e.detail.eventId;
+    if (!eventId) return;
+    this.setData({
+      clockinSignature: {
+        visible: true,
+        eventId: String(eventId),
+        submitting: false,
+      },
+    }, () => {
+      setTimeout(() => {
+        const pad = this.selectComponent('#hostClockinSignaturePad');
+        if (pad && pad.prepare) pad.prepare();
+      }, 320);
+    });
+  },
+
+  preventClockinTouchMove() {},
+
+  closeHostClockinSignature() {
+    this.setData({
+      'clockinSignature.visible': false,
+      'clockinSignature.eventId': '',
+    });
+    const pad = this.selectComponent('#hostClockinSignaturePad');
+    if (pad && pad.reset) pad.reset();
+  },
+
+  async onHostSignatureConfirm(e) {
+    const fileId = e.detail && e.detail.fileId;
+    const eventId = this.data.clockinSignature.eventId;
+    if (!fileId || !eventId || this.data.clockinSignature.submitting) return;
+
+    this.setData({ 'clockinSignature.submitting': true });
+    try {
+      wx.showLoading({ title: '打卡中...' });
+      await submitClockIn(eventId, fileId);
+      wx.hideLoading();
+      this.closeHostClockinSignature();
+      wx.showToast({ title: '打卡成功', icon: 'success' });
+      this._refreshClockinPanelsAfterSign();
+    } catch (err) {
+      wx.hideLoading();
+      wx.showToast({ title: err.message || '打卡失败', icon: 'none' });
+    } finally {
+      this.setData({ 'clockinSignature.submitting': false });
+    }
+  },
+
+  _refreshClockinPanelsAfterSign() {
+    ['#profileEventJoinedPanel', '#overlayEventJoinedPanel'].forEach((id) => {
+      const panel = this.selectComponent(id);
+      if (panel && panel.loadEventData) panel.loadEventData();
+    });
+  },
 
 });

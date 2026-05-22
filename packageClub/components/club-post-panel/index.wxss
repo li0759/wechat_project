@@ -1,0 +1,194 @@
+.post-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #f7f8fa;
+  position: relative;
+}
+
+.post-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 28rpx 16rpx;
+  background: #fff;
+  border-bottom: 1rpx solid #eee;
+}
+
+.post-panel-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.post-panel-actions {
+  display: flex;
+  align-items: center;
+}
+
+.post-action-btn {
+  font-size: 28rpx;
+  color: var(--md-sys-color-primary, #ff6b9d);
+  padding: 8rpx 16rpx;
+}
+
+.post-action-btn--hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.post-scroll {
+  flex: 1;
+  min-height: 0;
+  padding: 24rpx 28rpx 160rpx;
+  box-sizing: border-box;
+}
+
+.post-scroll--edit {
+  padding-bottom: 24rpx;
+}
+
+.post-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.post-item {
+  width: calc((100% - 32rpx) / 3);
+  position: relative;
+  border-radius: 12rpx;
+  overflow: hidden;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.post-item--edit {
+  transition: none;
+  overflow: hidden;
+}
+
+.post-item::before {
+  content: '';
+  display: block;
+  padding-top: 100%;
+}
+
+.post-item-inner {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 12rpx;
+  overflow: hidden;
+  background: #e8e8e8;
+}
+
+.post-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* 抖动动画放在 inner，避免与拖拽 transform 冲突 */
+@keyframes post-ios-shake {
+  0% { transform: rotate(-1.5deg) scale(1); }
+  25% { transform: rotate(1.5deg) scale(1); }
+  50% { transform: rotate(-1.2deg) scale(1); }
+  75% { transform: rotate(1.2deg) scale(1); }
+  100% { transform: rotate(-1.5deg) scale(1); }
+}
+
+.post-item-inner--shake {
+  animation: post-ios-shake 0.22s infinite ease-in-out;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.post-item--dragging {
+  z-index: 100;
+  transition: none !important;
+}
+
+.post-item--dragging .post-item-inner--shake {
+  animation: none;
+}
+
+.post-item--dragging .post-item-inner {
+  transform: scale(1.06);
+  box-shadow: 0 16rpx 40rpx rgba(0, 0, 0, 0.22);
+}
+
+.post-delete-badge {
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.72);
+  border: 2rpx solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.25);
+}
+
+.post-delete-badge--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.post-delete-x {
+  color: #fff;
+  font-size: 36rpx;
+  line-height: 1;
+  font-weight: 300;
+  margin-top: -4rpx;
+}
+
+.post-empty {
+  padding: 120rpx 0;
+}
+
+.post-fab {
+  position: absolute;
+  right: 28rpx;
+  bottom: 48rpx;
+  z-index: 2000;
+  transition: opacity 0.15s ease;
+}
+
+.post-fab--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.post-fab-btn {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 50%;
+  background: var(--md-sys-color-primary, #ff6b9d);
+  box-shadow: 0 8rpx 24rpx rgba(255, 107, 157, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.post-fab-btn:active {
+  transform: scale(0.92);
+}
+
+.post-saving-mask {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+}

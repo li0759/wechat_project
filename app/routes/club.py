@@ -15,6 +15,31 @@ import requests
 bp = Blueprint('club', __name__, url_prefix='/api/v1/club')
 
 
+def _gender_label(gender):
+    if gender == 1:
+        return '男'
+    if gender == 2:
+        return '女'
+    if gender == 0:
+        return '其他'
+    return ''
+
+
+def _application_applicant_fields(application):
+    user = application.appliced_user
+    if not user:
+        return {
+            'appliced_user_department': None,
+            'appliced_user_position': None,
+            'appliced_user_gender': None,
+        }
+    return {
+        'appliced_user_department': user.department or None,
+        'appliced_user_position': user.position or None,
+        'appliced_user_gender': _gender_label(user.gender),
+    }
+
+
 # ==================== 协会管理路由 ====================
 
 
@@ -139,6 +164,16 @@ def get_club_detail(club_id):
             'description': club_show.description,
             'charter': club_show.charter,
             'cover_url': club_show.cover.fileUrl if club_show.cover else None,
+            'post_ids': club_show.postIDs or [],
+            'post_files': [
+                {
+                    'fileID': f.fileID,
+                    'originalName': f.originalName,
+                    'fileUrl': f.fileUrl,
+                    'fileSize': f.fileSize,
+                    'fileType': f.fileType
+                } for f in club_show.post_files
+            ],
 			# 最近开展的5个活动：actual_endTime为空的在前，其余按actual_endTime倒序
 			'recent_events': [{
 				'event_id': e.eventID,
@@ -438,7 +473,8 @@ def get_application_for_club_pending(club_id):
             'processed_user_id': app.processed_user.userID if app.processed_user else None,
             'club_name': app.club.clubName,
             'processedDate': app.processedDate.isoformat() if app.processedDate else None,
-            'opinion': app.opinion
+            'opinion': app.opinion,
+            **_application_applicant_fields(app),
         } for app in pending_applications]
     })
 
@@ -509,6 +545,7 @@ def get_all_applications_for_club(club_id):
             'club_name': app.club.clubName if app.club else None,
             'processedDate': app.processedDate.isoformat() if app.processedDate else None,
             'opinion': app.opinion,
+            **_application_applicant_fields(app),
         }
 
     return jsonify({
@@ -866,7 +903,7 @@ def get_club_members(club_id):
     获取社团成员列表，用于会长管理
     排序规则：会长、副会长、理事、普通会员，当前用户排在所在角色的最前面
     只有会长或超级管理员可以访问
-    只显示未删除的成员
+    含已退出成员（isDelete=True），排在列表末尾；已退出成员 role_display 为「已退出协会」
     """
     # 权限检查
     has_permission, message = check_permission(club.get_club_members.permission_judge)
@@ -889,9 +926,8 @@ def get_club_members(club_id):
         if not user_member_record and not cur_user.isSuperUser:
             return jsonify({'Flag':'4001','message': '社团已被删除'}), 200
 
-    # 获取所有未删除的成员（无论协会是否被删除）
-    # ClubMember.isDelete 只标识成员是否被主动移除，与协会删除状态无关
-    all_members = ClubMember.query.filter_by(clubID=club_id, isDelete=False).all()
+    # 含已退出成员（isDelete=True）；ClubMember.isDelete 标识成员是否被主动移除
+    all_members = ClubMember.query.filter_by(clubID=club_id).all()
     
     # 统计每位成员在该协会开展的活动参与次数（基于 EventJoin 与 Event 的关联）
     participation_counts_query = db.session.query(
@@ -963,6 +999,7 @@ def get_club_members(club_id):
     }
     
     for member in all_members:
+        exited = bool(member.isDelete)
         member_info = {
             'member_id': member.memberID,
             'user_id': member.userID,
@@ -972,7 +1009,8 @@ def get_club_members(club_id):
             'department': member.user.department,
             'position': member.user.position,
             'role': member.role,
-            'role_display': role_display_names.get(member.role, '普通会员'),
+            'is_deleted': exited,
+            'role_display': '已退出协会' if exited else role_display_names.get(member.role, '普通会员'),
             'avatar': member.user.avatar.fileUrl if member.user.avatar else None,
             'join_date': member.joinDate.isoformat() if member.joinDate else None,
             'is_current_user': member.userID == cur_user.userID,
@@ -1011,6 +1049,10 @@ def get_club_members(club_id):
         if current_user_member:
             sorted_members.append(current_user_member)
         sorted_members.extend(other_members)
+
+    active_members = [m for m in sorted_members if not m.get('is_deleted')]
+    exited_members = [m for m in sorted_members if m.get('is_deleted')]
+    sorted_members = active_members + exited_members
 
     return jsonify({
         'Flag': '4000',
@@ -1271,13 +1313,17 @@ def create_club():
     description = data.get('description')
     charter = data.get('charter')
     cover_id = data.get('cover_id', '')  # 协会展示图片，参考event的process_images
+    post_ids = data.get('post_ids') or []
+    if not isinstance(post_ids, list):
+        post_ids = []
     president_id = data.get('president_id')  # 前端指定的协会会长ID
     # 创建协会（clubID自动自增）
     new_club = Club(
         clubName=club_name,
         description=description or '',
         charter=charter or '',
-        coverID=cover_id
+        coverID=cover_id,
+        postIDs=post_ids
     )
 
     db.session.add(new_club)
@@ -1375,6 +1421,58 @@ def update_cover(club_id):
         }
     })
 
+
+@bp.route('/<int:club_id>/update_posts', methods=['POST'])
+@jwt_required()
+def update_posts(club_id):
+    """更新协会海报图片列表（顺序与 post_ids 一致）"""
+    has_permission, message = check_permission(club.update_club_images.permission_judge)
+    if not has_permission:
+        return jsonify({'Flag': '4002', 'message': message}), 200
+
+    data = request.get_json() or {}
+    post_ids = data.get('post_ids')
+    if post_ids is None:
+        return jsonify({'Flag': '4003', 'message': '缺少 post_ids 参数'}), 200
+    if not isinstance(post_ids, list):
+        return jsonify({'Flag': '4003', 'message': 'post_ids 必须为数组'}), 200
+
+    try:
+        normalized_ids = [int(x) for x in post_ids]
+    except (TypeError, ValueError):
+        return jsonify({'Flag': '4003', 'message': 'post_ids 元素必须为整数'}), 200
+
+    club_update = Club.query.filter_by(clubID=club_id).first()
+    if not club_update:
+        return jsonify({'Flag': '4003', 'message': '协会不存在'}), 200
+
+    old_ids = list(club_update.postIDs or [])
+    removed_ids = [fid for fid in old_ids if fid not in normalized_ids]
+    for fid in removed_ids:
+        delete_file_inside(fid)
+
+    club_update.postIDs = normalized_ids
+    club_update.updateDate = datetime.utcnow()
+    db.session.commit()
+
+    post_files = [
+        {
+            'fileID': f.fileID,
+            'originalName': f.originalName,
+            'fileUrl': f.fileUrl,
+            'fileSize': f.fileSize,
+            'fileType': f.fileType
+        } for f in club_update.post_files
+    ]
+
+    return jsonify({
+        'Flag': '4000',
+        'message': '协会海报更新成功',
+        'data': {
+            'post_ids': club_update.postIDs or [],
+            'post_files': post_files
+        }
+    })
 
 
 # 查看协会章程
@@ -1706,6 +1804,17 @@ def get_hot_clubs():
                 'avatar': club_show.president.user.avatar.fileUrl if club_show.president and not club_show.president.isDelete and club_show.president.user.avatar else None
             } if club_show.president and not club_show.president.isDelete else None,
             'member_count': len([m for m in club_show.members if not m.isDelete]),
+            'recent_event_count': event_counts.get(club_show.clubID, 0),
+            'post_ids': club_show.postIDs or [],
+            'post_files': [
+                {
+                    'fileID': f.fileID,
+                    'originalName': f.originalName,
+                    'fileUrl': f.fileUrl,
+                    'fileSize': f.fileSize,
+                    'fileType': f.fileType
+                } for f in club_show.post_files
+            ],
             'recent_members': [
                 {
                     'user_name': m.user.userName,
@@ -1716,20 +1825,6 @@ def get_hot_clubs():
                     reverse=True
                 )[:9]
             ],
-            'recent_events': [
-                {
-                    'title': e.title,
-                    'event_imgs': (
-                        [file.fileUrl for moment in (e.moments[-2:] or []) for file in (moment.image_files or [])] if e.moments else []
-                    ),                   
-                    'description': e.message,
-                    'start_time': e.actual_startTime.isoformat() if e.actual_startTime else e.pre_startTime.isoformat()
-                } for e in sorted(
-                    [e for e in club_show.events if not e.is_cancelled],  # 只包括未取消的活动
-                    key=lambda x: x.actual_startTime if x.actual_startTime else x.pre_startTime,
-                    reverse=True
-                )[:8]
-            ]
         } for club_show in final_clubs]
     })
 

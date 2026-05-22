@@ -1,7 +1,15 @@
+page {
+  --td-brand-color: #df76b0;
+  --td-button-primary-bg-color: #df76b0;
+  --td-button-primary-border-color: #df76b0;
+  --td-button-primary-active-bg-color: #c85a9e;
+  --td-button-primary-active-border-color: #c85a9e;
+}
+
 .container {
   padding: 60rpx 40rpx;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #DF76B0 0%, #C85A9E 100%);
   display: flex;
   flex-direction: column;
   align-items: center;

@@ -231,6 +231,7 @@ Component({
             
             // 处理成员数据
     const processedMembers = membersData.map(member => {
+              const isDeleted = !!(member.is_deleted || member.isDelete)
               return {
                 member_id: member.member_id,
                 user_id: member.user_id,
@@ -240,7 +241,8 @@ Component({
                 department: member.department,
                 position: member.position,
                 role: member.role,
-                role_display: member.role_display,
+                is_deleted: isDeleted,
+                role_display: isDeleted ? '已退出协会' : (member.role_display || this.data.roleNames[member.role] || '普通会员'),
                 avatar: member.avatar,
                 join_date: this.formatDate(member.join_date),
                 join_date_raw: member.join_date,
@@ -256,7 +258,9 @@ Component({
             this.setData({
               members: processedMembers,
               filteredMembers: processedMembers,
-              existingUserIds: processedMembers.map((m) => String(m.user_id)),
+              existingUserIds: processedMembers
+                .filter((m) => !m.is_deleted)
+                .map((m) => String(m.user_id)),
               isPresident: isPresident,
               loading: false
             }, () => {
@@ -706,10 +710,28 @@ Component({
     return { groups, sidebar }
   },
 
+  /** 兼容页面 bindtap（dataset）与子组件 triggerEvent（detail） */
+  getHandlerDataset(e) {
+    const detail = e && e.detail
+    if (detail && typeof detail === 'object' && !Array.isArray(detail)) {
+      const hasKeys = detail.memberid != null
+        || detail.userid != null
+        || detail.userId != null
+        || detail.user_id != null
+        || detail.newrole != null
+        || detail.username != null
+      if (hasKeys) return detail
+    }
+    return (e && e.currentTarget && e.currentTarget.dataset) || {}
+  },
+
   // 角色变更 (参考club-manage)
   async changeRole(e) {
-    const { memberid, newrole, username } = e.currentTarget.dataset
-    
+    const ds = this.getHandlerDataset(e)
+    const memberid = ds.memberid ?? ds.memberId
+    const newrole = ds.newrole ?? ds.newRole
+    const username = ds.username ?? ds.userName ?? ds.user_name
+
     if (!memberid || !newrole) {
       this.showErrorToast('参数错误')
       return
@@ -778,22 +800,26 @@ Component({
 
   // 移除会员 (参考club-manage)
   async removeMember(e) {
-    const { userid, username } = e.currentTarget.dataset
-    const member = this.data.members.find(m => m.user_id === userid) || { user_name: username }
-    
-    if (!member) {
+    const ds = this.getHandlerDataset(e)
+    const userid = ds.userid ?? ds.userId ?? ds.user_id
+    const username = ds.username ?? ds.userName ?? ds.user_name
+
+    if (userid == null || userid === '') {
       Toast({
         context: this,
         selector: '#t-toast',
-        message: '用户信息不存在',
+        message: '缺少用户ID',
         theme: 'error',
       })
       return
     }
-    
+
+    const found = this.data.members.find((m) => String(m.user_id) === String(userid))
+    const displayName = (found && found.user_name) || username || '该会员'
+
     wx.showModal({
       title: '确认移除',
-      content: `确定要移除会员"${member.user_name}"吗？`,
+      content: `确定要移除会员「${displayName}」吗？`,
       confirmColor: '#ee0a24',
       success: async (res) => {
         if (res.confirm) {
@@ -910,9 +936,13 @@ Component({
     }
   },
 
+  isActiveClubMember(userId) {
+    const m = (this.data.members || []).find((mem) => String(mem.user_id) === String(userId))
+    return !!(m && !m.is_deleted)
+  },
+
   abIsExisting(userId) {
-    const arr = this.data.existingUserIds || []
-    return arr.some((x) => String(x) === String(userId))
+    return this.isActiveClubMember(userId)
   },
 
   abUpdateNavTitle() {
@@ -1014,10 +1044,12 @@ Component({
           const users = (res.data.users || []).map((u) => {
             const uid = String(u.user_id)
             const isCurrent = String(uid) === String(this.data.currentUserId)
+            const existingMember = (this.data.members || []).find((m) => String(m.user_id) === uid)
             return {
               ...u,
               user_id: uid,
               is_current_user: isCurrent,
+              is_deleted: !!(existingMember && existingMember.is_deleted),
               isExistingMember: this.abIsExisting(uid) || isCurrent
             }
           })
@@ -1125,12 +1157,17 @@ Component({
         const searchResults = res.data.users.map(user => {
           const existingMember = this.data.members.find(member => member.user_id === user.user_id)
           const isCurrentUser = user.user_id === this.data.currentUserId
+          const isDeleted = !!(existingMember && existingMember.is_deleted)
+          const isActive = this.isActiveClubMember(user.user_id) || isCurrentUser
           return {
             ...user,
             member_id: existingMember ? existingMember.member_id : null,
             role: existingMember ? existingMember.role : (user.role || 'member'),
-            role_display: existingMember ? existingMember.role_display : (user.role_display || user.role_name || user.role || '成员'),
-            isExistingMember: !!existingMember || isCurrentUser,
+            role_display: existingMember
+              ? existingMember.role_display
+              : (user.role_display || user.role_name || user.role || '成员'),
+            is_deleted: isDeleted,
+            isExistingMember: isActive,
             is_current_user: isCurrentUser
           }
         })
@@ -1169,9 +1206,13 @@ Component({
       const isCurrentUser = targetUser.user_id === this.data.currentUserId
 
       // 更新搜索结果中的用户信息状态
-    const updatedSearchResults = this.data.searchResults.map(user =>
+      const updatedSearchResults = this.data.searchResults.map(user =>
         user.user_id == userId
-          ? { ...user, isExistingMember: !!existingMember || isCurrentUser }
+          ? {
+              ...user,
+              is_deleted: !!(existingMember && existingMember.is_deleted),
+              isExistingMember: this.isActiveClubMember(userId) || isCurrentUser,
+            }
           : user
       )
 
@@ -1316,8 +1357,11 @@ Component({
           ...searchUser,
           member_id: existingMember ? existingMember.member_id : searchUser.member_id,
           role: existingMember ? existingMember.role : (searchUser.role || 'member'),
-          role_display: existingMember ? existingMember.role_display : (searchUser.role_display || searchUser.role_name || searchUser.role || '成员'),
-          isExistingMember: !!existingMember || isCurrentUser,
+          role_display: existingMember
+            ? existingMember.role_display
+            : (searchUser.role_display || searchUser.role_name || searchUser.role || '成员'),
+          is_deleted: !!(existingMember && existingMember.is_deleted),
+          isExistingMember: this.isActiveClubMember(searchUser.user_id) || isCurrentUser,
           is_current_user: isCurrentUser
         }
       })
@@ -1354,9 +1398,20 @@ Component({
       const nextUsers = s.users.map((u) => {
         const uid = String(u.user_id)
         const isCurrent = String(uid) === String(this.data.currentUserId)
+        const existingMember = (this.data.members || []).find((m) => String(m.user_id) === uid)
         const nextExisting = this.abIsExisting(uid) || isCurrent
-        if (u.isExistingMember !== nextExisting || u.is_current_user !== isCurrent) changed = true
-        return { ...u, isExistingMember: nextExisting, is_current_user: isCurrent }
+        const nextDeleted = !!(existingMember && existingMember.is_deleted)
+        if (
+          u.isExistingMember !== nextExisting
+          || u.is_current_user !== isCurrent
+          || !!u.is_deleted !== nextDeleted
+        ) changed = true
+        return {
+          ...u,
+          isExistingMember: nextExisting,
+          is_current_user: isCurrent,
+          is_deleted: nextDeleted,
+        }
       })
       updates[`abDeptExpand.${deptId}.users`] = nextUsers
       

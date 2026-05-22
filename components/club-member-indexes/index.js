@@ -184,9 +184,16 @@ Component({
 
     async onExportMemberDetail(e) {
       if (this.data.detailExporting) return
-      const userId = String(e?.currentTarget?.dataset?.userid || '')
+      let userId = String(e?.currentTarget?.dataset?.userid || '')
+      if (!userId && this.data.selectedMemberId) {
+        const member = this.findMemberByMemberId(this.data.selectedMemberId)
+        userId = String(member?.user_id || '')
+      }
       const clubId = String(this.properties.clubId || '')
-      if (!clubId || !userId) return
+      if (!clubId || !userId) {
+        wx.showToast({ title: '无法导出，缺少协会或成员信息', icon: 'none' })
+        return
+      }
 
       this.setData({ detailExporting: true })
       wx.showLoading({ title: '生成文件中...' })

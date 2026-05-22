@@ -40,6 +40,8 @@
               />
               <view class="tl-op-meta">
                 <text class="tl-op-name">{{item.appliced_user_name}}</text>
+                <text class="tl-op-sub">申请时间 {{item.applicatedDate || '—'}}</text>
+                <text class="tl-op-sub" wx:if="{{item.userProfileLine}}">{{item.userProfileLine}}</text>
                 <text class="tl-op-sub">{{item.club_name || '协会'}} · 申请加入</text>
                 <text class="tl-op-sub">处理人 {{item.processed_user_name || '—'}} · {{item.processedDate}}</text>
                 <text wx:if="{{item.opinion}}" class="tl-op-sub">意见：{{item.opinion}}</text>
@@ -47,15 +49,20 @@
             </view>
           </block>
           <block wx:else>
-            <view class="tl-op-row cap-app-pending-row">
-              <image
-                class="tl-op-avatar"
-                src="{{item.appliced_user_avartor || defaultAvatarUrl}}"
-                mode="aspectFill"
-              />
-              <view class="tl-op-meta">
-                <text class="tl-op-name">{{item.appliced_user_name}}</text>
-                <text class="tl-op-sub">{{item.club_name || '协会'}} · 申请加入</text>
+            <view class="cap-app-pending-card">
+              <text class="tl-milestone-title tl-milestone-title--pending">待审批</text>
+              <view class="tl-op-row cap-app-pending-row">
+                <image
+                  class="tl-op-avatar"
+                  src="{{item.appliced_user_avartor || defaultAvatarUrl}}"
+                  mode="aspectFill"
+                />
+                <view class="tl-op-meta">
+                  <text class="tl-op-name">{{item.appliced_user_name}}</text>
+                  <text class="tl-op-sub">申请时间 {{item.applicatedDate || '—'}}</text>
+                  <text class="tl-op-sub" wx:if="{{item.userProfileLine}}">{{item.userProfileLine}}</text>
+                  <text class="tl-op-sub">{{item.club_name || '协会'}} · 申请加入</text>
+                </view>
               </view>
               <view class="cap-app-pending-actions" catchtap="stopBubble">
                 <t-button
@@ -67,9 +74,8 @@
                 >批准</t-button>
                 <t-button
                   size="small"
-                  theme="default"
-                  variant="outline"
-                  class="cap-btn"
+                  theme="primary"
+                  class="cap-btn cap-btn-reject"
                   data-application-id="{{item.applicationID}}"
                   bind:tap="showRejectDialog"
                 >拒绝</t-button>
@@ -96,13 +102,16 @@
   bind:confirm="handleApprove"
   bind:close="closeDialog"
 >
-  <view class="dialog-body">
-    <t-textarea
+  <view slot="content" class="dialog-body">
+    <textarea
+      class="cap-dialog-textarea"
       value="{{ approveOpinion }}"
       placeholder="请输入批准意见（选填）"
       maxlength="200"
-      bind:change="onApproveOpinionChange"
+      auto-height
+      bindinput="onApproveOpinionChange"
     />
+    <text class="cap-dialog-counter">{{approveOpinion.length}}/200</text>
   </view>
 </t-dialog>
 
@@ -114,13 +123,16 @@
   bind:confirm="handleReject"
   bind:close="closeDialog"
 >
-  <view class="dialog-body">
-    <t-textarea
+  <view slot="content" class="dialog-body">
+    <textarea
+      class="cap-dialog-textarea"
       value="{{ rejectOpinion }}"
       placeholder="请输入拒绝理由（必填）"
       maxlength="200"
-      bind:change="onRejectOpinionChange"
+      auto-height
+      bindinput="onRejectOpinionChange"
     />
+    <text class="cap-dialog-counter">{{rejectOpinion.length}}/200</text>
   </view>
 </t-dialog>
 </view>

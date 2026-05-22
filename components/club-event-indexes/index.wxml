@@ -142,9 +142,8 @@
                 <view class="am-btn am-btn-primary" hover-class="am-btn-hover" bindtap="onBeginEvent" data-eventid="{{event.event_id}}">开始活动</view>
                 <view class="am-btn am-btn-danger" hover-class="am-btn-danger-hover" bindtap="onCancelEvent" data-eventid="{{event.event_id}}">取消活动</view>
               </view>
-              <view wx:elif="{{!event.actual_end_time}}" class="am-admin-actions">
+              <view wx:elif="{{!event.actual_end_time}}" class="am-admin-actions am-admin-actions--single">
                 <view class="am-btn am-btn-danger" hover-class="am-btn-danger-hover" bindtap="onEndEvent" data-eventid="{{event.event_id}}">结束活动</view>
-                <view class="am-btn am-btn-primary" hover-class="am-btn-hover" bindtap="onClockIn" data-eventid="{{event.event_id}}">点击打卡</view>
               </view>
             </view>
 
@@ -159,7 +158,7 @@
                 <view
                   class="cmb-member-activity__export {{detailExporting ? 'cmb-member-activity__export--loading' : ''}}"
                   hover-class="cmb-member-activity__export--hover"
-                  bindtap="onExportEventDetail"
+                  catchtap="onExportEventDetail"
                   data-eventid="{{event.event_id}}"
                 >
                   <t-icon name="send" size="24" color="#df76b0" />

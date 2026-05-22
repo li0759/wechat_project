@@ -86,7 +86,7 @@
                 data-sheet-bg-color="#f7f8fa"
               >
                 <view class="hot-event-card">
-                <view class="hot-event-layout" style="height: 430rpx;">
+                <view class="hot-event-layout" style="height: 400rpx;">
                   <view class="hot-event-map-background" wx:if="{{item.location_data && item.premap_url}}">
                     <view class="hot-event-map">
                       <animated-map
@@ -152,7 +152,7 @@
               <view wx:if="{{index % 2 === 0}}" class="card" style="width:100%;margin-bottom:15rpx;">
                 <!-- 阶段1：数据未加载 - 完整骨架屏 -->
                 <view wx:if="{{item.loading}}" class="card-skeleton">
-                  <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '260rpx', borderRadius: '8rpx' }]}}" />
+                  <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '280rpx', borderRadius: '8rpx' }]}}" />
                   <view class="card-content">
                     <t-skeleton animation="gradient" rowCol="{{[{ width: '80%', height: '28rpx', marginBottom: '12rpx' }]}}" />
                     <t-skeleton animation="gradient" rowCol="{{[{ width: '50%', height: '22rpx' }]}}" />
@@ -172,10 +172,10 @@
                 >
                   <view class="card-wrapper">
                     <!-- 图片区域 -->
-                    <view class="image-container" style="width:100%;height:260rpx;position:relative;">
+                    <view class="image-container" style="width:100%;height:280rpx;position:relative;">
                       <!-- 阶段2：图片骨架屏（覆盖在图片上方） -->
                       <view wx:if="{{!item.imgLoaded}}" class="image-skeleton">
-                        <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '260rpx', borderRadius: '8rpx 8rpx 0 0' }]}}" />
+                        <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '280rpx', borderRadius: '8rpx 8rpx 0 0' }]}}" />
                       </view>
                       <!-- 图片始终渲染，但在未加载完成时被骨架屏遮挡 -->
                       <image class="card-image" src="{{item.cover_url_thumb}}" mode="aspectFill" bindload="onEventImgLoad" binderror="onEventImgLoad" data-index="{{index}}" style="{{item.imgLoaded ? '' : 'opacity: 0;'}}" />
@@ -219,7 +219,7 @@
               <view wx:if="{{index % 2 === 1}}" class="card" style="width:100%;margin-bottom:15rpx;">
                 <!-- 阶段1：数据未加载 - 完整骨架屏 -->
                 <view wx:if="{{item.loading}}" class="card-skeleton">
-                  <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '260rpx', borderRadius: '8rpx' }]}}" />
+                  <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '280rpx', borderRadius: '8rpx' }]}}" />
                   <view class="card-content">
                     <t-skeleton animation="gradient" rowCol="{{[{ width: '80%', height: '28rpx', marginBottom: '12rpx' }]}}" />
                     <t-skeleton animation="gradient" rowCol="{{[{ width: '50%', height: '22rpx' }]}}" />
@@ -239,10 +239,10 @@
                 >
                   <view class="card-wrapper">
                     <!-- 图片区域 -->
-                    <view class="image-container" style="width:100%;height:260rpx;position:relative;">
+                    <view class="image-container" style="width:100%;height:280rpx;position:relative;">
                       <!-- 阶段2：图片骨架屏（覆盖在图片上方） -->
                       <view wx:if="{{!item.imgLoaded}}" class="image-skeleton">
-                        <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '260rpx', borderRadius: '8rpx 8rpx 0 0' }]}}" />
+                        <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '280rpx', borderRadius: '8rpx 8rpx 0 0' }]}}" />
                       </view>
                       <!-- 图片始终渲染，但在未加载完成时被骨架屏遮挡 -->
                       <image class="card-image" src="{{item.cover_url_thumb}}" mode="aspectFill" bindload="onEventImgLoad" binderror="onEventImgLoad" data-index="{{index}}" style="{{item.imgLoaded ? '' : 'opacity: 0;'}}" />
@@ -313,16 +313,16 @@
                   <!-- isotope背景 -->
                   <view class="isotope-background-container">
                     <isotope
-                      id="hotClubIsotope-{{index}}"
+                      id="hotClubIsotope-{{hotIndex}}"
                       items="{{item.isotopeData}}"
                       layoutMode="masonryHorizontal"
                       masonryHorizontal="{{masonryHorizontalConfig}}"
                       width="750rpx"
-                      height="450rpx"
+                      height="420rpx"
                       gutter="{{10}}"
                       transitionDuration="0.8s"
-                      groupInterval="5000"
-                      backgroundColor="rgba(122, 54, 92, 0.66)">
+                      groupInterval="3000"
+                      backgroundColor="rgba(176, 104, 160, 0.66)">
                     </isotope>
                     <view class="isotope-overlay"></view>
                   </view>
@@ -481,6 +481,7 @@
     bg-color="rgba(223, 118, 176, 0.8)"
     fullscreen-sheet-bg-color="#f7f8fa"
     fullscreen-top-padding="{{0}}"
+    clear-parent="{{messagesFs.visible}}"
     bind:collapse="onGlobalPopupCollapse"
     bind:contentReady="onGlobalPopupContentReady"
   >
@@ -493,6 +494,11 @@
         <event-joined-skeleton wx:if="{{globalPopup.type === 'event-joined'}}" />
         <club-detail-skeleton wx:if="{{globalPopup.type === 'club-detail'}}" />
         <club-manage-skeleton wx:if="{{globalPopup.type === 'club-manage'}}" />
+        <club-joined-skeleton wx:if="{{globalPopup.type === 'club-joined'}}" />
+        <club-applications-skeleton wx:if="{{globalPopup.type === 'club-applications'}}" />
+        <my-applications-skeleton wx:if="{{globalPopup.type === 'my-applications'}}" />
+        <paypersonal-skeleton wx:if="{{globalPopup.type === 'paypersonal'}}" />
+        <user-info-skeleton wx:if="{{globalPopup.type === 'user-info'}}" />
       </view>
 
       <!-- 真实 panel 组件 - 延迟渲染 -->
@@ -512,9 +518,11 @@
           wx:if="{{globalPopup.type === 'event-joined'}}"
           id="globalEventJoinedPanel"
           event-id="{{globalPopup.id}}"
+          delegate-signature-to-host="{{true}}"
           bind:loaded="onGlobalPopupLoaded"
           bind:update="onEventJoinedPanelUpdate"
           bind:close="closeGlobalPopup"
+          bind:clockin-signature="onHostClockinSignature"
         />
         <!-- 活动管理 -->
         <event-manage-panel 
@@ -546,6 +554,53 @@
           bind:loaded="onGlobalPopupLoaded"
           bind:close="closeGlobalPopup"
         />
+        <!-- 已加入协会 -->
+        <club-joined-panel
+          wx:if="{{globalPopup.type === 'club-joined'}}"
+          id="globalClubJoinedPanel"
+          club-id="{{globalPopup.id}}"
+          bind:loaded="onGlobalPopupLoaded"
+          bind:update="onClubJoinedPanelUpdate"
+          bind:close="closeGlobalPopup"
+        />
+        <!-- 入会审批 -->
+        <club-applications-panel
+          wx:if="{{globalPopup.type === 'club-applications'}}"
+          id="globalClubApplicationsPanel"
+          club-id="{{globalPopup.id}}"
+          style="flex: 1; min-height: 0; height: 100%; width: 100%;"
+          bind:loaded="onGlobalPopupLoaded"
+          bind:update="onGlobalPopupPanelUpdate"
+          bind:close="closeGlobalPopup"
+        />
+        <!-- 我的入会申请 -->
+        <my-applications-panel
+          wx:if="{{globalPopup.type === 'my-applications'}}"
+          id="globalMyApplicationsPanel"
+          style="flex: 1; min-height: 0; height: 100%; width: 100%;"
+          bind:loaded="onGlobalPopupLoaded"
+          bind:update="onGlobalPopupPanelUpdate"
+          bind:close="closeGlobalPopup"
+        />
+        <!-- 我的缴费 -->
+        <paypersonal-panel
+          wx:if="{{globalPopup.type === 'paypersonal'}}"
+          id="globalPaypersonalPanel"
+          style="flex: 1; min-height: 0; height: 100%; width: 100%;"
+          bind:loaded="onGlobalPopupLoaded"
+          bind:update="onGlobalPopupPanelUpdate"
+          bind:close="closeGlobalPopup"
+        />
+        <!-- 用户资料 -->
+        <user-info-panel
+          wx:if="{{globalPopup.type === 'user-info'}}"
+          id="globalUserInfoPanel"
+          user-id="{{globalPopup.id}}"
+          style="flex: 1; min-height: 0; height: 100%; width: 100%;"
+          bind:loaded="onGlobalPopupLoaded"
+          bind:update="onGlobalPopupPanelUpdate"
+          bind:close="closeGlobalPopup"
+        />
       </block>
     </view>
   </expandable-container_fullscreen>
@@ -566,6 +621,15 @@
         <view class="messages-panel-header">
         </view>
         <view class="messages-panel-body">
+          <block wx:if="{{messagesContentSuspended && messagesContentSuspendMode === 'blank'}}">
+            <view style="height: 100%; min-height: 400rpx;"></view>
+          </block>
+          <block wx:elif="{{messagesContentSuspended}}">
+            <view class="loading-container">
+              <notice-list-skeleton />
+            </view>
+          </block>
+          <block wx:else>
           <view class="loading-container" wx:if="{{messagesLoading}}">
             <notice-list-skeleton />
           </view>
@@ -584,6 +648,7 @@
                       bindtap="onMessageItemTap"
                       data-message_id="{{item.message_id}}"
                       data-url="{{item.url}}"
+                      data-operation="{{item.operation}}"
                       data-type="club"
                     >
                       <view class="notice-icon">
@@ -616,6 +681,7 @@
                       bindtap="onMessageItemTap"
                       data-message_id="{{item.message_id}}"
                       data-url="{{item.url}}"
+                      data-operation="{{item.operation}}"
                       data-type="event"
                     >
                       <view class="notice-icon">
@@ -648,6 +714,7 @@
                       bindtap="onMessageItemTap"
                       data-message_id="{{item.message_id}}"
                       data-url="{{item.url}}"
+                      data-operation="{{item.operation}}"
                       data-type="system"
                     >
                       <view class="notice-icon">
@@ -667,10 +734,33 @@
               </scroll-view>
             </t-tab-panel>
           </t-tabs>
+          </block>
         </view>
       </view>
     </view>
   </expandable-container_fullscreen>
+</view>
+
+<view
+  wx:if="{{clockinSignature.visible}}"
+  class="clockin-signature-overlay"
+>
+  <view class="clockin-signature-mask" catchtap="closeHostClockinSignature" catchtouchmove="preventClockinTouchMove"></view>
+  <view class="signature-popup clockin-signature-sheet">
+    <view class="signature-popup__title">活动打卡签名</view>
+    <signature-pad
+      id="hostClockinSignaturePad"
+      active="{{clockinSignature.visible}}"
+      bind:confirm="onHostSignatureConfirm"
+    />
+    <t-button
+      theme="default"
+      variant="text"
+      size="medium"
+      bind:tap="closeHostClockinSignature"
+      disabled="{{clockinSignature.submitting}}"
+    >取消</t-button>
+  </view>
 </view>
 
 <!-- 整页唯一 page-container：微信在 slot/深层组件内常无法拦截系统返回；栈顶为 clip 或 fullscreen 时统一收起 -->

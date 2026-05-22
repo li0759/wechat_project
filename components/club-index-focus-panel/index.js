@@ -15,7 +15,7 @@ Component({
     /** 面板左侧留白（rpx），露出列表行头像区 */
     leftInsetRpx: { type: Number, value: 116 },
     /** 右滑超过该距离（rpx）松手后继续收回 */
-    dismissThresholdRpx: { type: Number, value: 300 },
+    dismissThresholdRpx: { type: Number, value: 150 },
     lowerThreshold: { type: Number, value: 80 },
   },
 
@@ -116,7 +116,7 @@ Component({
         let thresholdPx = 120
         try {
           const sys = wx.getSystemInfoSync()
-          thresholdPx = Number(this.properties.dismissThresholdRpx || 300)
+          thresholdPx = Number(this.properties.dismissThresholdRpx || 150)
             * Number(sys.windowWidth || 375) / 750
         } catch (err) {}
         if (Number(this.data.dragX || 0) >= thresholdPx) {

@@ -14,6 +14,7 @@ class Club(db.Model):
     createDate = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updateDate = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     coverID = db.Column(db.Integer, db.ForeignKey('file.fileID'))
+    postIDs = db.Column(JSON)  # 协会海报图片ID数组，使用JSON格式存储
     cover = db.relationship('File', 
                               foreign_keys=[coverID],
                               backref='cover_ref_club', 
@@ -44,9 +45,17 @@ class Club(db.Model):
         uselist=False,
         overlaps="club_as_member,members,club_as_manager,managers"
     )
-    
-        
-    
+
+    @property
+    def post_files(self):
+        """获取协会海报相关文件，按 postIDs 顺序返回"""
+        if not self.postIDs:
+            return []
+        from app.models.file import File
+        files = File.query.filter(File.fileID.in_(self.postIDs)).all()
+        file_map = {f.fileID: f for f in files}
+        return [file_map[fid] for fid in self.postIDs if fid in file_map]
+
     def __repr__(self):
         return f'<Club {self.clubID}>' 
 

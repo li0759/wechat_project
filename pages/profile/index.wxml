@@ -5,32 +5,6 @@
     <view class="header">
       <view class="user-card">
         <image class="avatar" src="{{userInfo.avatar}}" mode="aspectFill"></image>
-        <view class="user-info">
-          <view class="name">{{userInfo.username || '未登录'}}</view>
-          <view class="role">{{userInfo.roles_join}}</view>
-        </view>
-      </view>
-      
-      <!-- 添加统计信息 -->
-      <view class="statistics">
-        <view class="stat-item">
-          <view class="stat-num">{{statistics.joinedClubs}}</view>
-          <view class="stat-label">协会</view>
-          <!-- 添加分隔线元素 -->
-          <view class="stat-item-divider"></view>
-        </view>
-        <view class="stat-item">
-          <view class="stat-num">{{statistics.joinedEvents}}</view>
-          <view class="stat-label">活动</view>
-          <!-- 添加分隔线元素 -->
-          <view class="stat-item-divider"></view>
-        </view>
-        <view class="stat-item">
-          <view class="stat-num">{{statistics.unpaidPayments}}</view>
-          <view class="stat-label">待缴费</view>
-          <!-- 添加分隔线元素 -->
-          <view class="stat-item-divider"></view>
-        </view>
       </view>
     </view>
  
@@ -415,9 +389,11 @@
           wx:if="{{globalPopup.type === 'event-joined'}}"
           id="profileEventJoinedPanel" 
           event-id="{{globalPopup.id}}"
+          delegate-signature-to-host="{{true}}"
           style="flex: 1; min-height: 0; height: 100%; width: 100%;"
           bind:update="onManagePanelUpdate"
           bind:loaded="onGlobalPopupLoaded"
+          bind:clockin-signature="onHostClockinSignature"
         />
 
         <!-- Club Manage Panel -->
@@ -546,6 +522,29 @@
       </block>
     </view>
   </expandable-container_fullscreen>
+
+  <!-- 打卡签名：页面根级，避开全屏弹层 transform 导致 canvas 无法绘制 -->
+  <view
+    wx:if="{{clockinSignature.visible}}"
+    class="clockin-signature-overlay"
+  >
+    <view class="clockin-signature-mask" catchtap="closeHostClockinSignature" catchtouchmove="preventClockinTouchMove"></view>
+    <view class="signature-popup clockin-signature-sheet">
+      <view class="signature-popup__title">活动打卡签名</view>
+      <signature-pad
+        id="hostClockinSignaturePad"
+        active="{{clockinSignature.visible}}"
+        bind:confirm="onHostSignatureConfirm"
+      />
+      <t-button
+        theme="default"
+        variant="text"
+        size="medium"
+        bind:tap="closeHostClockinSignature"
+        disabled="{{clockinSignature.submitting}}"
+      >取消</t-button>
+    </view>
+  </view>
 
   <!-- 整页唯一 page-container：与 home 一致，拦截 clip / fullscreen 栈顶系统返回 -->
   <page-container

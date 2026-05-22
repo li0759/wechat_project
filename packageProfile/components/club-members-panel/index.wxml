@@ -302,7 +302,7 @@
                             </view>
 
                             <view
-                              wx:elif="{{user.isExistingMember && isPresident && !user.is_current_user}}"
+                              wx:elif="{{user.isExistingMember && !user.is_deleted && isPresident && !user.is_current_user}}"
                               class="am-admin-actions"
                             >
                               <view
@@ -329,6 +329,9 @@
                               </view>
                             </view>
 
+                            <view wx:elif="{{user.is_deleted}}" class="am-added am-added--exited">
+                              <text>已退出协会</text>
+                            </view>
                             <view wx:else class="am-added">
                               <t-icon name="check-circle-filled" size="18" color="#52c41a" />
                               <text>已添加</text>
@@ -356,8 +359,14 @@
                       >
                         <t-icon name="add" size="20" color="#667eea" />
                       </view>
-                      <view 
-                        wx:else 
+                      <view
+                        wx:elif="{{user.is_deleted}}"
+                        class="am-icon-btn am-icon-exited"
+                      >
+                        <text class="am-icon-exited-text">已退出</text>
+                      </view>
+                      <view
+                        wx:else
                         class="am-icon-btn am-icon-ok"
                         catchtap="removeMember"
                         data-userid="{{user.user_id}}"
@@ -497,6 +506,9 @@
                                   <t-icon name="check-circle-filled" size="18" color="#52c41a" />
                                   <text>这是您的账户</text>
                                 </view>
+                                <view wx:elif="{{u.is_deleted}}" class="am-added am-added--exited">
+                                  <text>已退出协会</text>
+                                </view>
                                 <view wx:else class="am-added">
                                   <t-icon name="check-circle-filled" size="18" color="#52c41a" />
                                   <text>已添加</text>
@@ -524,8 +536,14 @@
                           >
                             <t-icon name="add" color="{{abThemeColor}}" />
                           </view>
-                          <view 
-                            wx:else 
+                          <view
+                            wx:elif="{{u.is_deleted}}"
+                            class="am-icon-btn am-icon-exited"
+                          >
+                            <text class="am-icon-exited-text">已退出</text>
+                          </view>
+                          <view
+                            wx:else
                             class="am-icon-btn am-icon-ok"
                             catchtap="removeMember"
                             data-userid="{{u.user_id}}"

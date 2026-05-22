@@ -541,16 +541,15 @@ Component({
 
     async resumeContentWithSkeletonReload() {
       this.setData({ contentSuspended: true, contentSuspendMode: 'skeleton' });
-      if (this.data.clubId && this.loadClubData) {
-        try {
+      try {
+        if (this.data.clubId && typeof this.loadClubData === 'function') {
           await this.loadClubData();
-        } catch (e) {}
+        }
+      } catch (e) {
+        console.error('[club-detail-panel] resumeContentWithSkeletonReload failed:', e);
+      } finally {
+        this.setData({ contentSuspended: false, contentSuspendMode: '' });
       }
-      this.setData({ contentSuspended: false, contentSuspendMode: '' });
-    },
-
-    onNestedEventExpandSettled() {
-      this.suspendContentToBlank();
     },
 
     // 点击活动卡片：弹出活动详情（全屏弹窗）
@@ -636,7 +635,6 @@ Component({
     },
 
     onNestedEventDetailCollapsed() {
-      this.resumeContentWithSkeletonReload();
       setTimeout(() => {
         this.setData({
           nestedEventDetail: {
@@ -649,14 +647,6 @@ Component({
           }
         });
       }, 300);
-    },
-
-    onNestedEventDetailCovered() {
-      this.suspendContentToBlank();
-    },
-
-    onNestedEventDetailUncovered() {
-      this.resumeContentWithSkeletonReload();
     },
 
     /** 退出协会：后端 GET /club/:id/quit（与 club-joined-panel 一致） */

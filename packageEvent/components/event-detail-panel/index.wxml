@@ -258,10 +258,10 @@
       bg-color="rgba(223, 118, 176, 0.8)"
       fullscreen-sheet-bg-color="#f7f8fa"
       fullscreen-top-padding="{{0}}"
+      clear-parent="{{true}}"
       bind:collapse="onNestedClubDetailCollapse"
       bind:collapsed="onNestedClubDetailCollapsed"
       bind:contentReady="onNestedClubDetailContentReady"
-      bind:expandsettled="onNestedClubDetailExpandSettled"
     >
       <view slot="trigger"></view>
       <view slot="content" class="nested-popup-shell">

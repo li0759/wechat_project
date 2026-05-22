@@ -285,6 +285,10 @@
               if(res.data.user.avatar && res.data.user.phone){
                 const userInfo = res.data.user;
                 wx.setStorageSync('userInfo', userInfo);
+                try {
+                  const { preloadAllPanelSubpackages } = require('./utils/panel-lazy-load');
+                  preloadAllPanelSubpackages();
+                } catch (e) {}
                 resolve(true);
               }
               else{
@@ -318,6 +322,62 @@
       // 如果URL解析失败，返回原URL
       return imageUrl;
     }
+  },
+
+  /**
+   * 热门协会 / 管理页海报预览：isotope 二维分组
+   * [封面组?, 全部海报组(minlength=150), 海报1组(400), 海报2组(400), ...]
+   */
+  buildClubPosterIsotopeData: function(club, options = {}) {
+    const POST_GRID_MIN = options.postMin != null ? options.postMin : 150;
+    const POST_SINGLE_MIN = options.postSingleMin != null ? options.postSingleMin : 400;
+    const COVER_MIN = options.coverMin != null ? options.coverMin : 400;
+    const postersOnly = !!options.postersOnly;
+    const clubKey = String(options.clubKey || club.club_id || club.id || 'club');
+    const groups = [];
+    const coverUrl = club.cover_url || club.cover;
+
+    if (!postersOnly && coverUrl) {
+      groups.push([{
+        id: `${clubKey}-cover`,
+        image: this.convertToThumbnailUrl(coverUrl, COVER_MIN),
+        type: 'club_cover',
+        ini_height: COVER_MIN,
+        ini_width: COVER_MIN,
+        club_id: club.club_id || club.id,
+        club_name: club.club_name || club.name
+      }]);
+    }
+
+    const buildPosterItem = (f, minLength) => {
+      const url = f.fileUrl || f.file_url || f.url || '';
+      const fileId = f.fileID != null ? f.fileID : f.file_id;
+      if (!url || fileId == null) return null;
+      return {
+        id: `${clubKey}-post-${fileId}`,
+        image: this.convertToThumbnailUrl(url, minLength),
+        type: 'club_post',
+        ini_height: minLength,
+        ini_width: minLength,
+        club_id: club.club_id || club.id,
+        fileId
+      };
+    };
+
+    const posterItemsGrid = (club.post_files || [])
+      .map((f) => buildPosterItem(f, POST_GRID_MIN))
+      .filter(Boolean);
+
+    if (posterItemsGrid.length > 0) {
+      groups.push(posterItemsGrid);
+    }
+
+    (club.post_files || []).forEach((f) => {
+      const item = buildPosterItem(f, POST_SINGLE_MIN);
+      if (item) groups.push([item]);
+    });
+
+    return groups;
   },
  /**
    * 格式化日期时间（最终版 V2 - 包含过去和未来友好格式，基于日历周）

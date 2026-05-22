@@ -1,32 +1,70 @@
-<view class="popup-skeleton">
-  <!-- 基本信息行 -->
-  <view style="padding: 20rpx 30rpx;">
-    <t-skeleton animation="gradient" rowCol="{{[{ width: '100%', height: '120rpx', borderRadius: '16rpx' }]}}" />
-  </view>
-  <!-- 协会封面+活动管理 双卡片 -->
-  <view style="padding: 0 30rpx 20rpx; display: flex; gap: 20rpx;">
-    <t-skeleton animation="gradient" rowCol="{{[{ width: '335rpx', height: '300rpx', borderRadius: '16rpx' }]}}" />
-    <t-skeleton animation="gradient" rowCol="{{[{ width: '335rpx', height: '300rpx', borderRadius: '16rpx' }]}}" />
-  </view>
-  <!-- 人员管理大卡片 -->
-  <view style="padding: 0 30rpx 20rpx;">
-    <!-- 标题行 -->
-    <view style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20rpx;">
-      <t-skeleton animation="gradient" rowCol="{{[{ width: '140rpx', height: '40rpx' }]}}" />
-      <t-skeleton animation="gradient" rowCol="{{[{ width: '60rpx', height: '32rpx' }]}}" />
-    </view>
-    <!-- 排序按钮行 -->
-    <view style="display: flex; gap: 16rpx; margin-bottom: 20rpx;">
-      <t-skeleton animation="gradient" rowCol="{{[{ width: '195rpx', height: '62rpx', borderRadius: '31rpx' }]}}" />
-      <t-skeleton animation="gradient" rowCol="{{[{ width: '195rpx', height: '62rpx', borderRadius: '31rpx' }]}}" />
-      <t-skeleton animation="gradient" rowCol="{{[{ width: '195rpx', height: '62rpx', borderRadius: '31rpx' }]}}" />
-    </view>
-    <!-- 头像网格 - 7列 -->
-    <view style="display: flex; flex-wrap: wrap; gap: 12rpx;">
-      <view wx:for="{{21}}" wx:key="index" style="display: flex; flex-direction: column; align-items: center; width: 90rpx;">
-        <t-skeleton animation="gradient" rowCol="{{[{ width: '90rpx', height: '90rpx', borderRadius: '50%' }]}}" />
-        <t-skeleton animation="gradient" rowCol="{{[{ width: '70rpx', height: '24rpx', marginTop: '6rpx' }]}}" style="margin-top: 6rpx;" />
+<!-- 协会管理骨架：对齐 club-manage-panel 新布局（海报区仅外框） -->
+<view class="sk-manage">
+  <view class="sk-rows">
+    <!-- 基本信息 + 协会章程 -->
+    <view class="sk-split-row">
+      <view class="sk-card sk-card-basic">
+        <view class="sk-card-head">
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '112rpx', height: '28rpx', borderRadius: '6rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '88rpx', height: '20rpx', borderRadius: '6rpx', marginTop: '4rpx' }]}}" />
+        </view>
+        <view class="sk-card-body">
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '200rpx', height: '28rpx', borderRadius: '6rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '160rpx', height: '24rpx', borderRadius: '6rpx', marginTop: '8rpx' }]}}" />
+        </view>
+      </view>
+      <view class="sk-card sk-card-charter">
+        <view class="sk-card-head">
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '112rpx', height: '28rpx', borderRadius: '6rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '88rpx', height: '20rpx', borderRadius: '6rpx', marginTop: '4rpx' }]}}" />
+        </view>
+        <view class="sk-card-body sk-card-body--end">
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '96rpx', height: '28rpx', borderRadius: '6rpx' }]}}" />
+        </view>
       </view>
     </view>
+
+    <!-- 协会海报：全宽，预览区只保留外边框 -->
+    <view class="sk-panel sk-panel-post">
+      <view class="sk-panel-header">
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '140rpx', height: '28rpx', borderRadius: '6rpx' }]}}" />
+        <t-skeleton animation="gradient" rowCol="{{[{ width: '180rpx', height: '24rpx', borderRadius: '6rpx' }]}}" />
+      </view>
+      <view class="sk-post-preview-box"></view>
+    </view>
+
+    <!-- 协会封面 + 活动管理 -->
+    <view class="sk-split-row">
+      <view class="sk-panel sk-panel-half">
+        <view class="sk-panel-header">
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '120rpx', height: '28rpx', borderRadius: '6rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '96rpx', height: '24rpx', borderRadius: '6rpx' }]}}" />
+        </view>
+        <view class="sk-cover-preview"></view>
+      </view>
+      <view class="sk-panel sk-panel-half">
+        <view class="sk-panel-header">
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '120rpx', height: '28rpx', borderRadius: '6rpx' }]}}" />
+          <t-skeleton animation="gradient" rowCol="{{[{ width: '48rpx', height: '24rpx', borderRadius: '6rpx' }]}}" />
+        </view>
+        <view class="sk-mini-rows">
+          <view class="sk-mini-row">
+            <t-skeleton animation="gradient" rowCol="{{[{ width: '96rpx', height: '24rpx', borderRadius: '6rpx' }]}}" />
+            <t-skeleton animation="gradient" rowCol="{{[{ width: '140rpx', height: '24rpx', borderRadius: '6rpx' }]}}" />
+          </view>
+          <view class="sk-mini-row">
+            <t-skeleton animation="gradient" rowCol="{{[{ width: '56rpx', height: '24rpx', borderRadius: '6rpx' }]}}" />
+            <t-skeleton animation="gradient" rowCol="{{[{ width: '120rpx', height: '24rpx', borderRadius: '6rpx' }]}}" />
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="sk-footer-space"></view>
+  </view>
+
+  <view class="sk-bottom-actions">
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '320rpx', height: '80rpx', borderRadius: '40rpx' }]}}" />
+    <t-skeleton animation="gradient" rowCol="{{[{ width: '320rpx', height: '80rpx', borderRadius: '40rpx' }]}}" />
   </view>
 </view>
