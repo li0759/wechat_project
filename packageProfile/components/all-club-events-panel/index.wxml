@@ -1,3 +1,14 @@
+<panel-loading-transition
+  duration="280"
+  command="{{pltCommand}}"
+  auto-need-load="{{true}}"
+  bind:needload="loadData"
+  bind:loaded="onPanelLoadTransitionDone"
+>
+  <view slot="skeleton">
+    <all-club-events-skeleton />
+  </view>
+  <view slot="content">
 <!--packageProfile/components/all-club-events-panel/index.wxml-->
 <view class="container">
   <scroll-view class="panel-scroll" scroll-y="{{true}}" show-scrollbar="{{false}}">
@@ -42,12 +53,7 @@
       </view>
     </view>
     
-    <view wx:if="{{loading}}" class="loading-container">
-      <t-loading size="24px" theme="circular" />
-      <view class="loading-text">正在加载数据...</view>
-    </view>
-    
-    <view wx:else class="content">
+    <view class="content">
     <!-- 总体统计卡片 -->
     <view class="stats-overview">
       <view class="stats-card">
@@ -118,4 +124,6 @@
 
     <view class="bottom-safe-area"></view>
   </scroll-view>
-</view> 
+</view>
+  </view>
+</panel-loading-transition>

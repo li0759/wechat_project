@@ -1,3 +1,14 @@
+<panel-loading-transition
+  duration="280"
+  command="{{pltCommand}}"
+  auto-need-load="{{true}}"
+  bind:needload="loadData"
+  bind:loaded="onPanelLoadTransitionDone"
+>
+  <view slot="skeleton">
+    <clubs-skeleton />
+  </view>
+  <view slot="content">
 <!-- 通用协会列表Panel -->
 <view class="club-panel-container">
   <view wx:if="{{contentSuspended}}" class="panel-list-suspend-skeleton">
@@ -111,12 +122,6 @@
   >
     <view slot="trigger"></view>
     <view slot="content" class="nested-popup-shell">
-      <!-- 骨架屏 - 覆盖在panel上面 -->
-      <view wx:if="{{nestedClubManage.loading}}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 999; background: #f7f8fa;">
-        <club-manage-skeleton />
-      </view>
-      
-      <!-- 真实 panel 组件 - 延迟渲染 -->
       <block wx:if="{{nestedClubManage.renderPanel}}">
         <club-manage-panel
           id="nestedClubManagePanel"
@@ -145,12 +150,6 @@
   >
     <view slot="trigger"></view>
     <view slot="content" class="nested-popup-shell">
-      <!-- 骨架屏 - 覆盖在panel上面 -->
-      <view wx:if="{{nestedClubDetail.loading}}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 999; background: #f7f8fa;">
-        <club-detail-skeleton />
-      </view>
-      
-      <!-- 真实 panel 组件 - 延迟渲染 -->
       <block wx:if="{{nestedClubDetail.renderPanel}}">
         <club-detail-panel
           id="nestedClubDetailPanel"
@@ -178,14 +177,9 @@
   >
     <view slot="trigger"></view>
     <view slot="content" class="nested-popup-shell">
-      <!-- 骨架屏 - 覆盖在panel上面 -->
-      <view wx:if="{{nestedClubJoined.loading}}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 999; background: #f7f8fa;">
-        <club-joined-skeleton />
-      </view>
-      
-      <!-- 真实 panel 组件 - 延迟渲染 -->
       <block wx:if="{{nestedClubJoined.renderPanel}}">
         <club-joined-panel
+          class="nested-popup-panel-fill"
           id="nestedClubJoinedPanel"
           club-id="{{nestedClubJoined.clubId}}"
           bind:loaded="onNestedClubJoinedLoaded"
@@ -198,3 +192,5 @@
     </view>
   </expandable-container_fullscreen>
 </view>
+  </view>
+</panel-loading-transition>

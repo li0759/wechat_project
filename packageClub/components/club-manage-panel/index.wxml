@@ -1,4 +1,15 @@
-﻿<view class="club-manage-panel">
+<panel-loading-transition
+  duration="280"
+  command="{{pltCommand}}"
+  auto-need-load="{{true}}"
+  bind:needload="loadData"
+  bind:loaded="onPanelLoadTransitionDone"
+>
+  <view slot="skeleton">
+    <club-manage-skeleton />
+  </view>
+  <view slot="content">
+<view class="club-manage-panel">
   <!-- 灰色蒙层 - 当协会被删除时显示 -->
   <view wx:if="{{club && club.isDelete}}" class="disabled-overlay">
     <view class="disabled-overlay-content">
@@ -411,7 +422,7 @@
       <view class="am-detail-head">
         <image
           class="am-detail-avatar"
-          src="{{currentMember.avatar || '/assets/images/default-avatar.png'}}"
+          src="{{currentMember.avatar || defaultAvatarUrl}}"
           mode="aspectFill"
           lazy-load="{{true}}"
         />
@@ -506,7 +517,7 @@
       <view class="am-detail-head">
         <image
           class="am-detail-avatar"
-          src="{{currentPendingApplication.avatar || '/assets/images/default-avatar.png'}}"
+          src="{{currentPendingApplication.avatar || defaultAvatarUrl}}"
           mode="aspectFill"
           lazy-load="{{true}}"
         />
@@ -587,5 +598,7 @@
     </view>
   </expandable-container>
 </view>
+  </view>
+</panel-loading-transition>
 
 

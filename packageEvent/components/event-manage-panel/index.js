@@ -1,4 +1,6 @@
 const app = getApp();
+const { getDefaultAvatarUrl } = require('../../../utils/default-avatar');
+const { runPanelLoad, emitPanelLoaded } = require('../../../components/panel-loading-transition/run-load');
 
 function pad2(n) {
   return String(n).padStart(2, '0');
@@ -39,6 +41,7 @@ function formatTimelineTimeShort(iso) {
 }
 
 Component({
+
   properties: {
     eventId: {
       type: String,
@@ -47,6 +50,7 @@ Component({
   },
 
   data: {
+    pltCommand: '',
     uploadAPI: '',
     defaultCover: '/assets/images/president/activity-default.png',
     defaultAvatarUrl: '',
@@ -245,22 +249,33 @@ Component({
     },
 
     // 懒加载入口：供外部调用，只有弹窗展开时才加载数据
+  onPanelLoadTransitionDone() {
+      emitPanelLoaded(this);
+    },
+
   loadData() {
       this._hasExpanded = true;
+      if (this._loadDataPromise) return this._loadDataPromise;
       if (this._loaded) return Promise.resolve();
-      if (!this.data.eventId || this.data.eventId.startsWith('placeholder')) {
-        return Promise.resolve();
+
+      const eventId = this.properties.eventId || this.data.eventId || '';
+      if (!eventId || String(eventId).startsWith('placeholder')) {
+        return runPanelLoad(this, { shouldFetch: () => false });
       }
-      
-      // 先设置基本的分享信息（eventId），详细信息?reloadAll 完成后更数
+
       app.globalData.shareInfo = {
         type: 'event',
-        id: this.data.eventId,
+        id: eventId,
         title: '点击查看活动详情',
         imageUrl: ''
-      };      
+      };
       this._loaded = true;
-      return this.reloadAll();
+      this._loadDataPromise = runPanelLoad(this, {
+        fetch: () => this.reloadAll({ silent: true }),
+      }).finally(() => {
+        this._loadDataPromise = null;
+      });
+      return this._loadDataPromise;
     },
 
     // 通用请求
@@ -287,8 +302,11 @@ Component({
       });
     },
 
-    async reloadAll() {
-      this.setData({ loading: true });
+    async reloadAll(options = {}) {
+      const silent = !!options.silent;
+      if (!silent) {
+        this.setData({ loading: true });
+      }
       this._earlyLoadedTriggered = false; // Reset flag
       try {
         const event = await this.loadEventDetail(this.data.eventId);
@@ -303,14 +321,13 @@ Component({
         ]);
         await this.loadMoments(1);
         this.prepareIsotopeMembers();
-        this.setData({ loading: false });
+        if (!silent) {
+          this.setData({ loading: false });
+        }
         
         // 设置分享信息
     this.updateShareInfo();
-        
-        this.triggerEvent('loaded');
-      } catch (e) {        this.setData({ loading: false, event: null });
-        this.triggerEvent('loaded');
+      } catch (e) {        this.setData({ ...(silent ? {} : { loading: false }), event: null });
         wx.showToast({ title: '加载失败', icon: 'none' });
       }
     },
@@ -377,13 +394,9 @@ Component({
           scheduleEnabled: !!scheduleId,
           scheduleStartTime: event.pre_startTime ? String(event.pre_startTime) : '',
         }, () => {
-          // 如果活动已取消或协会已删除，立即隐藏骨架屏并触发loaded事件
-          // 因为遮罩层会阻止用户交互，不需要等待所有数据加载完数
-      if (event.is_cancelled || event.club_deleted) {
-            this.setData({ loading: false });
-            this.triggerEvent('loaded');
-            this._earlyLoadedTriggered = true; // Set flag to prevent duplicate events
-  }
+          if (event.is_cancelled || event.club_deleted) {
+            this._earlyLoadedTriggered = true;
+          }
         });
         if (scheduleId) {
           try { await this.loadScheduleDetail(scheduleId, event.pre_startTime ? String(event.pre_startTime) : ''); } catch (e) {}
@@ -600,7 +613,7 @@ Component({
         
         return {
           id: uniqueId,
-          image: member.avatar || '/assets/images/default-avatar.png',
+          image: member.avatar || getDefaultAvatarUrl(),
           ini_width: 100,
           ini_height: 100,
           label: member.user_name,

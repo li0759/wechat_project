@@ -1,4 +1,5 @@
 const app = getApp();
+const { getDefaultAvatarUrl } = require('../../utils/default-avatar');
 
 Page({
   data: {
@@ -6,9 +7,22 @@ Page({
     userInfo: null,
     isInDevTools: false,
     devUsers: [],
-    default_avatar:app.globalData.static_url+'/assets/default_avatar.webp',
-    logo_url:app.globalData.static_url+'/assets/logo.png',
-    userInfo_complete: false // 是否可进入主页（头像和手机号都具备）
+    default_avatar: getDefaultAvatarUrl(),
+    logo_url: app.globalData.static_url + '/assets/logo.png',
+    userInfo_complete: false
+  },
+
+  _isProfileComplete(user) {
+    return !!(user && user.avatar && user.phone);
+  },
+
+  _enterApp() {
+    wx.showToast({ title: '登录成功', icon: 'success', duration: 800 });
+    setTimeout(() => {
+      wx.navigateBack({
+        fail: () => wx.switchTab({ url: '/pages/home/index' }),
+      });
+    }, 600);
   },
 
   onLoad: function (options) {
@@ -39,22 +53,12 @@ Page({
             wx.setStorageSync('token', res.data.new_token);
             this.setData({
               userInfo: userInfo,
+              isLoggedIn: true,
+              userInfo_complete: this._isProfileComplete(userInfo),
             });
-            if(res.data.user.avatar && res.data.user.phone){
-              this.setData({
-                isLoggedIn: true,
-                userInfo_complete: true
-              });
-              setTimeout(() => {
-                wx.switchTab({ url: '/pages/home/index' });
-              }, 1000);
-            }
-            else{
-              this.setData({
-                userInfor_complete: false,
-                isLoggedIn: false
-              });
-            }
+            setTimeout(() => {
+              wx.switchTab({ url: '/pages/home/index' });
+            }, 600);
           } else {
             // Token 无效，清除本地存储并跳转登录页
             wx.removeStorageSync('token');
@@ -116,35 +120,17 @@ Page({
           this.setData({
             isLoggedIn: true,
             userInfo: user,
+            userInfo_complete: this._isProfileComplete(user),
           });
-          if(user.avatar && user.phone){
-            this.setData({
-              userInfo_complete: true
-            });
+          if (this._isProfileComplete(user)) {
+            this._enterApp();
+          } else {
             wx.showToast({
-              title: '登录成功',
+              title: '登录成功，可稍后完善资料',
               icon: 'success',
-              duration: 800
+              duration: 1500,
             });
-            setTimeout(() => {
-              //wx.switchTab({ url: '/pages/home/index' });
-              console.log('navigateBack');
-              wx.navigateBack({fail: (err) => {
-                console.log(err);
-                wx.switchTab({ url: '/pages/home/index' });
-              }});
-            }, 1000);
-          }
-          else{
-            this.setData({
-              userInfo_complete: false
-            });
-            console.log('登录成功，请完善信息');
-            wx.showToast({
-              title: '登录成功，请完善信息',
-              icon: 'success',
-              duration: 1500
-            });
+            setTimeout(() => this._enterApp(), 800);
           }
         } else {
           wx.showToast({ title: '登录失败', icon: 'none' });
@@ -214,35 +200,17 @@ Page({
           this.setData({
             isLoggedIn: true,
             userInfo: user,
+            userInfo_complete: this._isProfileComplete(user),
           });
-          if(user.avatar && user.phone){
-            this.setData({
-              userInfo_complete: true
-            });
+          if (this._isProfileComplete(user)) {
+            this._enterApp();
+          } else {
             wx.showToast({
-              title: '登录成功',
+              title: '登录成功，可稍后完善资料',
               icon: 'success',
-              duration: 800
+              duration: 1500,
             });
-            setTimeout(() => {
-              //wx.switchTab({ url: '/pages/home/index' });
-              console.log('navigateBack');
-              wx.navigateBack({fail: (err) => {
-                console.log(err);
-                wx.switchTab({ url: '/pages/home/index' });
-              }});
-            }, 1000);
-          }
-          else{
-            this.setData({
-              userInfo_complete: false
-            });
-            console.log('登录成功，请完善信息');
-            wx.showToast({
-              title: '登录成功，请完善信息',
-              icon: 'success',
-              duration: 1500
-            });
+            setTimeout(() => this._enterApp(), 800);
           }
         } else {
           wx.showToast({ title: '登录失败', icon: 'none' });

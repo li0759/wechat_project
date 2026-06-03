@@ -1,4 +1,6 @@
 const app = getApp();
+const { getDefaultAvatarUrl } = require('../../../utils/default-avatar');
+const { runPanelLoad, emitPanelLoaded } = require('../../../components/panel-loading-transition/run-load');
 
 // 调用后端接口生成地图URL（避免在前端暴露API key）
 async function buildGeoapifyStaticMapUrl({ longitude, latitude, width = 600, height = 400, zoom = 14 }) {
@@ -28,6 +30,7 @@ async function buildGeoapifyStaticMapUrl({ longitude, latitude, width = 600, hei
 }
 
 Component({
+
   properties: {
     clubId: {
       type: Number,
@@ -36,6 +39,8 @@ Component({
   },
   
   data: {
+    pltCommand: '',
+    panelLoading: false,
     uploadAPI: app.globalData.request_url + `/file/upload_file`,
     defaultAvatarUrl: '',
     formData: {
@@ -169,21 +174,29 @@ Component({
 
   lifetimes: {
     attached() {
-      // 组件实例被放入页面节点树时执行
-    this.initializeComponent();
+      this._initStarted = false;
     },
     
     ready() {
-      // 组件在视图层布局完成后执行
-      // 注意：loaded 事件在 initializeComponent 完成后触发，不在这里触发
   },
     
     detached() {
-      // 组件实例被从页面节点树移除时执行
   }
   },
   
   methods: {
+    onPanelLoadTransitionDone() {
+      emitPanelLoaded(this);
+    },
+
+    loadData() {
+      if (this._initStarted) return Promise.resolve();
+      this._initStarted = true;
+      return runPanelLoad(this, {
+        fetch: () => this.initializeComponent(),
+      });
+    },
+
     onNavBack() {
       // 触发关闭事件，由父组件处理
     this.triggerEvent('close');
@@ -194,10 +207,10 @@ Component({
       if (!id) return
       this.selectComponent(`#${id}`)?.collapse?.()
     },
-    async initializeComponent() {
+    async initializeComponent(options = {}) {
       // 设置默认头像 URL
     this.setData({
-        defaultAvatarUrl: app.globalData.static_url + '/assets/default_avatar.webp'
+        defaultAvatarUrl: getDefaultAvatarUrl(),
       });
       
       // 检查登录状态并获取用户信息
@@ -225,18 +238,18 @@ Component({
         const parts = String(timeStr).split(':')
         const hIdx = Math.max(0, Math.min(23, parseInt(parts[0] || '9', 10) || 0))
         const mIdx = Math.max(0, Math.min(59, parseInt(parts[1] || '0', 10) || 0))
-        this.setData({
-          timeHours: hours,
-          timeMinutes: minutes,
-          timePickerValue: [hIdx, mIdx],
-          timeOfDayValue: `${String(hIdx).padStart(2, '0')}:${String(mIdx).padStart(2, '0')}`
+        await new Promise((resolve) => {
+          this.setData({
+            timeHours: hours,
+            timeMinutes: minutes,
+            timePickerValue: [hIdx, mIdx],
+            timeOfDayValue: `${String(hIdx).padStart(2, '0')}:${String(mIdx).padStart(2, '0')}`
+          }, resolve)
         })
 
         // 自动打开选择器弹窗
     this.autoOpenSelectorPopup();
       }
-      // 初始化完成后触发 loaded 事件，通知父组件隐藏骨架屏
-    this.triggerEvent('loaded');
     },
 
   // 统一请求方法（支持 silent 模式，不显示 loading）
@@ -1055,7 +1068,7 @@ Component({
     const nextMembers = (this.data.inviteMembers || []).concat([{
       user_id: member.user_id,
       user_name: member.user_name,
-      avatar: member.avatar || '/assets/images/default-avatar.png',
+      avatar: member.avatar || getDefaultAvatarUrl(),
       phone: member.phone,
       department: member.department,
       position: member.position,

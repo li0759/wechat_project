@@ -41,7 +41,7 @@
           z-index="30000"
         >
           <view slot="trigger" class="ab-avatar-trigger">
-            <image class="avatar" src="{{item.user.avatar || '/assets/images/default-avatar.png'}}" mode="aspectFill" />
+            <image class="avatar" src="{{item.user.avatar || defaultAvatarUrl}}" mode="aspectFill" />
           </view>
           <!-- 用户详情弹窗：对齐“搜索用户”列表的 expandable-container 弹窗结构 -->
           <view slot="content" class="ab-expanded-content">
@@ -50,7 +50,7 @@
               <view class="ab-user-avatar-section">
                 <image
                   class="ab-user-avatar"
-                  src="{{item.user.avatar || '/assets/images/default-avatar.png'}}"
+                  src="{{item.user.avatar || defaultAvatarUrl}}"
                   mode="aspectFill"
                   lazy-load="{{true}}"
                 />

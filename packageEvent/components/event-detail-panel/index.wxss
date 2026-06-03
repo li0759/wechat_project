@@ -1,4 +1,5 @@
 @import "../../../styles/panel-bottom-actions.wxss";
+@import "../../../styles/panel-component-host.wxss";
 
 /* 活动详情面板样式 - 复刻 event-detail 页面 */
 .event-detail-panel {

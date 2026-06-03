@@ -1,4 +1,6 @@
 const app = getApp();
+const { runPanelLoad, emitPanelLoaded } = require('../../../components/panel-loading-transition/run-load');
+const panelLazy = require('../../../utils/panel-lazy-load');
 
 /**
  * 活动列表Panel组件
@@ -6,6 +8,7 @@ const app = getApp();
  */
 
 Component({
+
   properties: {
     requestUrl: {
       type: String,
@@ -18,11 +21,13 @@ Component({
   },
 
   data: {
+    pltCommand: '',
     // 控制面板相关
     activeTab: 0,
     
     // 数据相关 - 列表视图
     eventList: [],
+    panelLoading: false,
     isEventLoading: false,
     eventPage: 1,
     eventTotalPages: 1,
@@ -120,36 +125,38 @@ Component({
     /**
      * 供外部调用的数据加载方法
      */
-    loadData() {
-      this._syncListRouteContext();
-      this.initData();
-      // 触发loaded事件
-    this.triggerEvent('loaded');
+    onPanelLoadTransitionDone() {
+      emitPanelLoaded(this);
     },
 
-    /**
-     * 初始化数据     */
-    initData() {
-      Promise.all([
-        this.loadEventsForCalendar(this.data.currentYear, this.data.currentMonth),
-        this.loadEventList(1)
-      ]);
+    loadData() {
+      this._syncListRouteContext();
+      return runPanelLoad(this, {
+        fetch: () =>
+          Promise.all([
+            this.loadEventsForCalendar(this.data.currentYear, this.data.currentMonth),
+            this.loadEventList(1, { silent: true }),
+          ]),
+      });
     },
 
     /**
      * 加载活动列表
      */
-    async loadEventList(page = 1) {
+    async loadEventList(page = 1, options = {}) {
+      const silent = !!(options && options.silent) && page === 1;
       if (this.data.isEventLoading || (this.data.eventTotalPages && page > this.data.eventTotalPages)) return;
       
-      this.setData({ isEventLoading: true });
+      if (!silent) {
+        this.setData({ isEventLoading: true });
+      }
       
       if (page > 1) {
         const skeletons = Array(2).fill({ loading: true });
         this.setData({
           eventList: this.data.eventList.concat(skeletons)
         });
-      } else if (page === 1 && this.data.eventList.length === 0) {
+      } else if (page === 1 && this.data.eventList.length === 0 && !silent) {
         this.setData({
           eventList: Array(4).fill({ loading: true })
         });
@@ -187,7 +194,7 @@ Component({
               eventPage: 1,
               eventTotalPages: totalPages,
               eventEmpty: false,
-              isEventLoading: false
+              ...(silent ? {} : { isEventLoading: false }),
             }, () => {
               this.loadEventList(2);
             });
@@ -205,7 +212,7 @@ Component({
                 eventPage: response.data.pagination.current_page || page,
                 eventTotalPages: totalPages,
                 eventEmpty: isEmpty,
-                isEventLoading: false
+                ...(silent ? {} : { isEventLoading: false }),
               });
             });
           } else {
@@ -217,17 +224,19 @@ Component({
               ],
               eventPage: response.data.pagination.current_page || page,
               eventTotalPages: totalPages,
-              isEventLoading: false
+              ...(silent ? {} : { isEventLoading: false }),
             });
           }
         } else {
           if (page === 1) {
-            this.setData({ isEventLoading: false });
+            if (!silent) {
+              this.setData({ isEventLoading: false });
+            }
           } else {
             const remain = this.data.eventList.length - 2;
             this.setData({
               eventList: this.data.eventList.slice(0, remain),
-              isEventLoading: false
+              ...(silent ? {} : { isEventLoading: false }),
             });
           }
           throw new Error(response.message || '获取活动列表失败');
@@ -237,12 +246,14 @@ Component({
             title: '加载活动列表失败',
             icon: 'none'
           });
-          this.setData({ isEventLoading: false });
+          if (!silent) {
+            this.setData({ isEventLoading: false });
+          }
         } else {
           const remain = this.data.eventList.length - 2;
           this.setData({
             eventList: this.data.eventList.slice(0, remain),
-            isEventLoading: false
+            ...(silent ? {} : { isEventLoading: false }),
           });
         }
       }
@@ -551,12 +562,7 @@ Component({
     onNestedEventManageContentReady() {      this.setData({
         'nestedEventManage.renderPanel': true
       }, () => {
-        setTimeout(() => {
-          const panel = this.selectComponent('#nestedEventManagePanel');
-          if (panel && panel.loadData) {
-            panel.loadData();
-          }
-        }, 100);
+        panelLazy.invokePanelLoadData(this, '#nestedEventManagePanel');
       });
     },
 
@@ -611,12 +617,7 @@ Component({
   onNestedEventDetailContentReady() {      this.setData({
         'nestedEventDetail.renderPanel': true
       }, () => {
-        setTimeout(() => {
-          const panel = this.selectComponent('#nestedEventDetailPanel');
-          if (panel && panel.loadData) {
-            panel.loadData();
-          }
-        }, 100);
+        panelLazy.invokePanelLoadData(this, '#nestedEventDetailPanel');
       });
     },
 
@@ -654,11 +655,7 @@ Component({
   onNestedEventJoinedContentReady() {      this.setData({
         'nestedEventJoined.renderPanel': true
       }, () => {
-        // 延迟调用loadData，确保组件已经完全渲数
-      setTimeout(() => {
-    const panel = this.selectComponent('#nestedEventJoinedPanel');          if (panel && panel.loadData) {            panel.loadData();
-          } else {          }
-        }, 100);
+        panelLazy.invokePanelLoadData(this, '#nestedEventJoinedPanel');
       });
     },
 

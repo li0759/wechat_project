@@ -285,7 +285,7 @@
                                 <view slot="trigger" class="am-avatar-trigger">
                                   <image
                                     class="am-avatar"
-                                    src="{{user.avatar || '/assets/images/default-avatar.png'}}"
+                                    src="{{user.avatar || defaultAvatarUrl}}"
                                     mode="aspectFill"
                                     lazy-load="{{true}}"
                                   />
@@ -295,7 +295,7 @@
                                   <view class="am-detail-head">
                                     <image
                                       class="am-detail-avatar"
-                                      src="{{user.avatar || '/assets/images/default-avatar.png'}}"
+                                      src="{{user.avatar || defaultAvatarUrl}}"
                                       mode="aspectFill"
                                       lazy-load="{{true}}"
                                     />
@@ -442,14 +442,14 @@
                                     z-index="30000"
                                   >
                                     <view slot="trigger" class="am-avatar-trigger">
-                                      <image class="am-avatar" src="{{u.avatar || '/assets/images/default-avatar.png'}}" mode="aspectFill" />
+                                      <image class="am-avatar" src="{{u.avatar || defaultAvatarUrl}}" mode="aspectFill" />
                                     </view>
 
                                     <view slot="content" class="am-user-detail">
                                       <view class="am-detail-head">
                                         <image
                                           class="am-detail-avatar"
-                                          src="{{u.avatar || '/assets/images/default-avatar.png'}}"
+                                          src="{{u.avatar || defaultAvatarUrl}}"
                                           mode="aspectFill"
                                           lazy-load="{{true}}"
                                         />
@@ -672,7 +672,7 @@
                                   <view slot="trigger" class="am-avatar-trigger">
                                     <image
                                       class="am-avatar"
-                                      src="{{user.avatar || '/assets/images/default-avatar.png'}}"
+                                      src="{{user.avatar || defaultAvatarUrl}}"
                                       mode="aspectFill"
                                       lazy-load="{{true}}"
                                     />
@@ -682,7 +682,7 @@
                                     <view class="am-detail-head">
                                       <image
                                         class="am-detail-avatar"
-                                        src="{{user.avatar || '/assets/images/default-avatar.png'}}"
+                                        src="{{user.avatar || defaultAvatarUrl}}"
                                         mode="aspectFill"
                                         lazy-load="{{true}}"
                                       />
@@ -945,14 +945,14 @@
                                       z-index="30000"
                                     >
                                       <view slot="trigger" class="am-avatar-trigger">
-                                        <image class="am-avatar" src="{{u.avatar || '/assets/images/default-avatar.png'}}" mode="aspectFill" />
+                                        <image class="am-avatar" src="{{u.avatar || defaultAvatarUrl}}" mode="aspectFill" />
                                       </view>
 
                                       <view slot="content" class="am-user-detail">
                                         <view class="am-detail-head">
                                           <image
                                             class="am-detail-avatar"
-                                            src="{{u.avatar || '/assets/images/default-avatar.png'}}"
+                                            src="{{u.avatar || defaultAvatarUrl}}"
                                             mode="aspectFill"
                                             lazy-load="{{true}}"
                                           />

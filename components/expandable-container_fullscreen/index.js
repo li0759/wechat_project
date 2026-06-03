@@ -14,7 +14,7 @@
 
   properties: {
     bgColor: { type: String, value: '#6750A4' },
-    animationDuration: { type: Number, value: 300 },
+    animationDuration: { type: Number, value: 200 },
     zIndex: { type: Number, value: 1000 },
     fullscreenTopPadding: { type: Number, value: 90 },
     fullscreenContentTopGap: { type: Number, value: 0 },
@@ -46,7 +46,7 @@
     pcLeaving: false,
     // sheet动画
     fsContentClass: 'fs-hidden',
-    fsContentDur: 360,
+    fsContentDur: 260,
     fsTopGapPx: 0,
     fsSheetBgColor: '#ffffff',
     // 手势
@@ -346,7 +346,7 @@
      * 先 transition:none + scale(max)，再 nextTick 过渡到 scale(1)，与展开时「小圆→大圆」对称。
      */
     playCollapseRippleShrink(durMs) {
-      const dur = Math.max(1, Number(durMs || 300))
+      const dur = Math.max(1, Number(durMs || 200))
       let wxW = 375
       let wxH = 667
       try {
@@ -458,7 +458,7 @@
       const sys = wx.getSystemInfoSync()
       const windowWidth = sys.windowWidth
       const windowHeight = sys.windowHeight
-      const dur = Number(this.properties.animationDuration || 300)
+      const dur = Number(this.properties.animationDuration || 200)
       const convertedBgColor = this.convertColorFormat(this.properties.bgColor)
       const effectiveZIndex = this.nextEffectiveZIndex()
       
@@ -512,7 +512,7 @@
         this.setData({ rippleStyle: expandedStyle })
 
         // 涟漪扩散到70%时，开始sheet上滑
-        const slideDur = Math.max(360, Math.floor(dur * 1.2))
+        const slideDur = Math.max(260, Math.floor(dur * 1.2) - 100)
         this.__expandTo2 = setTimeout(() => {
           if (runId !== this.__expandRunId) return
           this.setData({
@@ -600,16 +600,16 @@
         this.__expandTo3 = null
       }
 
-      const dur = Number(this.properties.animationDuration || 300)
-      const slideDur = Math.max(360, Math.floor(dur * 1.2))
+      const dur = Number(this.properties.animationDuration || 200)
+      const slideDur = Math.max(200, Math.floor(dur * 1.2) - 160)
       const deferStackRelease = Boolean(this.__pcDrivenClose)
 
       this.setData({ fsDragY: 0, fsDragTransform: 'none', fsDragTransition: '', fsGestureDismissing: false })
       // 普通收起立即释放栈；系统返回收起则延后到收起后段，避免视觉闪烁
       if (!deferStackRelease) this.unregisterGlobalFullscreenCloser()
 
-      // 1) sheet下滑
-    this.setData({ fsContentClass: 'fs-leave-active', fsContentDur: slideDur })
+      // 1) sheet 匀速下滑（与手势 dismiss 一致）
+    this.setData({ fsContentClass: 'fs-leave-linear', fsContentDur: slideDur })
 
       // 2) 下滑到70%时，涟漪收缩
       setTimeout(() => {
@@ -750,8 +750,8 @@
     gestureDismissFullscreen() {
       if (!this.data.isExpanded || this.data.fsGestureDismissing) return
       this._restoreClearParentHostIfNeeded()
-      const dur = Number(this.properties.animationDuration || 300)
-      const slideDur = 220
+      const dur = Number(this.properties.animationDuration || 200)
+      const slideDur = 120
       let windowHeight = 667
       try { windowHeight = wx.getSystemInfoSync().windowHeight || 667 } catch (e) {}
 

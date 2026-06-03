@@ -1,3 +1,14 @@
+<panel-loading-transition
+  duration="280"
+  command="{{pltCommand}}"
+  auto-need-load="{{true}}"
+  bind:needload="loadData"
+  bind:loaded="onPanelLoadTransitionDone"
+>
+  <view slot="skeleton">
+    <club-joined-skeleton />
+  </view>
+  <view slot="content">
 <view class="club-joined-panel">
   <!-- 灰色蒙层 - 当协会被删除时显示 -->
   <view wx:if="{{club && club.isDelete}}" class="disabled-overlay">
@@ -8,8 +19,10 @@
     </view>
   </view>
 
+  <t-empty wx:if="{{!club}}" icon="usergroup" description="协会不存在或无权查看" />
+
   <!-- 主内容：外层 view 承接 flex 高度，scroll-view 再 height:100%（微信里 scroll-view 直接 flex:1 常失效，底栏会被顶到屏外） -->
-  <view wx:if="{{!isLoading && club}}" class="club-joined-main">
+  <view wx:if="{{club}}" class="club-joined-main">
   <scroll-view 
     class="page-scroll" 
     scroll-y="{{true}}"
@@ -354,3 +367,5 @@
     </view>
   </expandable-container_fullscreen>
 </view>
+  </view>
+</panel-loading-transition>

@@ -1,14 +1,23 @@
-<view class="cmp-panel-root {{(loading || (!loading && events.length > 0)) ? 'cmp-panel-root--member-list' : ''}}">
-
-  <club-events-skeleton wx:if="{{loading}}" />
+<panel-loading-transition
+  duration="280"
+  command="{{pltCommand}}"
+  auto-need-load="{{true}}"
+  bind:needload="loadData"
+  bind:loaded="onPanelLoadTransitionDone"
+>
+  <view slot="skeleton">
+    <club-events-skeleton />
+  </view>
+  <view slot="content">
+<view class="cmp-panel-root cmp-panel-root--member-list">
 
   <t-empty
-    wx:elif="{{!loading && events.length === 0}}"
+    wx:if="{{events.length === 0}}"
     icon="calendar"
     description="暂无活动"
   />
 
-  <view wx:elif="{{!loading && events.length > 0}}" class="members-main cm-indexes-shell">
+  <view wx:if="{{events.length > 0}}" class="members-main cm-indexes-shell">
     <view class="cm-member-toolbar">
       <view wx:if="{{bulkMode}}" class="cm-bulk-send-bar">
         <view class="cm-bulk-icon-btn" hover-class="cm-bulk-icon-btn--hover" bindtap="onExitBulkMode">
@@ -64,7 +73,7 @@
   </view>
 
   <!-- 添加活动悬浮按钮（加载中由骨架屏展示，避免双 FAB） -->
-  <view class="fab-container" wx:if="{{!loading}}">
+  <view class="fab-container" wx:if="{{events.length > 0}}">
     <expandable-container_fullscreen
       id="nestedEventCreatePopup"
       expanded-width="750"
@@ -102,3 +111,5 @@
 
   <t-toast id="t-toast" />
 </view>
+  </view>
+</panel-loading-transition>

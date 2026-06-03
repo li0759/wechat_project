@@ -1,6 +1,9 @@
 const app = getApp();
+const { getDefaultAvatarUrl } = require('../../../utils/default-avatar');
+const { runPanelLoad, emitPanelLoaded } = require('../../../components/panel-loading-transition/run-load');
 
 Component({
+
   properties: {
     eventId: {
       type: String,
@@ -9,7 +12,9 @@ Component({
   },
 
   data: {
+    pltCommand: '',
     loading: true,
+    defaultAvatarUrl: getDefaultAvatarUrl(),
     contentSuspended: false,
     contentSuspendMode: '',
     event: null,
@@ -80,6 +85,10 @@ Component({
   methods: {
     // 地图动画逻辑已抽到 components/animated-map
     // 懒加载入口：供外部调用，只有弹窗展开时才加载数据
+  onPanelLoadTransitionDone() {
+      emitPanelLoaded(this);
+    },
+
   loadData() {
       this._hasExpanded = true;
       if (this._loaded) return Promise.resolve();
@@ -87,7 +96,9 @@ Component({
         return Promise.resolve();
       }
       this._loaded = true;
-      return this.loadEventData();
+      return runPanelLoad(this, {
+        fetch: () => this.loadEventData({ silent: true }),
+      });
     },
 
     // 通用请求
@@ -114,8 +125,11 @@ Component({
       });
     },
 
-    async loadEventData() {
-      this.setData({ loading: true });
+    async loadEventData(options = {}) {
+      const silent = !!options.silent;
+      if (!silent) {
+        this.setData({ loading: true });
+      }
       try {
         const [eventRes, membersRes] = await Promise.all([
           this.request({ url: `/event/${this.data.eventId}` }),
@@ -130,15 +144,15 @@ Component({
             this.setData({ membersList: membersRes.data?.members || [] });
           }
           
-          this.setData({ loading: false });
-          this.triggerEvent('loaded');
+          if (!silent) {
+            this.setData({ loading: false });
+          }
         } else {
           throw new Error(eventRes.message || '加载失败');
         }
       } catch (e) {
         console.error(e);
-        this.setData({ loading: false, event: null });
-        this.triggerEvent('loaded');
+        this.setData({ ...(silent ? {} : { loading: false }), event: null });
         wx.showToast({ title: '加载失败', icon: 'none' });
       }
     },

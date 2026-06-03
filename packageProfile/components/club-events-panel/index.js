@@ -1,7 +1,10 @@
 const app = getApp()
+const { runPanelLoad, emitPanelLoaded } = require('../../../components/panel-loading-transition/run-load');
+const panelLazy = require('../../../utils/panel-lazy-load')
 import Toast from 'tdesign-miniprogram/toast/index'
 
 Component({
+
   options: {
     styleIsolation: 'shared',
   },
@@ -14,12 +17,13 @@ Component({
   },
 
   data: {
+    pltCommand: '',
     events: [],
     filteredEvents: [],
     monthEventGroups: [],
     monthIndexSidebar: [],
     searchKeyword: '',
-    loading: true,
+    isLoading: false,
     default_cover: `${app.globalData.static_url}/assets/images/president/activity-default.png`,
     bulkMode: false,
     bulkSelectedEvents: [],
@@ -46,7 +50,7 @@ Component({
         this._lastClubId = null
         this._loaded = false
         this.setData({
-          loading: false,
+          isLoading: false,
           events: [],
           filteredEvents: [],
           monthEventGroups: [],
@@ -63,22 +67,21 @@ Component({
   },
 
   methods: {
+    onPanelLoadTransitionDone() {
+      emitPanelLoaded(this)
+    },
+
     loadData() {
       this._hasExpanded = true
-      if (this._loaded) return Promise.resolve()
-      this._loaded = true
-
       const clubId = this.properties.clubId
-      if (!clubId || String(clubId).startsWith('placeholder')) {
-        this.setData({ loading: false })
-        this.triggerEvent('loaded')
-        return Promise.resolve()
-      }
-
-      this._lastClubId = String(clubId)
-      return this.fetchClubEvents(clubId).then(() => {
-        this.triggerEvent('loaded')
+      if (this._fetching) return this._fetching
+      this._fetching = runPanelLoad(this, {
+        shouldFetch: () => clubId && !String(clubId).startsWith('placeholder'),
+        fetch: () => this.fetchClubEvents(clubId, { silent: true }),
+      }).finally(() => {
+        this._fetching = null
       })
+      return this._fetching
     },
 
     hideCharts() {},
@@ -87,42 +90,43 @@ Component({
     async fetchClubEvents(clubId, options = {}) {
       const silent = !!options.silent
       if (!silent) {
-        this.setData({ loading: true })
+        this.setData({ isLoading: true })
       }
-      try {
-        const res = await this.request({
+      return new Promise((resolve) => {
+        const finish = (patch) => {
+          this.setData(patch, () => resolve())
+        }
+        this.request({
           url: `/event/club/${clubId}/manage_events`,
           method: 'GET',
+        }).then((res) => {
+          if (!res || String(res.Flag) !== '4000') {
+            throw new Error(res?.message || '获取活动失败')
+          }
+          const rawEvents = Array.isArray(res.data?.events) ? res.data.events : []
+          const events = rawEvents.map((ev) => this.normalizeEvent(ev))
+          const { filtered, groups, sidebar } = this.computeEventListView(events)
+          finish({
+            events,
+            filteredEvents: filtered,
+            monthEventGroups: groups,
+            monthIndexSidebar: sidebar,
+          })
+        }).catch((error) => {
+          finish({
+            events: [],
+            filteredEvents: [],
+            monthEventGroups: [],
+            monthIndexSidebar: [],
+          })
+          Toast({
+            context: this,
+            selector: '#t-toast',
+            message: error.message || '加载失败',
+            theme: 'error',
+          })
         })
-        if (!res || String(res.Flag) !== '4000') {
-          throw new Error(res?.message || '获取活动失败')
-        }
-        const rawEvents = Array.isArray(res.data?.events) ? res.data.events : []
-        const events = rawEvents.map((ev) => this.normalizeEvent(ev))
-        const { filtered, groups, sidebar } = this.computeEventListView(events)
-        // 与 members 一致：filtered + 分组与 loading 同帧提交，避免骨架屏切走后闪「搜索空状态」
-        this.setData({
-          events,
-          filteredEvents: filtered,
-          monthEventGroups: groups,
-          monthIndexSidebar: sidebar,
-          loading: false,
-        })
-      } catch (error) {
-        this.setData({
-          loading: false,
-          events: [],
-          filteredEvents: [],
-          monthEventGroups: [],
-          monthIndexSidebar: [],
-        })
-        Toast({
-          context: this,
-          selector: '#t-toast',
-          message: error.message || '加载失败',
-          theme: 'error',
-        })
-      }
+      })
     },
 
     normalizeEvent(raw) {
@@ -322,7 +326,9 @@ Component({
     },
 
     onNestedEventCreateContentReady() {
-      this.setData({ 'nestedEventCreate.renderPanel': true })
+      this.setData({ 'nestedEventCreate.renderPanel': true }, () => {
+        panelLazy.invokePanelLoadData(this, '#nestedEventCreatePanel')
+      })
     },
 
     onNestedEventCreateLoaded() {

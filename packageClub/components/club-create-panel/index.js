@@ -1,4 +1,5 @@
 ﻿const app = getApp();
+const { getDefaultAvatarUrl } = require('../../../utils/default-avatar');
 
 function tryCloseFullscreenPopup() {
   const fn = getApp()?.globalData?.__fullscreenExpandableClose
@@ -12,6 +13,7 @@ Component({
   },
   
   data: {
+    defaultAvatarUrl: getDefaultAvatarUrl(),
     uploadAPI: app.globalData.request_url + `/file/upload_file`,
     formData: {
       club_name: '',
@@ -822,7 +824,7 @@ Component({
       const avatar = 50
       const newPresItem = {
         id: `president-${String(presidentData.id)}`,
-        image: (presidentData.avatar && presidentData.avatar.trim()) || '/assets/images/default-avatar.png',
+        image: (presidentData.avatar && presidentData.avatar.trim()) || getDefaultAvatarUrl(),
         ini_width: avatar,
         ini_height: avatar,
         user_id: String(presidentData.id),
@@ -894,7 +896,7 @@ Component({
       const avatar = 50
       const newItem = {
         id: `club-member-${String(newMember.user_id)}`,
-        image: newMember.avatar || '/assets/images/default-avatar.png',
+        image: newMember.avatar || getDefaultAvatarUrl(),
         ini_width: avatar,
         ini_height: avatar,
         user_id: String(newMember.user_id),
@@ -1618,7 +1620,7 @@ Component({
 
     const items = members.map((m) => ({
       id: `club-member-${String(m.user_id)}`,
-      image: m.avatar || '/assets/images/default-avatar.png',
+      image: m.avatar || getDefaultAvatarUrl(),
       ini_width: avatar,
       ini_height: avatar,
       user_id: String(m.user_id),
@@ -1674,7 +1676,7 @@ Component({
 
     const items = [{
       id: `president-${String(president.id)}`,
-      image: president.avatar || '/assets/images/default-avatar.png',
+      image: president.avatar || getDefaultAvatarUrl(),
       ini_width: avatar,
       ini_height: avatar,
       user_id: String(president.id),

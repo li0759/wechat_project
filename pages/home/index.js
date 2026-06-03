@@ -1,14 +1,16 @@
-// 引入API请求工具
 const app = getApp();
 const { submitClockIn } = require('../../utils/event-clockin');
 const panelLazy = require('../../utils/panel-lazy-load');
+const { getDefaultAvatarUrl } = require('../../utils/default-avatar');
+
+const PANEL_REVEAL_MS = 280;
 
 Page({
   data: {
     // 用户信息
     userInfo: {},
     // 活动列表
-    default_avatar:app.globalData.static_url+'/assets/default_avatar.webp',
+    default_avatar: getDefaultAvatarUrl(),
     // 协会列表
     clubList: [],
     clubPage: 1,
@@ -40,6 +42,7 @@ Page({
       { event_id: 'placeholder-2', title: '加载中...', cover_url: '', join_count: 0},
       { event_id: 'placeholder-3', title: '加载中...', cover_url: '', join_count: 0}
     ],
+    hotEventCurrent: 0,
     // 热门协会列表
     hotClubs: [
       { club_id: 'placeholder-1', club_name: '加载中...', logo: ''},
@@ -92,8 +95,10 @@ Page({
     globalPopup: {
       visible: false,
       loading: true,
-      renderPanel: false,  // 是否渲染 panel 组件
-      type: '', // 'event-detail', 'event-joined', 'event-manage', 'club-detail', 'club-manage', ...
+      renderPanel: false,
+      skeletonFading: false,
+      panelContentVisible: false,
+      type: '',
       id: '',
       data: {},
       tapX: 0,
@@ -700,8 +705,14 @@ Page({
    */
   onClubSwiperChange: function(e) {
     const current = e.detail.current;
-    // 可以在这里添加协会swiper切换时的特殊逻辑
     console.log('协会swiper切换到:', current);
+  },
+
+  onEventSwiperChange(e) {
+    const current = e.detail && e.detail.current;
+    if (typeof current === 'number') {
+      this.setData({ hotEventCurrent: current });
+    }
   },
 
   /**
@@ -2077,7 +2088,12 @@ Page({
   _renderGlobalPopupPanel() {
     const type = this.data.globalPopup.type;
     panelLazy.preloadForPanelType(type).then(() => {
-      this.setData({ 'globalPopup.renderPanel': true }, () => {
+      this.setData({
+        'globalPopup.renderPanel': true,
+        'globalPopup.panelContentVisible': true,
+        'globalPopup.loading': false,
+        'globalPopup.skeletonFading': false,
+      }, () => {
         const panelId = this._panelIdForGlobalPopupType(type);
         if (!panelId) return;
         panelLazy.invokePanelLoadData(this, panelId, {
@@ -2136,6 +2152,8 @@ Page({
         visible: true,
         loading: true,
         renderPanel: false,
+        skeletonFading: false,
+        panelContentVisible: false,
         type,
         id: safeId,
         data: popupData,
@@ -2352,10 +2370,16 @@ Page({
 
   // 全局弹窗内容加载完成回调
   onGlobalPopupLoaded: function() {
-    console.log('onGlobalPopupLoaded 被调用，设置 loading = false');
     this.setData({
-      'globalPopup.loading': false
+      'globalPopup.panelContentVisible': true,
+      'globalPopup.skeletonFading': true,
     });
+    setTimeout(() => {
+      this.setData({
+        'globalPopup.loading': false,
+        'globalPopup.skeletonFading': false,
+      });
+    }, PANEL_REVEAL_MS);
   },
 
   /**

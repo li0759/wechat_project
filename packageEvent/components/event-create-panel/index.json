@@ -30,6 +30,8 @@
     "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",
     "addressbook-tree": "/components/addressbook-tree/index",
     "search-suggest": "/components/search_suggest/index",
-    "ripple": "/components/ripple/index"
+    "ripple": "/components/ripple/index",
+    "panel-loading-transition": "/components/panel-loading-transition/index",
+    "event-create-skeleton": "/components/panel-skeleton/event-create-skeleton/index"
   }
-} 
+}

@@ -1,7 +1,9 @@
 // app.js
-  App({
+const { getDefaultAvatarUrl } = require('./utils/default-avatar')
+
+App({
   onLaunch() {
-    // 登录
+    this.globalData.defaultAvatarUrl = getDefaultAvatarUrl()
     wx.login({
       success: res => {
         // 发送 res.code 到后台换取 openId, sessionKey, unionId
@@ -18,10 +20,11 @@
     static_url:"https://ghwtxh.msatmb.com:10443",
     userInfo: null,
     defaultImages: {
-      avatarUrl: '/assets/images/president/default-avatar.png',
+      avatarUrl: getDefaultAvatarUrl(),
       clubLogo: '/assets/images/president/club-logo.png',
       activityDefault: '/assets/images/president/activity-default.png'
     },
+    defaultAvatarUrl: getDefaultAvatarUrl(),
     // 分享相关全局变量
     shareInfo: {
       type: '', // 'event' | 'club'
@@ -282,19 +285,13 @@
           success: (res) => {
             if (res.statusCode == 200 && res.data && res.data.valid ) {
               wx.setStorageSync('token', res.data.new_token);
-              if(res.data.user.avatar && res.data.user.phone){
-                const userInfo = res.data.user;
-                wx.setStorageSync('userInfo', userInfo);
-                try {
-                  const { preloadAllPanelSubpackages } = require('./utils/panel-lazy-load');
-                  preloadAllPanelSubpackages();
-                } catch (e) {}
-                resolve(true);
-              }
-              else{
-                wx.navigateTo({ url: '/pages/login/index' });
-                resolve(false);
-              }
+              const userInfo = res.data.user;
+              wx.setStorageSync('userInfo', userInfo);
+              try {
+                const { preloadAllPanelSubpackages } = require('./utils/panel-lazy-load');
+                preloadAllPanelSubpackages();
+              } catch (e) {}
+              resolve(true);
             } else {
               wx.removeStorageSync('token');
               wx.removeStorageSync('userInfo');

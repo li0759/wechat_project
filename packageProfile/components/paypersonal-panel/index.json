@@ -6,6 +6,8 @@
     "t-button": "tdesign-miniprogram/button/button",
     "t-empty": "tdesign-miniprogram/empty/empty",
     "t-popup": "tdesign-miniprogram/popup/popup",
-    "calendar": "/components/calendar/calendar"
+    "calendar": "/components/calendar/calendar",
+    "panel-loading-transition": "/components/panel-loading-transition/index",
+    "paypersonal-skeleton": "/components/panel-skeleton/paypersonal-skeleton/index"
   }
-} 
+}

@@ -7,6 +7,7 @@
     "t-icon": "tdesign-miniprogram/icon/icon",
     "club-event-indexes": "/components/club-event-indexes/index",
     "club-events-skeleton": "/components/panel-skeleton/club-events-skeleton/index",
+    "panel-loading-transition": "/components/panel-loading-transition/index",
     "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",
     "event-create-panel": "/packageEvent/components/event-create-panel/index",
     "event-create-skeleton": "/components/panel-skeleton/event-create-skeleton/index"

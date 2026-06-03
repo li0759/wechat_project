@@ -1,0 +1,11 @@
+<view class="plt-root">
+  <view class="plt-content">
+    <slot name="content" />
+  </view>
+  <view
+    class="plt-skeleton {{skeletonFading ? 'plt-skeleton--fading' : ''}} {{showSkeleton ? '' : 'plt-skeleton--gone'}}"
+    style="transition-duration: {{duration}}ms;"
+  >
+    <slot name="skeleton" />
+  </view>
+</view>

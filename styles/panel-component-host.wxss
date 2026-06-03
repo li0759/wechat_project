@@ -1,0 +1,10 @@
+/* 全屏弹层内 panel 自定义组件须撑满 flex 父级，否则页面骨架屏撤掉后会白屏 */
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}

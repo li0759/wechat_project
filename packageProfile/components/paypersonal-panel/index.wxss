@@ -1,3 +1,5 @@
+@import "../../../styles/panel-component-host.wxss";
+
 /* pages/money/paypersonal/index.wxss */
 /* 基础变量 */
 :root {

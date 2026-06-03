@@ -1,3 +1,5 @@
+@import "../../../styles/panel-component-host.wxss";
+
 /* 入会审批：与 event-manage-panel 活动时间线弹窗同一套 tl-modal-* 结构/样式 */
 
 .cap-app-panel-host {

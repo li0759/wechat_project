@@ -2,6 +2,14 @@
 const app = getApp()
 const { submitClockIn } = require('../../utils/event-clockin')
 const panelLazy = require('../../utils/panel-lazy-load')
+const { getDefaultAvatarUrl } = require('../../utils/default-avatar')
+
+const PANEL_REVEAL_MS = 280
+
+/** 仅 club-events：页面骨架盖住 renderPanel 后内部占位，避免双骨架闪一下 */
+const HOST_SKELETON_PANEL_TYPES = [
+  'club-events',
+]
 
 Page({
 
@@ -9,6 +17,7 @@ Page({
    * 页面的初始数据   */
   data: {
     userInfo: {},
+    default_avatar: getDefaultAvatarUrl(),
     loading: true,
     isClubAdmin: false,  // 是否为协会管理员
     isSuperUser: false,  // 是否为超级用数
@@ -18,10 +27,13 @@ Page({
       globalPopup: {
       visible: false,
       loading: true,
-      renderPanel: false,  // 是否渲染 panel 组件
-      type: '', // 'club-create' | 'event-create' | 'event-manage' | 'club-manage'
+      renderPanel: false,
+      hostSkeletonHold: false,
+      skeletonFading: false,
+      panelContentVisible: false,
+      type: '',
       id: '',
-      clubId: '',  // 用于 event-create
+      clubId: '',
       bgColor: 'rgba(223, 118, 176, 0.8)',
       sheetBgColor: 'rgba(223, 118, 176, 0.8)',
       tapX: 0,
@@ -1199,8 +1211,15 @@ Page({
 
   _renderGlobalPopupPanel() {
     const type = this.data.globalPopup.type;
+    const hostSkeletonHold = HOST_SKELETON_PANEL_TYPES.includes(type);
     panelLazy.preloadForPanelType(type).then(() => {
-      this.setData({ 'globalPopup.renderPanel': true }, () => {
+      this.setData({
+        'globalPopup.renderPanel': true,
+        'globalPopup.hostSkeletonHold': hostSkeletonHold,
+        'globalPopup.panelContentVisible': true,
+        'globalPopup.loading': false,
+        'globalPopup.skeletonFading': false,
+      }, () => {
         const panelId = this._panelIdForGlobalPopupType(type);
         if (!panelId) return;
         panelLazy.invokePanelLoadData(this, panelId, {
@@ -1338,8 +1357,11 @@ Page({
         visible: true,
         loading: true,
         renderPanel: false,
+        hostSkeletonHold: false,
+        skeletonFading: false,
+        panelContentVisible: false,
         bgColor: config.bgColor || '#f3e3f3ff',
-        sheetBgColor: config.sheetBgColor || '#f3e3f3ff',
+        sheetBgColor: config.sheetBgColor || '#f7f8fa',
         tapX,
         tapY,
         ...config
@@ -1625,8 +1647,16 @@ Page({
    */
   onGlobalPopupLoaded() {
     this.setData({
-      'globalPopup.loading': false
+      'globalPopup.hostSkeletonHold': false,
+      'globalPopup.panelContentVisible': true,
+      'globalPopup.skeletonFading': true,
     });
+    setTimeout(() => {
+      this.setData({
+        'globalPopup.loading': false,
+        'globalPopup.skeletonFading': false,
+      });
+    }, PANEL_REVEAL_MS);
     this._profileMarkSeenForCurrentPopup();
   },
 

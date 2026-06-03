@@ -5,6 +5,8 @@
     "t-icon": "tdesign-miniprogram/icon/icon",
     "t-empty": "tdesign-miniprogram/empty/empty",
     "t-dialog": "tdesign-miniprogram/dialog/dialog",
-    "t-textarea": "tdesign-miniprogram/textarea/textarea"
+    "t-textarea": "tdesign-miniprogram/textarea/textarea",
+    "panel-loading-transition": "/components/panel-loading-transition/index",
+    "club-applications-skeleton": "/components/panel-skeleton/club-applications-skeleton/index"
   }
-} 
+}

@@ -17,7 +17,9 @@
     "event-detail-panel": "/packageEvent/components/event-detail-panel/index",
     "event-detail-skeleton": "/components/panel-skeleton/event-detail-skeleton/index",
     "event-joined-panel": "/packageEvent/components/event-joined-panel/index",
-    "event-joined-skeleton": "/components/panel-skeleton/event-joined-skeleton/index"
+    "event-joined-skeleton": "/components/panel-skeleton/event-joined-skeleton/index",
+    "events-skeleton": "/components/panel-skeleton/events-skeleton/index",
+    "panel-loading-transition": "/components/panel-loading-transition/index"
   },
   "componentPlaceholder": {
     "event-manage-panel": "event-manage-skeleton",

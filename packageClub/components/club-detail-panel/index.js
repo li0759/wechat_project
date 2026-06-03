@@ -1,6 +1,9 @@
 const app = getApp();
+const { getDefaultAvatarUrl } = require('../../../utils/default-avatar');
+const { runPanelLoad, emitPanelLoaded } = require('../../../components/panel-loading-transition/run-load');
 
 Component({
+
   properties: {
     clubId: {
       type: String,
@@ -14,7 +17,9 @@ Component({
   },
 
   data: {
+    pltCommand: '',
     loading: true,
+    defaultAvatarUrl: getDefaultAvatarUrl(),
     contentSuspended: false,
     contentSuspendMode: '',
     club: null,
@@ -120,6 +125,10 @@ Component({
     },
 
     // 懒加载入口：供外部调用，只有弹窗展开时才加载数据
+  onPanelLoadTransitionDone() {
+      emitPanelLoaded(this);
+    },
+
   loadData() {
       this._hasExpanded = true;
       if (this._loaded) return Promise.resolve();
@@ -127,7 +136,9 @@ Component({
         return Promise.resolve();
       }
       this._loaded = true;
-      return this.loadClubData();
+      return runPanelLoad(this, {
+        fetch: () => this.loadClubData({ silent: true }),
+      });
     },
 
     request({ url, method = 'GET', data, loadingText }) {
@@ -153,12 +164,20 @@ Component({
       });
     },
 
-    async loadClubData() {
-      this.setData({
-        loading: true,
-        detailEventsList: [],
-        detailEventsEmpty: true
-      });
+    async loadClubData(options = {}) {
+      const silent = !!options.silent;
+      if (!silent) {
+        this.setData({
+          loading: true,
+          detailEventsList: [],
+          detailEventsEmpty: true
+        });
+      } else {
+        this.setData({
+          detailEventsList: [],
+          detailEventsEmpty: true
+        });
+      }
       try {
         const [clubRes, membersRes, eventsRes] = await Promise.all([
           this.request({ url: `/club/${this.data.clubId}` }),
@@ -181,19 +200,19 @@ Component({
             await this.processDetailEventsData(club, { records: [], pagination: {} });
           }
           
-          this.setData({ loading: false });
-          this.triggerEvent('loaded');
+          if (!silent) {
+            this.setData({ loading: false });
+          }
         } else {
           throw new Error(clubRes.message || '加载失败');
         }
       } catch (e) {
         this.setData({
-          loading: false,
+          ...(silent ? {} : { loading: false }),
           club: null,
           detailEventsList: [],
           detailEventsEmpty: true
         });
-        this.triggerEvent('loaded');
         wx.showToast({ title: '加载失败', icon: 'none' });
       }
     },

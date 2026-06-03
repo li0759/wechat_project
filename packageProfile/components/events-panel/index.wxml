@@ -1,3 +1,14 @@
+<panel-loading-transition
+  duration="280"
+  command="{{pltCommand}}"
+  auto-need-load="{{true}}"
+  bind:needload="loadData"
+  bind:loaded="onPanelLoadTransitionDone"
+>
+  <view slot="skeleton">
+    <events-skeleton />
+  </view>
+  <view slot="content">
 <!-- 活动列表页面 -->
 <view class="event-container">
   <t-tabs value="{{ activeTab }}" bind:change="onTabChange">
@@ -163,12 +174,6 @@
   >
     <view slot="trigger"></view>
     <view slot="content" class="nested-popup-shell">
-      <!-- 骨架屏 - 覆盖在panel上面 -->
-      <view wx:if="{{nestedEventManage.loading}}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 999; background: #f7f8fa;">
-        <event-manage-skeleton />
-      </view>
-      
-      <!-- 真实 panel 组件 - 延迟渲染 -->
       <block wx:if="{{nestedEventManage.renderPanel}}">
         <event-manage-panel
           id="nestedEventManagePanel"
@@ -196,12 +201,6 @@
   >
     <view slot="trigger"></view>
     <view slot="content" class="nested-popup-shell">
-      <!-- 骨架屏 - 覆盖在panel上面 -->
-      <view wx:if="{{nestedEventDetail.loading}}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 999; background: #f7f8fa;">
-        <event-detail-skeleton />
-      </view>
-      
-      <!-- 真实 panel 组件 - 延迟渲染 -->
       <block wx:if="{{nestedEventDetail.renderPanel}}">
         <event-detail-panel
           id="nestedEventDetailPanel"
@@ -229,12 +228,6 @@
   >
     <view slot="trigger"></view>
     <view slot="content" class="nested-popup-shell">
-      <!-- 骨架屏 - 覆盖在panel上面 -->
-      <view wx:if="{{nestedEventJoined.loading}}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 999; background: #f7f8fa;">
-        <event-joined-skeleton />
-      </view>
-      
-      <!-- 真实 panel 组件 - 延迟渲染 -->
       <block wx:if="{{nestedEventJoined.renderPanel}}">
         <event-joined-panel
           id="nestedEventJoinedPanel"
@@ -246,4 +239,6 @@
       </block>
     </view>
   </expandable-container_fullscreen>
-</view> 
+</view>
+  </view>
+</panel-loading-transition>

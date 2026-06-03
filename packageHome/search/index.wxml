@@ -48,7 +48,7 @@
           wx:key="user_id"
           bindtap="navigateToUserProfile"
           data-user-id="{{item.user_id}}">
-          <image class="user-avatar" src="{{item.avatar || '/assets/images/default-avatar.png'}}" mode="aspectFill"></image>
+          <image class="user-avatar" src="{{item.avatar || default_avatar}}" mode="aspectFill"></image>
           <view class="user-info">
             <view class="user-name">{{item.user_name}}</view>
             <view class="user-detail">

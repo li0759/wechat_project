@@ -1,4 +1,5 @@
 ﻿const app = getApp();
+const { getDefaultAvatarUrl } = require('../../utils/default-avatar');
 
 const ENTER_LEAVE_MS = 180;
 
@@ -24,8 +25,8 @@ Component({
 
   data: {
     deptTree: [],
-    // 用“可见列表”渲染，避免 WXML template 递归被运行时强制停止
-    visibleItems: []
+    visibleItems: [],
+    defaultAvatarUrl: getDefaultAvatarUrl(),
   },
 
   observers: {

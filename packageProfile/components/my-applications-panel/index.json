@@ -1,8 +1,10 @@
 {
   "component": true,
   "usingComponents": {
-    "t-icon": "tdesign-miniprogram/icon/icon",
     "t-empty": "tdesign-miniprogram/empty/empty",
-    "t-dialog": "tdesign-miniprogram/dialog/dialog"
+    "t-dialog": "tdesign-miniprogram/dialog/dialog",
+    "t-button": "tdesign-miniprogram/button/button",
+    "panel-loading-transition": "/components/panel-loading-transition/index",
+    "my-applications-skeleton": "/components/panel-skeleton/my-applications-skeleton/index"
   }
-} 
+}

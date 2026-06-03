@@ -53,6 +53,17 @@
   };
 </wxs>
 
+<panel-loading-transition
+  duration="280"
+  command="{{pltCommand}}"
+  auto-need-load="{{true}}"
+  bind:needload="loadData"
+  bind:loaded="onPanelLoadTransitionDone"
+>
+  <view slot="skeleton">
+    <event-create-skeleton />
+  </view>
+  <view slot="content">
 <view class="page page-with-bottom-bar">
   <scroll-view class="page-scroll" scroll-y>
     <view class="rows">
@@ -770,3 +781,5 @@
       </view>
     </view>
   </t-popup>
+  </view>
+</panel-loading-transition>

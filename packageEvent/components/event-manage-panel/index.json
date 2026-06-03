@@ -19,6 +19,8 @@
     "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",
     "isotope": "/components/isotope/index",
     "addressbook-tree": "/components/addressbook-tree/index",
-    "ripple": "/components/ripple/index"
+    "ripple": "/components/ripple/index",
+    "panel-loading-transition": "/components/panel-loading-transition/index",
+    "event-manage-skeleton": "/components/panel-skeleton/event-manage-skeleton/index"
   }
 }

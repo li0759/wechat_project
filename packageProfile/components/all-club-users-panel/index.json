@@ -4,6 +4,8 @@
     "t-button": "tdesign-miniprogram/button/button",
     "t-loading": "tdesign-miniprogram/loading/loading",
     "bar-chart": "/components/charts/bar-chart/bar-chart",
-    "pie-chart": "/components/charts/pie-chart/pie-chart"
+    "pie-chart": "/components/charts/pie-chart/pie-chart",
+    "panel-loading-transition": "/components/panel-loading-transition/index",
+    "all-club-users-skeleton": "/components/panel-skeleton/all-club-users-skeleton/index"
   }
 } 

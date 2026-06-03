@@ -104,6 +104,9 @@ function invokePanelLoadData(page, selector, options = {}) {
     attempts += 1;
     const panel = page.selectComponent(selector);
     if (panel && typeof panel.loadData === 'function') {
+      if (typeof panel._markPanelLoadStarted === 'function') {
+        panel._markPanelLoadStarted();
+      }
       try {
         panel.loadData();
       } catch (e) {

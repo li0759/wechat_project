@@ -1,3 +1,14 @@
+<panel-loading-transition
+  duration="280"
+  command="{{pltCommand}}"
+  auto-need-load="{{true}}"
+  bind:needload="loadData"
+  bind:loaded="onPanelLoadTransitionDone"
+>
+  <view slot="skeleton">
+    <club-detail-skeleton />
+  </view>
+  <view slot="content">
 <!-- 协会详情面板 - 复刻 club-detail 页面样式 -->
 <view class="club-detail-panel">
   <!-- 灰色蒙层 - 当协会被删除时显示 -->
@@ -130,7 +141,7 @@
 
         <view class="members-grid" wx:if="{{clubMembers.length > 0}}">
           <view class="member-item" wx:for="{{clubMembers}}" wx:key="user_id">
-            <image class="member-avatar" src="{{item.avatar || '/assets/images/default-avatar.png'}}" mode="aspectFill" />
+            <image class="member-avatar" src="{{item.avatar || defaultAvatarUrl}}" mode="aspectFill" />
             <text class="member-name">{{item.user_name}}</text>
           </view>
         </view>
@@ -317,3 +328,5 @@
     bind:close="closeImageViewer"
   />
 </view>
+  </view>
+</panel-loading-transition>

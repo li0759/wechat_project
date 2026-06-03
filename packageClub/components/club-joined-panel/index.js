@@ -1,6 +1,9 @@
-﻿const app = getApp();
+const app = getApp();
+const { runPanelLoad, emitPanelLoaded } = require('../../../components/panel-loading-transition/run-load');
+const panelLazy = require('../../../utils/panel-lazy-load');
 
 Component({
+
   properties: {
     clubId: {
       type: String,
@@ -9,6 +12,7 @@ Component({
   },
 
   data: {
+    pltCommand: '',
     isLoading: true,
     club: null,
     selfMemberCard: null,
@@ -84,6 +88,10 @@ Component({
   },
 
   methods: {
+    setDataAsync(data) {
+      return new Promise((resolve) => this.setData(data, resolve))
+    },
+
     _apiOk(r) {
       return r && (r.Flag == '4000' || r.Flag == 4000);
     },
@@ -109,7 +117,7 @@ Component({
       };
     },
 
-    processMembersSection(membersRaw, club) {
+    processMembersSection(membersRaw) {
       const members = Array.isArray(membersRaw) ? membersRaw : [];
       const self = members.find((m) => m.is_current_user) || null;
       const selfId = self != null && self.user_id != null ? String(self.user_id) : null;
@@ -164,7 +172,7 @@ Component({
           avatar: m.avatar,
         }));
 
-      this.setData({
+      return this.setDataAsync({
         selfMemberCard,
         presidentCard,
         viceCard,
@@ -254,28 +262,38 @@ Component({
       }
     },
 
-    // 懒加载入数
-      loadData() {
-      this._hasExpanded = true;
-      if (this._loaded) return Promise.resolve();
-      if (!this.data.clubId || this.data.clubId.startsWith('placeholder')) {
-        return Promise.resolve();
-      }
-      this._loaded = true;
-      return this.loadClubData();
+    /** 与 club-applications-panel / event-joined-panel 一致的外层加载流程 */
+    onPanelLoadTransitionDone() {
+      emitPanelLoaded(this);
     },
 
-    // 加载协会数据
-    async loadClubData() {
-      this.setData({ isLoading: true });
+    loadData() {
+      this._hasExpanded = true;
+      const clubId = this.properties.clubId || this.data.clubId || '';
+      if (this._fetching) return this._fetching;
+      this._fetching = runPanelLoad(this, {
+        shouldFetch: () => clubId && !String(clubId).startsWith('placeholder'),
+        fetch: () => this.loadClubData({ silent: true }),
+      }).finally(() => {
+        this._fetching = null;
+      });
+      return this._fetching;
+    },
+
+    async loadClubData(options = {}) {
+      const silent = !!options.silent;
+      if (!silent) {
+        this.setData({ isLoading: true });
+      }
       this._eventsPageCache = {};
 
       try {
+        const clubId = this.properties.clubId || this.data.clubId || '';
         const [clubRes, membersRes, eventsRes] = await Promise.all([
-          this.request({ url: `/club/${this.data.clubId}` }),
-          this.request({ url: `/club/${this.data.clubId}/members` }),
+          this.request({ url: `/club/${clubId}` }),
+          this.request({ url: `/club/${clubId}/members` }),
           this.request({
-            url: `/event/club_public/${this.data.clubId}/list/all?mode=page&page=1&include_featured_isotope=1`
+            url: `/event/club_public/${clubId}/list/all?mode=page&page=1&include_featured_isotope=1`
           })
         ]);
 
@@ -283,12 +301,12 @@ Component({
           const club = clubRes.data || {};
           const membersRaw = this._apiOk(membersRes) ? membersRes.data?.members || [] : [];
           await this.processClubData(club);
-          this.processMembersSection(membersRaw, club);
+          await this.processMembersSection(membersRaw);
 
           if (this._apiOk(eventsRes)) {
             await this.processEventsData(eventsRes.data);
           } else {
-            this.setData({
+            await this.setDataAsync({
               eventsEmpty: true,
               featuredEvent: null,
               eventsCurrentPage: [],
@@ -296,15 +314,16 @@ Component({
               eventsTotalPages: 1,
             });
           }
-          
-          this.setData({ isLoading: false });
-          this.triggerEvent('loaded');
+
+          if (!silent) {
+            this.setData({ isLoading: false });
+          }
         } else {
           throw new Error(clubRes.message || '加载失败');
         }
       } catch (e) {
         this.setData({
-          isLoading: false,
+          ...(silent ? {} : { isLoading: false }),
           club: null,
           selfMemberCard: null,
           presidentCard: null,
@@ -313,7 +332,6 @@ Component({
           memberAvatarOnlyList: [],
           eventsCurrentPage: [],
         });
-        this.triggerEvent('loaded');
         wx.showToast({ title: '加载失败', icon: 'none' });
       }
     },
@@ -328,7 +346,7 @@ Component({
         club.president_avatar = club.president?.user?.avatar?.fileUrl || null;
       }
       
-      this.setData({ club });
+      await this.setDataAsync({ club });
     },
 
     /** 第 1 页：特色海报 + isotope（club_public + featured_isotope） */
@@ -355,7 +373,7 @@ Component({
     async processEventsData(data) {
       const raw = data.events || data.records || [];
       if (!raw.length) {
-        this.setData({
+        await this.setDataAsync({
           featuredEvent: null,
           eventsCurrentPage: [],
           eventsEmpty: true,
@@ -372,7 +390,7 @@ Component({
 
       const featured = pageNum === 1 ? await this.applyFeaturedForPage1(list, data) : this.data.featuredEvent;
 
-      this.setData({
+      await this.setDataAsync({
         featuredEvent: pageNum === 1 ? featured : this.data.featuredEvent,
         eventsCurrentPage: list,
         eventsEmpty: false,
@@ -752,12 +770,7 @@ Component({
       this.setData({
         'nestedEventDetail.renderPanel': true
       }, () => {
-        setTimeout(() => {
-          const panel = this.selectComponent('#nestedEventDetailPanel');
-          if (panel && panel.loadData) {
-            panel.loadData();
-          }
-        }, 100);
+        panelLazy.invokePanelLoadData(this, '#nestedEventDetailPanel');
       });
     },
 
@@ -841,12 +854,7 @@ Component({
       this.setData({
         'nestedEventJoined.renderPanel': true
       }, () => {
-        setTimeout(() => {
-          const panel = this.selectComponent('#nestedEventJoinedPanel');
-          if (panel && panel.loadData) {
-            panel.loadData();
-          }
-        }, 100);
+        panelLazy.invokePanelLoadData(this, '#nestedEventJoinedPanel');
       });
     },
 

@@ -1,4 +1,5 @@
 const app = getApp();
+const { runPanelLoad, emitPanelLoaded } = require('../../../components/panel-loading-transition/run-load');
 
 /**
  * 我的缴费Panel组件
@@ -6,11 +7,13 @@ const app = getApp();
  */
 
 Component({
+
   properties: {
     // 无需properties，使用当前用户数数
       },
 
   data: {
+    pltCommand: '',
     // 控制面板相关
     activeTab: 0,                              // 当前选中的标签页索引
     
@@ -69,26 +72,33 @@ Component({
     /**
      * 供外部调用的数据加载方法
      */
+    onPanelLoadTransitionDone() {
+      emitPanelLoaded(this);
+    },
+
     loadData() {
-      this.initData();
-      // 触发loaded事件
-    this.triggerEvent('loaded');
+      return runPanelLoad(this, {
+        fetch: () => this.initData({ silent: true }),
+      });
     },
 
   /**
    * 初始化数据
    */
-  initData: function() {
-    wx.showLoading({ title: '加载?..' });
-    
+  initData(options = {}) {
+    const silent = !!options.silent;
+    if (!silent) {
+      wx.showLoading({ title: '加载中...' });
+    }
+
     // 并行加载日历和列表数据
-    Promise.all([
-      // 日历数据 - 当前月份
-    this.loadEventsForCalendar(this.data.currentYear, this.data.currentMonth),
-      // 列表数据 - 使用分页方式获取消页数数
-      this.loadInitialTimelineData(),
+    return Promise.all([
+      this.loadEventsForCalendar(this.data.currentYear, this.data.currentMonth),
+      this.loadInitialTimelineData({ silent: true }),
     ]).finally(() => {
-      wx.hideLoading();
+      if (!silent) {
+        wx.hideLoading();
+      }
     });
   },
 
@@ -96,11 +106,16 @@ Component({
    * 加载初始时间线数据
    * 加载?页的数据
    */
-  loadInitialTimelineData: function() {
-    this.setData({ 
-      isLoading: true,
-      currentPage: 1
-    });
+  loadInitialTimelineData(options = {}) {
+    const silent = !!(options && options.silent);
+    if (!silent) {
+      this.setData({
+        isLoading: true,
+        currentPage: 1,
+      });
+    } else {
+      this.setData({ currentPage: 1 });
+    }
     
     // 使用分页API获取消页数数
       const requestUrl = `/money/paypersonal/user_payable/list/all?mode=page&page=1`;
@@ -151,7 +166,9 @@ Component({
       });
       return false;
     }).finally(() => {
-      this.setData({ isLoading: false });
+      if (!silent) {
+        this.setData({ isLoading: false });
+      }
     });
   },
 

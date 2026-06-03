@@ -1821,8 +1821,49 @@ scroll-view {
   border-radius: 30rpx 30rpx 0 0;
   overflow: hidden;
   background: #f7f8fa;
-  /* Tab 页：底栏整体上移，避开 custom-tab-bar */
   --tab-bar-visual-gap: 64rpx;
+}
+
+.global-popup-skeleton-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+  background: #f7f8fa;
+  opacity: 1;
+  transition: opacity 280ms ease;
+  pointer-events: none;
+}
+
+.global-popup-skeleton-overlay--fading {
+  opacity: 0;
+}
+
+.global-popup-panel-layer {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  opacity: 1;
+}
+
+.global-popup-panel-fill {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.hot-event-map-static {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 /* 子 panel 定高链：与 events-panel / clubs-panel 的 nested-popup-shell 一致，避免 scroll-view / 底栏错位 */

@@ -15,6 +15,7 @@
     "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",
     "event-detail-panel": "/packageEvent/components/event-detail-panel/index",
     "event-detail-skeleton": "/components/panel-skeleton/event-detail-skeleton/index",
-    "club-detail-skeleton": "/components/panel-skeleton/club-detail-skeleton/index"
+    "club-detail-skeleton": "/components/panel-skeleton/club-detail-skeleton/index",
+    "panel-loading-transition": "/components/panel-loading-transition/index"
   }
 }

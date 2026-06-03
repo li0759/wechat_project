@@ -120,7 +120,7 @@
 /* page-container：勿用外层选择器当 div 来写样式（无效）。无遮罩/透明请用组件属性 overlay/custom-style（见 index.wxml） */
 
 .fs-sheet.fs-enter-active {
-  animation: fsSheetIn var(--fs-content-dur, 360ms) cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: fsSheetIn var(--fs-content-dur, 260ms) cubic-bezier(0.22, 1, 0.36, 1) forwards;
   pointer-events: none;
   will-change: transform;
   /* 上滑入场全程：顶栏与 sheet 上方空隙露粉涟漪，与 fs-entered 一致 */
@@ -132,6 +132,13 @@
   pointer-events: none;
   will-change: transform;
   /* 下滑离场全程：与入场对称 */
+  background: transparent !important;
+}
+
+.fs-sheet.fs-leave-linear {
+  animation: fsSheetOut var(--fs-content-dur, 200ms) linear forwards;
+  pointer-events: none;
+  will-change: transform;
   background: transparent !important;
 }
 

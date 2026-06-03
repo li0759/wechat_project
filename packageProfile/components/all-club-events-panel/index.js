@@ -1,9 +1,12 @@
 const app = getApp()
+const { runPanelLoad, emitPanelLoaded } = require('../../../components/panel-loading-transition/run-load');
 
 Component({
+
   properties: {},
 
   data: {
+    pltCommand: '',
     loading: true,
     downloading: false,
     totalEvents: 0,
@@ -21,9 +24,14 @@ Component({
   },
 
   methods: {
+    onPanelLoadTransitionDone() {
+      emitPanelLoaded(this)
+    },
+
     loadData() {
-      this.fetchData()
-      this.triggerEvent('loaded')
+      return runPanelLoad(this, {
+        fetch: () => this.fetchData({ silent: true }),
+      })
     },
 
     hideCharts() {
@@ -72,9 +80,12 @@ Component({
       this.fetchData()
     },
 
-    async fetchData() {
+    async fetchData(options = {}) {
+      const silent = !!options.silent
       try {
-        this.setData({ loading: true })
+        if (!silent) {
+          this.setData({ loading: true })
+        }
 
         const token = wx.getStorageSync('token')
         if (!token) {
@@ -115,14 +126,16 @@ Component({
           monthlyChart: chartData.monthlyChart,
           budgetChart: chartData.budgetChart,
           checkinChart: chartData.checkinChart,
-          loading: false
+          ...(silent ? {} : { loading: false }),
         })
       } catch (error) {
         wx.showToast({
           title: error.message || '加载数据失败',
           icon: 'none'
         })
-        this.setData({ loading: false })
+        if (!silent) {
+          this.setData({ loading: false })
+        }
       }
     },
 

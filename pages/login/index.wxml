@@ -33,7 +33,7 @@
     <!-- 信息补全按钮区域 -->
     <view wx:if="{{!userInfo_complete}}" class="profile-buttons">
       <view class="profile-section">
-        <text class="section-title">完善个人信息</text>
+        <text class="section-title">可选：完善个人信息</text>
         <view class="button-group">
           <!-- 手机号获取按钮 -->
           <t-button 

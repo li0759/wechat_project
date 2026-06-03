@@ -4,7 +4,7 @@
     <!-- 头部用户信息 -->
     <view class="header">
       <view class="user-card">
-        <image class="avatar" src="{{userInfo.avatar}}" mode="aspectFill"></image>
+        <image class="avatar" src="{{userInfo.avatar || default_avatar}}" mode="aspectFill"></image>
       </view>
     </view>
  
@@ -330,8 +330,11 @@
   >
     <view slot="trigger"></view>
     <view slot="content" class="popup-content-wrapper">
-      <!-- 骨架屏 - 覆盖在 panel 上面 -->
-      <view wx:if="{{globalPopup.loading}}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 999; background: #f7f8fa;">
+      <!-- 骨架屏：淡出过渡 -->
+      <view
+        wx:if="{{!globalPopup.renderPanel || globalPopup.skeletonFading}}"
+        class="global-popup-skeleton-overlay {{globalPopup.skeletonFading ? 'global-popup-skeleton-overlay--fading' : ''}}"
+      >
         <club-create-skeleton wx:if="{{globalPopup.type === 'club-create'}}" />
         <event-create-skeleton wx:if="{{globalPopup.type === 'event-create'}}" />
         <event-manage-skeleton wx:if="{{globalPopup.type === 'event-manage'}}" />
@@ -352,10 +355,15 @@
       </view>
 
       <!-- 真实 panel 组件 - 延迟渲染 -->
-      <block wx:if="{{globalPopup.renderPanel}}">
+      <view
+        wx:if="{{globalPopup.renderPanel}}"
+        class="global-popup-panel-layer"
+      >
+      <block>
         <!-- Club Create Panel -->
         <club-create-panel
           wx:if="{{globalPopup.type === 'club-create'}}"
+          class="global-popup-panel-fill"
           id="clubCreatePanel"
           bind:loaded="onGlobalPopupLoaded"
           bind:create-success="onPanelCreateSuccess"
@@ -366,6 +374,7 @@
         <!-- Event Create Panel -->
         <event-create-panel
           wx:if="{{globalPopup.type === 'event-create'}}"
+          class="global-popup-panel-fill"
           id="eventCreatePanel"
           club-id="{{globalPopup.clubId}}"
           bind:loaded="onGlobalPopupLoaded"
@@ -377,6 +386,7 @@
         <!-- Event Manage Panel -->
         <event-manage-panel 
           wx:if="{{globalPopup.type === 'event-manage'}}"
+          class="global-popup-panel-fill"
           id="profileEventManagePanel" 
           event-id="{{globalPopup.id}}" 
           bind:update="onManagePanelUpdate"
@@ -387,10 +397,10 @@
         <!-- Event Joined Panel -->
         <event-joined-panel 
           wx:if="{{globalPopup.type === 'event-joined'}}"
-          id="profileEventJoinedPanel" 
+          class="global-popup-panel-fill"
+          id="profileEventJoinedPanel"
           event-id="{{globalPopup.id}}"
           delegate-signature-to-host="{{true}}"
-          style="flex: 1; min-height: 0; height: 100%; width: 100%;"
           bind:update="onManagePanelUpdate"
           bind:loaded="onGlobalPopupLoaded"
           bind:clockin-signature="onHostClockinSignature"
@@ -399,6 +409,7 @@
         <!-- Club Manage Panel -->
         <club-manage-panel 
           wx:if="{{globalPopup.type === 'club-manage'}}"
+          class="global-popup-panel-fill"
           id="profileClubManagePanel" 
           club-id="{{globalPopup.id}}" 
           bind:update="onManagePanelUpdate" 
@@ -410,9 +421,9 @@
         <!-- Club Members Panel -->
         <club-members-panel 
           wx:if="{{globalPopup.type === 'club-members'}}"
-          id="clubMembersPanel" 
+          class="global-popup-panel-fill"
+          id="clubMembersPanel"
           club-id="{{globalPopup.id}}"
-          style="flex: 1; min-height: 0; height: 100%; width: 100%;"
           bind:loaded="onGlobalPopupLoaded"
           bind:close="closeGlobalPopup"
         />
@@ -420,6 +431,7 @@
         <!-- Events Panel (通用：我的活动 / 协会活动管理) -->
         <events-panel 
           wx:if="{{globalPopup.type === 'events'}}"
+          class="global-popup-panel-fill"
           id="eventsPanel" 
           requestUrl="{{globalPopup.data.requestUrl}}" 
           clientFilter="{{globalPopup.data.clientFilter}}"
@@ -431,6 +443,7 @@
         <!-- Clubs Panel (通用：我的协会 / 所有协会) -->
         <clubs-panel 
           wx:if="{{globalPopup.type === 'clubs'}}"
+          class="global-popup-panel-fill"
           id="clubsPanel" 
           requestUrl="{{globalPopup.data.requestUrl}}" 
           bind:loaded="onGlobalPopupLoaded"
@@ -441,9 +454,9 @@
         <!-- Club Applications Panel -->
         <club-applications-panel 
           wx:if="{{globalPopup.type === 'club-applications'}}"
-          id="clubApplicationsPanel" 
+          class="global-popup-panel-fill"
+          id="clubApplicationsPanel"
           club-id="{{globalPopup.id}}"
-          style="flex: 1; min-height: 0; height: 100%; width: 100%;"
           bind:loaded="onGlobalPopupLoaded"
           bind:update="onManagePanelUpdate"
           bind:close="closeGlobalPopup"
@@ -452,6 +465,7 @@
         <!-- My Applications Panel -->
         <my-applications-panel 
           wx:if="{{globalPopup.type === 'my-applications'}}"
+          class="global-popup-panel-fill"
           id="myApplicationsPanel" 
           bind:loaded="onGlobalPopupLoaded"
           bind:update="onManagePanelUpdate"
@@ -461,6 +475,7 @@
         <!-- All Club Events Panel (活动数据) -->
         <all-club-events-panel 
           wx:if="{{globalPopup.type === 'all-club-events'}}"
+          class="global-popup-panel-fill"
           id="allClubEventsPanel" 
           bind:loaded="onGlobalPopupLoaded"
           bind:close="closeGlobalPopup"
@@ -469,6 +484,7 @@
         <!-- All Club Users Panel (用户数据) -->
         <all-club-users-panel 
           wx:if="{{globalPopup.type === 'all-club-users'}}"
+          class="global-popup-panel-fill"
           id="allClubUsersPanel" 
           bind:loaded="onGlobalPopupLoaded"
           bind:close="closeGlobalPopup"
@@ -477,6 +493,7 @@
         <!-- Club Events Panel (活动管理) -->
         <club-events-panel 
           wx:if="{{globalPopup.type === 'club-events'}}"
+          class="global-popup-panel-fill"
           id="clubEventsPanel" 
           clubId="{{globalPopup.data.clubId}}" 
           bind:loaded="onGlobalPopupLoaded"
@@ -486,6 +503,7 @@
         <!-- Club Timeline Panel (协会收支) -->
         <club-timeline-panel 
           wx:if="{{globalPopup.type === 'club-timeline'}}"
+          class="global-popup-panel-fill"
           id="clubTimelinePanel" 
           clubId="{{globalPopup.data.clubId}}" 
           bind:loaded="onGlobalPopupLoaded"
@@ -496,6 +514,7 @@
         <!-- Club Financial Panel (收支统计) -->
         <club-financial-panel 
           wx:if="{{globalPopup.type === 'club-financial'}}"
+          class="global-popup-panel-fill"
           id="clubFinancialPanel" 
           clubId="{{globalPopup.data.clubId}}" 
           bind:loaded="onGlobalPopupLoaded"
@@ -505,6 +524,7 @@
         <!-- Paypersonal Panel (我的缴费) -->
         <paypersonal-panel 
           wx:if="{{globalPopup.type === 'paypersonal'}}"
+          class="global-popup-panel-fill"
           id="paypersonalPanel" 
           bind:loaded="onGlobalPopupLoaded"
           bind:close="closeGlobalPopup"
@@ -513,6 +533,7 @@
         <!-- User Info Panel (个人信息) -->
         <user-info-panel 
           wx:if="{{globalPopup.type === 'user-info'}}"
+          class="global-popup-panel-fill"
           id="userInfoPanel" 
           user-id="{{globalPopup.id}}" 
           bind:loaded="onGlobalPopupLoaded"
@@ -520,6 +541,7 @@
           bind:close="closeGlobalPopup"
         />
       </block>
+      </view>
     </view>
   </expandable-container_fullscreen>
 

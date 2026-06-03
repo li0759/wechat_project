@@ -1,4 +1,7 @@
 const app = getApp()
+const { getDefaultAvatarUrl } = require('../../../utils/default-avatar')
+const { runPanelLoad, emitPanelLoaded } = require('../../../components/panel-loading-transition/run-load');
+const panelLazy = require('../../../utils/panel-lazy-load')
 
 /**
  * 从原生 tap 或 ripple 的 triggerEvent('tap', { x, y, changedTouches }) 解析点击坐标。
@@ -26,6 +29,7 @@ function resolveTapClientXY(e) {
 }
 
 Component({
+
   properties: {
     clubId: {
       type: String,
@@ -34,6 +38,7 @@ Component({
   },
 
   data: {
+    pltCommand: '',
     loading: true,
     clubDetail: null,
     defaultCover: '/assets/images/president/activity-default.png',
@@ -116,7 +121,7 @@ Component({
       const userId = wx.getStorageSync('userId')
       this.setData({
         uploadAPI: app.globalData.request_url + '/file/upload_file',
-        defaultAvatarUrl: app.globalData.static_url + '/assets/default_avatar.webp',
+        defaultAvatarUrl: getDefaultAvatarUrl(),
         currentUserId: userId
       })
       this._loaded = false
@@ -169,16 +174,18 @@ Component({
     },
 
     // 懒加载入口：供外部调用，只有弹窗展开时才加载数据
-  loadData() {
+  onPanelLoadTransitionDone() {
+      emitPanelLoaded(this)
+    },
 
+  loadData() {
       this._hasExpanded = true
       if (this._loaded) return Promise.resolve()
       if (!this.data.clubId || this.data.clubId.startsWith('placeholder')) {
         return Promise.resolve()
       }
-      
-      // 先设置基本的分享信息（clubId），详细信息在 reloadAll 完成后更新
-    const app = getApp();
+
+      const app = getApp();
       app.globalData.shareInfo = {
         type: 'club',
         id: this.data.clubId,
@@ -186,18 +193,22 @@ Component({
         imageUrl: ''
       };
 
-      
       this._loaded = true
-      return this.reloadAll()
+      return runPanelLoad(this, {
+        fetch: () => this.reloadAll({ silent: true }),
+      })
     },
 
-    async reloadAll() {
+    async reloadAll(options = {}) {
+      const silent = !!options.silent
 
-      this.setData({ loading: true })
+      if (!silent) {
+        this.setData({ loading: true })
+      }
       this._earlyLoadedTriggered = false; // Reset flag
       try {
         await Promise.all([
-          this.loadClubData(),
+          this.loadClubData({ silent }),
           this.fetchMemberList(),
           this.fetchPendingApplications(),
           this.fetchClubActivities()
@@ -207,12 +218,14 @@ Component({
         }
 
         this.updateShareInfo()
-        this.setData({ loading: false })
-        this.triggerEvent('loaded')
+        if (!silent) {
+          this.setData({ loading: false })
+        }
       } catch(e) {
         console.error('[club-manage-panel] reloadAll error:', e)
-        this.setData({ loading: false })
-        this.triggerEvent('loaded')
+        if (!silent) {
+          this.setData({ loading: false })
+        }
       }
     },
 
@@ -244,7 +257,8 @@ Component({
 
     },
 
-    async loadClubData() {
+    async loadClubData(options = {}) {
+      const silent = !!options.silent
   
       const res = await this.request({ url: `/club/${this.data.clubId}`, method: 'GET' })
 
@@ -260,13 +274,9 @@ Component({
         }, () => {
           this.updatePostPreview(clubDetail.post_files || [])
           this.updatePeoplePanel()
-          // 如果协会已删除，立即隐藏骨架屏并触发loaded事件
-          // 因为遮罩层会阻止用户交互，不需要等待isotope布局完成
-    if (clubDetail.isDelete) {
-            this.setData({ loading: false })
-            this.triggerEvent('loaded')
-            this._earlyLoadedTriggered = true; // Set flag to prevent duplicate events
-  }
+          if (clubDetail.isDelete) {
+            this._earlyLoadedTriggered = true;
+          }
         })
       } else {
         this.setData({ clubDetail: null, club: null })
@@ -312,7 +322,7 @@ Component({
         return tb - ta
       })
       const top = raw.slice(0, 9)
-      const defAv = this.data.defaultAvatarUrl || '/assets/images/default-avatar.png'
+      const defAv = this.data.defaultAvatarUrl || getDefaultAvatarUrl()
       const cells = []
       for (let i = 0; i < 9; i++) {
         const a = top[i]
@@ -333,7 +343,7 @@ Component({
 
     normalizePendingApplicationForDetail(src) {
       if (!src) return null
-      const defAv = this.data.defaultAvatarUrl || '/assets/images/default-avatar.png'
+      const defAv = this.data.defaultAvatarUrl || getDefaultAvatarUrl()
       if (src.appliced_user_name != null || src.appliced_user_id != null) {
         return {
           applicationID: src.applicationID,
@@ -678,14 +688,12 @@ Component({
     },
 
     // 嵌套弹窗内容准备完成（动画完成后触发）
-  onNestedEventCreateContentReady() {
+    onNestedEventCreateContentReady() {
 
-      // 弹窗动画完成，现在可以渲染 panel 了
-      // event-create-panel会在attached时自动调用initializeComponent，不需要手动调用loadData
-    this.setData({
+      this.setData({
         'nestedEventCreate.renderPanel': true
       }, () => {
-
+        panelLazy.invokePanelLoadData(this, '#nestedEventCreatePanel');
       });
     },
 
@@ -745,17 +753,10 @@ Component({
     // 嵌套弹窗内容准备完成（动画完成后触发）
   onNestedEventManageContentReady() {
 
-      // 弹窗动画完成，现在可以渲染 panel 了
-    this.setData({
+      this.setData({
         'nestedEventManage.renderPanel': true
       }, () => {
-        // 等待 panel 渲染后，调用 loadData
-        setTimeout(() => {
-          const panel = this.selectComponent('#nestedEventManagePanel');
-          if (panel && panel.loadData) {
-            panel.loadData();
-          }
-        }, 100);
+        panelLazy.invokePanelLoadData(this, '#nestedEventManagePanel')
       });
     },
 
@@ -952,7 +953,7 @@ Component({
 
       const items = ordered.map((m) => ({
         id: `club-member-${String(m.user_id)}`,
-        image: m.avatar || '/assets/images/default-avatar.png',
+        image: m.avatar || getDefaultAvatarUrl(),
         ini_width: avatar,
         ini_height: avatar,
         user_id: String(m.user_id),
@@ -990,7 +991,7 @@ Component({
       if (avatarIso && avatarIso.addItem) {
         avatarIso.addItem({
           id: `club-member-${String(member.user_id)}`,
-          image: member.avatar || '/assets/images/default-avatar.png',
+          image: member.avatar || getDefaultAvatarUrl(),
           ini_width: 50,
           ini_height: 50,
           user_id: String(member.user_id),

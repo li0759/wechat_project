@@ -1,3 +1,5 @@
+@import "../../../styles/panel-component-host.wxss";
+
 /* pages/profile/all-club-events/index.wxss */
 .container {
   padding: 0;

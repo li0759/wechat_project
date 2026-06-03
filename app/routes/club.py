@@ -1640,9 +1640,11 @@ def get_user_applicated_application():
             'approved': clubApplication.approved,
             'processedDate': clubApplication.processedDate,
             'club_name': clubApplication.club.clubName,
+            'club_cover': clubApplication.club.cover.fileUrl if clubApplication.club.cover else None,
             'processed_user': clubApplication.processed_user.userName if clubApplication.processed_user else None,
             'applicatedDate': clubApplication.applicatedDate,
-            'applicationID': clubApplication.applicationID
+            'applicationID': clubApplication.applicationID,
+            'opinion': clubApplication.opinion,
         } for clubApplication in sorted_applications]
     })
 		

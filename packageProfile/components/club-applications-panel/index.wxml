@@ -1,3 +1,14 @@
+<panel-loading-transition
+  duration="280"
+  command="{{pltCommand}}"
+  auto-need-load="{{true}}"
+  bind:needload="loadData"
+  bind:loaded="onPanelLoadTransitionDone"
+>
+  <view slot="skeleton">
+    <club-applications-skeleton />
+  </view>
+  <view slot="content">
 <view class="cap-app-panel-host">
 <view class="tl-modal-root cap-tl-root">
   <view class="tl-modal-header">
@@ -13,8 +24,7 @@
     lower-threshold="{{120}}"
     bindscrolltolower="onApplicationsScrollToLower"
   >
-    <view wx:if="{{applicationsListLoading && allApplications.length === 0}}" class="tl-modal-loading">加载中…</view>
-    <block wx:elif="{{allApplications.length > 0}}">
+    <block wx:if="{{allApplications.length > 0}}">
       <view
         wx:for="{{allApplications}}"
         wx:key="applicationID"
@@ -86,7 +96,7 @@
       </view>
     </block>
     <view wx:else class="tl-modal-empty">
-      <t-empty wx:if="{{!applicationsListLoading}}" description="暂无申请记录" />
+      <t-empty description="暂无申请记录" />
     </view>
     <view wx:if="{{applicationsListLoadingMore}}" class="tl-modal-loading">加载中…</view>
     <view wx:elif="{{applicationsListEnd && allApplications.length > 0}}" class="tl-modal-end">没有更多了</view>
@@ -136,3 +146,5 @@
   </view>
 </t-dialog>
 </view>
+  </view>
+</panel-loading-transition>

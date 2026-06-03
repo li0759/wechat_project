@@ -1,3 +1,14 @@
+<panel-loading-transition
+  duration="280"
+  command="{{pltCommand}}"
+  auto-need-load="{{true}}"
+  bind:needload="loadData"
+  bind:loaded="onPanelLoadTransitionDone"
+>
+  <view slot="skeleton">
+    <paypersonal-skeleton />
+  </view>
+  <view slot="content">
 <view class="event-container">
   <t-tabs value="{{ activeTab }}" bind:change="onTabChange">
     <!-- 缴费记录选项卡 -->
@@ -143,4 +154,6 @@
   <view class="unpaid-badge" wx:if="{{ unpaidCount > 0 }}">
     <text>您有 {{ unpaidCount }} 项待支付</text>
   </view>
-</view> 
+</view>
+  </view>
+</panel-loading-transition>

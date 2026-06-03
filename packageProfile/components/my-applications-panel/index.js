@@ -1,126 +1,146 @@
 const app = getApp();
+const { runPanelLoad, emitPanelLoaded } = require('../../../components/panel-loading-transition/run-load');
 
 /**
- * 我的入会申请Panel组件
- * 从packageClub/my-applications页面转换而来
+ * 我的入会申请 Panel 组件
  */
 
 Component({
+
   properties: {},
 
   data: {
+    pltCommand: '',
     applications: [],
-    userInfo: {},
+    listLoading: false,
     currentWithdrawId: null,
-    /** 与撤回方法名区分开，避免与 methods 同名产生歧义 */
     withdrawDialogVisible: false,
-    isLoading: false
+    defaultClubCoverUrl: '/assets/images/default-club.png',
   },
 
   lifetimes: {
     attached() {
-      // 组件初始化，但不加载数据
-    const userInfo = wx.getStorageSync('userInfo');
-      this.setData({
-        userInfo: userInfo || {}
-      });
-    }
+      try {
+        const base = app.globalData && app.globalData.static_url;
+        if (base) {
+          this.setData({ defaultClubCoverUrl: `${base}/assets/default_club.webp` });
+        }
+      } catch (e) {}
+    },
   },
 
   methods: {
-    /**
-     * 供外部调用的数据加载方法
-     */
-    loadData() {
-      this.fetchMyApplications();
-      // 触发loaded事件
-    this.triggerEvent('loaded');
+    stopBubble() {},
+
+    onPanelLoadTransitionDone() {
+      emitPanelLoaded(this);
     },
 
-    // 切换展开/折叠状数
-      toggleExpand(e) {
-      const index = e.currentTarget.dataset.index;
-      const applications = this.data.applications;
-      
-      applications[index].expanded = !applications[index].expanded;
-      
-      this.setData({
-        applications: applications
+    loadData() {
+      return runPanelLoad(this, {
+        fetch: () => this.fetchMyApplications({ silent: true }),
       });
     },
 
-    /** 撤回：dataset 必须放在原生 view 上（t-button 内点击时 currentTarget 往往拿不到 data-*） */
+    decorateApplicationAxis(rawDate) {
+      const d = rawDate ? new Date(rawDate) : null;
+      if (!d || Number.isNaN(d.getTime())) return { axis_date: '', axis_time: '' };
+      const pad2 = (n) => String(n).padStart(2, '0');
+      return {
+        axis_date: `${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`,
+        axis_time: `${pad2(d.getHours())}:${pad2(d.getMinutes())}`,
+      };
+    },
+
+    formatApplicationItem(item) {
+      const rawAppDate = item.applicatedDate;
+      const axis = this.decorateApplicationAxis(rawAppDate);
+      const applicatedDate = rawAppDate ? this.formatDate(rawAppDate) : '';
+      const processedDate = item.processedDate ? this.formatDate(item.processedDate) : '';
+      const processed = Boolean(processedDate);
+      const mainClass = processed
+        ? item.approved
+          ? 'tl-modal-main--milestone-start'
+          : 'tl-modal-main--milestone-rejected'
+        : 'tl-modal-main--milestone-pending';
+      const clubCoverRaw = item.club_cover || item.clubCover || '';
+      const club_cover_thumb = clubCoverRaw
+        ? app.convertToThumbnailUrl(clubCoverRaw, 300)
+        : '';
+      return {
+        ...item,
+        applicatedDate,
+        processedDate,
+        axis_date: axis.axis_date,
+        axis_time: axis.axis_time,
+        club_cover_thumb,
+        mainClass,
+      };
+    },
+
     showWithdrawDialog(e) {
-      const ds = e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset : {};
-      const applicationId = ds.applicationId ?? ds.applicationid;
+      const applicationId =
+        e.currentTarget?.dataset?.applicationId ??
+        e.currentTarget?.dataset?.applicationid;
       if (applicationId == null || applicationId === '') {
         wx.showToast({ title: '缺少申请编号', icon: 'none' });
         return;
       }
       this.setData({
         currentWithdrawId: applicationId,
-        withdrawDialogVisible: true
+        withdrawDialogVisible: true,
       });
     },
 
-    // 关闭对话数
-      closeDialog() {
+    closeDialog() {
       this.setData({
         withdrawDialogVisible: false,
-        currentWithdrawId: null
+        currentWithdrawId: null,
       });
     },
 
-    // 处理撤回申请
     async handleWithdraw() {
       if (!this.data.currentWithdrawId) return;
-      
+
       const applicationId = this.data.currentWithdrawId;
-      
-      wx.showLoading({
-        title: '处理中…',
-      });
-      
+
+      wx.showLoading({ title: '处理中…' });
+
       try {
         const res = await this.request({
           url: `/club/application/${applicationId}/delete`,
-          method: 'GET'
+          method: 'GET',
         });
-        
+
         if (res.Flag === '4000' || res.Flag === 4000) {
-          wx.showToast({
-            title: '申请已撤', icon: 'success'
-          });
-          
-          this.fetchMyApplications();
-          
-          // 触发更新事件
-    this.triggerEvent('update');
+          wx.showToast({ title: '申请已撤回', icon: 'success' });
+          await this.fetchMyApplications();
+          this.triggerEvent('update');
         } else {
           wx.showToast({
             title: res.message || '撤回失败',
-            icon: 'none'
+            icon: 'none',
           });
         }
       } catch (error) {
         wx.showToast({
           title: '网络错误，请重试',
-          icon: 'none'
-        });      } finally {
+          icon: 'none',
+        });
+      } finally {
         wx.hideLoading();
         this.closeDialog();
       }
     },
 
-    // 统一请求方法
-  request(options) {
+    request(options) {
       return new Promise((resolve, reject) => {
         wx.request({
           url: app.globalData.request_url + options.url,
           method: options.method || 'GET',
           header: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + wx.getStorageSync('token')
+            Authorization: 'Bearer ' + wx.getStorageSync('token'),
           },
           data: options.data,
           success(res) {
@@ -128,79 +148,64 @@ Component({
           },
           fail(err) {
             reject(err);
-          }
+          },
         });
       });
     },
 
-    // 获取我的申请列表数据
-    async fetchMyApplications() {
-      this.setData({ isLoading: true });
-      
+    async fetchMyApplications(options = {}) {
+      const silent = !!options.silent;
+      if (!silent) {
+        this.setData({ listLoading: true });
+      }
       try {
         const res = await this.request({
           url: '/club/application/user_applicated/list',
-          method: 'GET'
+          method: 'GET',
         });
-        
+
         if (res.Flag === '4000' || res.Flag === 4000) {
-          // 格式化日期并添加展开状数
-      let formattedData = res.data.map(item => {
-            return {
-              ...item,
-              applicatedDate: item.applicatedDate ? this.formatDate(item.applicatedDate) : '',
-              processedDate: item.processedDate ? this.formatDate(item.processedDate) : '',
-              expanded: false // 默认为折叠状数
-      };
-          });
-          
-          // 按申请时间排序（从新到旧数
-      formattedData.sort((a, b) => {
-            return new Date(b.applicatedDate) - new Date(a.applicatedDate);
-          });
-          
-          // 将已处理的申请排到后数
-      formattedData.sort((a, b) => {
+          const rawList = Array.isArray(res.data) ? res.data : [];
+          const formattedData = rawList.map((item) => this.formatApplicationItem(item));
+
+          formattedData.sort((a, b) => {
             if (a.processedDate && !b.processedDate) return 1;
             if (!a.processedDate && b.processedDate) return -1;
-            return 0;
+            return new Date(b.applicatedDate) - new Date(a.applicatedDate);
           });
-          
-          this.setData({
-            applications: formattedData
-          });
+
+          this.setData({ applications: formattedData });
         } else if (res.Flag === '4004' || res.Flag === 4004) {
-          // 用户未发起任何加入申数
-      this.setData({
-            applications: []
-          });
+          this.setData({ applications: [] });
         } else {
           wx.showToast({
             title: res.message || '获取申请列表失败',
-            icon: 'none'
+            icon: 'none',
           });
         }
       } catch (error) {
         wx.showToast({
           title: '网络错误，请重试',
-          icon: 'none'
-        });      } finally {
-        this.setData({ isLoading: false });
+          icon: 'none',
+        });
+      } finally {
+        if (!silent) {
+          this.setData({ listLoading: false });
+        }
       }
     },
 
-    // 格式化日数
-      formatDate(dateString) {
+    formatDate(dateString) {
       if (!dateString) return '';
-      
+
       const date = new Date(dateString);
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
       const hours = String(date.getHours()).padStart(2, '0');
       const minutes = String(date.getMinutes()).padStart(2, '0');
-      
+
       return `${year}-${month}-${day} ${hours}:${minutes}`;
-    }
-  }
+    },
+  },
 });

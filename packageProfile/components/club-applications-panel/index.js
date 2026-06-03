@@ -1,4 +1,6 @@
 const app = getApp();
+const { getDefaultAvatarUrl } = require('../../../utils/default-avatar');
+const { runPanelLoad, emitPanelLoaded } = require('../../../components/panel-loading-transition/run-load');
 
 /**
  * 入会审批Panel组件
@@ -19,6 +21,7 @@ Component({
   },
 
   data: {
+    pltCommand: '',
     allApplications: [],
     applicationsCurrentPage: 0,
     applicationsTotalPages: 1,
@@ -32,7 +35,7 @@ Component({
     approveOpinion: '',
     rejectOpinion: '',
     isLoading: false,
-    defaultAvatarUrl: '/assets/images/default-avatar.png',
+    defaultAvatarUrl: getDefaultAvatarUrl(),
   },
 
   lifetimes: {
@@ -60,11 +63,15 @@ Component({
     /**
      * 供外部调用的数据加载方法
      */
-    async loadData() {
-      if (this.properties.clubId) {
-        await this.fetchApplications(true);
-      }
-      this.triggerEvent('loaded');
+    onPanelLoadTransitionDone() {
+      emitPanelLoaded(this);
+    },
+
+    loadData() {
+      return runPanelLoad(this, {
+        shouldFetch: () => !!this.properties.clubId,
+        fetch: () => this.fetchApplications(true, { silent: true }),
+      });
     },
 
     onApplicationsScrollToLower() {
@@ -150,7 +157,8 @@ Component({
     /**
      * @param {boolean} reset true 从第一页重拉；false 下一页追加
      */
-    async fetchApplications(reset = false) {
+    async fetchApplications(reset = false, options = {}) {
+      const silent = !!options.silent
       const clubId = this.properties.clubId
       if (!clubId) return
 
@@ -165,8 +173,7 @@ Component({
       this._applicationsPagingLock = true
       if (reset) {
         this.setData({
-          isLoading: true,
-          applicationsListLoading: true,
+          ...(silent ? {} : { isLoading: true, applicationsListLoading: true }),
           applicationsCurrentPage: 0,
           applicationsTotalPages: 1,
           applicationsTotalRecords: 0,
@@ -227,11 +234,17 @@ Component({
         console.error('获取申请列表失败:', error)
       } finally {
         this._applicationsPagingLock = false
-        this.setData({
-          isLoading: false,
-          applicationsListLoading: false,
-          applicationsListLoadingMore: false,
-        })
+        if (!silent) {
+          this.setData({
+            isLoading: false,
+            applicationsListLoading: false,
+            applicationsListLoadingMore: false,
+          })
+        } else {
+          this.setData({
+            applicationsListLoadingMore: false,
+          })
+        }
       }
     },
 

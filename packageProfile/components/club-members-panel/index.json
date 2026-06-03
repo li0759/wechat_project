@@ -21,6 +21,7 @@
     "isotope": "/components/isotope/index",
     "expandable-container": "/components/expandable-container/index",
     "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",
-    "club-members-skeleton": "/components/panel-skeleton/club-members-skeleton/index"
+    "club-members-skeleton": "/components/panel-skeleton/club-members-skeleton/index",
+    "panel-loading-transition": "/components/panel-loading-transition/index"
   }
 }

@@ -1,10 +1,13 @@
 // pages/profile/club-members/index.js
 const app = getApp()
+const { getDefaultAvatarUrl, resolveAvatarUrl } = require('../../../utils/default-avatar')
+const { runPanelLoad, emitPanelLoaded } = require('../../../components/panel-loading-transition/run-load');
 import Toast from 'tdesign-miniprogram/toast/index'
 
 const AB_ENTER_LEAVE_MS = 180
 
 Component({
+
   options: {
     // 让本组件 wxss 下发到子组件（club-member-indexes），否则会出现「列表/详情弹窗像没样式」的情况
     styleIsolation: 'shared'
@@ -13,10 +16,13 @@ Component({
     clubId: {
       type: String,
       value: ''
-    }
+    },
   },
 
   data: {
+    pltCommand: '',
+    /** 仅给 panel-loading-transition 用，勿在 wxml 里门控内容（同 club-applications） */
+    isLoading: false,
     members: [],
     filteredMembers: [],
     memberListTab: '0',
@@ -29,8 +35,7 @@ Component({
     monthMemberGroups: [],
     monthIndexSidebar: [],
     searchKeyword: '',
-    loading: true,
-    default_avatar: app.globalData.static_url+'/assets/default_avatar.webp',
+    default_avatar: getDefaultAvatarUrl(),
     // 角色相关
     roleNames: {
       'president': '会长',
@@ -146,7 +151,7 @@ Component({
         this._lastClubId = null
         this._loaded = false
         this.setData({
-          loading: false,
+          isLoading: false,
           members: [],
           filteredMembers: [],
           nameMemberGroups: [],
@@ -181,24 +186,55 @@ Component({
         this.selectComponent('#add-member-sheet')?.collapse?.()
       } catch (e) {}
     },
-    // 懒加载入口：供外部调用，只有弹窗展开时才加载数据
-  loadData() {
+    onPanelLoadTransitionDone() {
+      emitPanelLoaded(this)
+    },
+
+    loadData() {
       this._hasExpanded = true
-      if (this._loaded) return Promise.resolve()
-      this._loaded = true
-      
       const clubId = this.properties.clubId
-      if (!clubId || clubId.startsWith('placeholder')) {
-        this.setData({ loading: false })
-        this.triggerEvent('loaded')
-        return Promise.resolve()
+      this._lastClubId = clubId ? String(clubId) : ''
+      if (this._fetching) return this._fetching
+      this._fetching = runPanelLoad(this, {
+        shouldFetch: () => clubId && !String(clubId).startsWith('placeholder'),
+        fetch: () => this.fetchClubMembers(clubId, { silent: true }),
+      }).finally(() => {
+        this._fetching = null
+      })
+      return this._fetching
+    },
+
+    _runAfterMemberViewsReady(fn) {
+      const members = this.data.members || []
+      const searchKeyword = this.data.searchKeyword || ''
+      let filtered = members
+      if (searchKeyword) {
+        const keyword = searchKeyword.toLowerCase()
+        filtered = members.filter((member) => {
+          const name = (member.user_name || '').toLowerCase()
+          return (
+            name.includes(keyword) ||
+            (member.department && member.department.toLowerCase().includes(keyword)) ||
+            (member.position && member.position.toLowerCase().includes(keyword)) ||
+            (member.phone && member.phone.includes(keyword))
+          )
+        })
       }
-      
-      this._lastClubId = String(clubId)
-      return this.fetchClubMembers(clubId).then(() => {
-        this.triggerEvent('loaded')
-      }).catch(() => {
-        this.triggerEvent('loaded')
+      const list = Array.isArray(filtered) ? filtered : []
+      const name = this.buildMemberNameView(list)
+      const dept = this.buildMemberDeptView(list)
+      const month = this.buildMemberMonthView(list)
+      this.setData({
+        filteredMembers: filtered,
+        nameMemberGroups: name.groups,
+        nameIndexSidebar: name.sidebar,
+        deptMemberGroups: dept.groups,
+        deptIndexSidebar: dept.sidebar,
+        monthMemberGroups: month.groups,
+        monthIndexSidebar: month.sidebar,
+      }, () => {
+        this.updateMemberIsotope()
+        if (typeof fn === 'function') fn()
       })
     },
 
@@ -213,7 +249,7 @@ Component({
       if (!clubId) clubId = this.properties.clubId
       const silent = !!(opts && opts.silent)
       if (!silent) {
-        this.setData({ loading: true })
+        this.setData({ isLoading: true })
       }
     return new Promise((resolve, reject) => {
       const prevExisting = (this.data.existingUserIds || []).map((x) => String(x))
@@ -262,36 +298,33 @@ Component({
                 .filter((m) => !m.is_deleted)
                 .map((m) => String(m.user_id)),
               isPresident: isPresident,
-              loading: false
             }, () => {
-              // 记录“本次新增”的成员，确保头像墙新加的在最前面
-    const nextExisting = processedMembers.map((m) => String(m.user_id))
+              const nextExisting = processedMembers.map((m) => String(m.user_id))
               if (prevExisting.length > 0) {
                 const added = nextExisting.filter((id) => !prevExisting.includes(id))
                 if (added.length) {
                   const merged = [...added, ...(this.data.recentAddedUserIds || [])]
-                  // 去重 + 保持顺序
-    const seen = new Set()
+                  const seen = new Set()
                   const uniq = merged.filter((id) => {
                     const sid = String(id)
                     if (seen.has(sid)) return false
                     seen.add(sid)
                     return true
                   })
-                  this.setData({ recentAddedUserIds: uniq }, () => this.updateMemberIsotope())
+                  this.setData({ recentAddedUserIds: uniq }, () => {
+                    this.updateMemberIsotope()
+                    this._runAfterMemberViewsReady(() => resolve())
+                  })
                   return
                 }
               }
-              // 初次加载或无新增：仅刷新头像墙
-    this.updateMemberIsotope()
+              this.updateMemberIsotope()
+              this._runAfterMemberViewsReady(() => resolve())
             })
             
-            this.filterMembers()
-            // 现有成员变化会影响通讯录“已添加”态
-    if ((this.data.abDeptTree || []).length) this.abRefreshExistingStatus()
-            resolve()
+            if ((this.data.abDeptTree || []).length) this.abRefreshExistingStatus()
           } else {
-            this.setData({ loading: false })
+            resolve()
             Toast({
               context: this,
               selector: '#t-toast',
@@ -299,11 +332,10 @@ Component({
               theme: 'error',
               direction: 'column',
             })
-            resolve()
           }
         },
         fail: (err) => {
-          this.setData({ loading: false })
+          resolve()
           Toast({
             context: this,
             selector: '#t-toast',
@@ -311,7 +343,6 @@ Component({
             theme: 'error',
             direction: 'column',
           })
-          resolve()
         }
       })
     })
@@ -343,7 +374,7 @@ Component({
 
     const items = ordered.map((m) => ({
       id: `club-member-${String(m.user_id)}`,
-      image: m.avatar || '/assets/images/default-avatar.png',
+      image: m.avatar || getDefaultAvatarUrl(),
       ini_width: avatar,
       ini_height: avatar,
       user_id: String(m.user_id),
@@ -1289,7 +1320,7 @@ Component({
           const avatar = 50
           const newItem = {
             id: `club-member-${String(userInfo.user_id)}`,
-            image: userInfo.avatar || '/assets/images/default-avatar.png',
+            image: userInfo.avatar || getDefaultAvatarUrl(),
             ini_width: avatar,
             ini_height: avatar,
             user_id: String(userInfo.user_id),

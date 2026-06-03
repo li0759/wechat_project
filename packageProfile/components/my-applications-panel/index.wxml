@@ -1,62 +1,95 @@
-<view class="container">
-  <view class="applications-list">
+<panel-loading-transition
+  duration="280"
+  command="{{pltCommand}}"
+  auto-need-load="{{true}}"
+  bind:needload="loadData"
+  bind:loaded="onPanelLoadTransitionDone"
+>
+  <view slot="skeleton">
+    <my-applications-skeleton />
+  </view>
+  <view slot="content">
+<view class="map-app-panel-host">
+<view class="tl-modal-root map-tl-root">
+  <view class="tl-modal-header">
+    <text class="tl-modal-h-title">入会申请</text>
+    <text class="tl-modal-h-count" wx:if="{{applications.length > 0}}">共 {{applications.length}} 条</text>
+  </view>
+
+  <scroll-view
+    class="tl-modal-scroll"
+    scroll-y="{{true}}"
+    show-scrollbar="{{false}}"
+    enable-flex="{{true}}"
+  >
     <block wx:if="{{applications.length > 0}}">
-      <view wx:for="{{applications}}" wx:key="index" class="application-item">
-        <!-- 折叠状态的基础信息 -->
-        <view class="application-summary" bind:tap="toggleExpand" data-index="{{index}}">
-          <view class="summary-left">
-            <image class="user-avatar-small" src="{{userInfo.avatarUrl || '/assets/images/default-avatar.png'}}" mode="aspectFill"></image>
-            <view class="user-name">{{item.club_name}}</view>
-          </view>
-          <view class="summary-right">
-            <!-- 待审批状态显示撤回按钮 -->
-            <block wx:if="{{!item.processedDate}}">
-              <view class="summary-status">正在审批</view>
-              <!-- 勿用 t-button：其内部常 catch 触摸，事件冒泡不到外层，expandable 全屏里会表现为「点了没反应」 -->
-              <view
-                class="summary-btn withdraw-btn withdraw-native-btn"
-                catchtap="showWithdrawDialog"
-                data-application-id="{{item.applicationID || item.application_id}}"
-                hover-class="withdraw-native-btn--hover"
-                hover-stay-time="80"
-              >撤回</view>
-            </block>
-            <!-- 已处理状态显示状态 -->
-            <view wx:else class="summary-status {{item.approved ? 'status-approved' : 'status-rejected'}}">
-              {{item.approved ? '已通过' : '已拒绝'}}
-            </view>
-            <!-- 展开箭头 -->
-            <t-icon name="{{item.expanded ? 'chevron-up' : 'chevron-down'}}" class="expand-arrow" />
-          </view>
+      <view
+        wx:for="{{applications}}"
+        wx:key="applicationID"
+        wx:for-index="idx"
+        class="tl-modal-row"
+      >
+        <view class="tl-modal-left">
+          <text class="tl-axis-date">{{item.axis_date}}</text>
+          <text class="tl-axis-time">{{item.axis_time}}</text>
         </view>
-        
-        <!-- 展开状态的详细信息 -->
-        <view class="application-details" wx:if="{{item.expanded}}">
-          <view class="detail-row">
-            <view class="detail-title">申请时间</view>
-            <view class="detail-value">{{item.applicatedDate}}</view>
+        <view class="tl-modal-rail">
+          <view class="tl-dot"></view>
+          <view class="tl-vline" wx:if="{{idx < applications.length - 1}}"></view>
+        </view>
+        <view class="tl-modal-main {{item.mainClass}}">
+          <view class="map-app-cover-bg" aria-hidden="true">
+            <image
+              class="map-app-cover-img"
+              src="{{item.club_cover_thumb || defaultClubCoverUrl}}"
+              mode="aspectFill"
+            />
           </view>
           <block wx:if="{{item.processedDate}}">
-            <view class="detail-row">
-              <view class="detail-title">处理人</view>
-              <view class="detail-value">{{item.processed_user}}</view>
+            <view class="map-app-card-body">
+              <text class="tl-milestone-title">{{item.approved ? '已批准' : '已拒绝'}}</text>
+              <view class="tl-op-row">
+                <view class="tl-op-meta">
+                  <text class="tl-op-name">{{item.club_name}}</text>
+                  <text class="tl-op-sub">申请时间 {{item.applicatedDate || '—'}}</text>
+                  <text class="tl-op-sub">处理人 {{item.processed_user || '—'}} · {{item.processedDate}}</text>
+                  <text wx:if="{{item.opinion}}" class="tl-op-sub">意见：{{item.opinion}}</text>
+                </view>
+              </view>
             </view>
-            <view class="detail-row">
-              <view class="detail-title">处理时间</view>
-              <view class="detail-value">{{item.processedDate}}</view>
-            </view>
-            <view class="detail-row" wx:if="{{item.opinion}}">
-              <view class="detail-title">处理意见</view>
-              <view class="detail-value">{{item.opinion}}</view>
+          </block>
+          <block wx:else>
+            <view class="map-app-pending-card">
+              <view class="map-app-pending-actions" catchtap="stopBubble">
+                <t-button
+                  size="small"
+                  theme="primary"
+                  class="map-btn map-btn-withdraw"
+                  data-application-id="{{item.applicationID}}"
+                  bind:tap="showWithdrawDialog"
+                >撤回</t-button>
+              </view>
+              <view class="map-app-card-body">
+                <text class="tl-milestone-title tl-milestone-title--pending">正在审批</text>
+                <view class="tl-op-row map-app-pending-row">
+                  <view class="tl-op-meta">
+                    <text class="tl-op-name">{{item.club_name}}</text>
+                    <text class="tl-op-sub">申请时间 {{item.applicatedDate || '—'}}</text>
+                  </view>
+                </view>
+              </view>
             </view>
           </block>
         </view>
       </view>
     </block>
-    <t-empty wx:else description="暂无申请记录" />
-  </view>
+    <view wx:else class="tl-modal-empty">
+      <t-empty description="暂无申请记录" />
+    </view>
+    <view class="tl-modal-footer-space" />
+  </scroll-view>
+</view>
 
-<!-- 撤回确认对话框 -->
 <t-dialog
   visible="{{ withdrawDialogVisible }}"
   zIndex="200000"
@@ -67,4 +100,6 @@
   bind:confirm="handleWithdraw"
   bind:close="closeDialog"
 />
-</view> 
+</view>
+  </view>
+</panel-loading-transition>

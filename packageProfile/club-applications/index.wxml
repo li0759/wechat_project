@@ -35,7 +35,7 @@
             <view class="application-card">
               <view class="user-info" bindtap="viewUserDetail" data-userid="{{item.user_id}}">
                 <view class="user-avatar">
-                  <image src="{{item.userAvatar || '/assets/images/default-avatar.png'}}" mode="aspectFill"></image>
+                  <image src="{{item.userAvatar || defaultAvatarUrl}}" mode="aspectFill"></image>
                 </view>
                 <view class="user-detail">
                   <view class="user-name">{{item.userName || '未知用户'}}</view>
@@ -64,7 +64,7 @@
             <view class="application-card">
               <view class="user-info" bindtap="viewUserDetail" data-userid="{{item.userId}}">
                 <view class="user-avatar">
-                  <image src="{{item.userAvatar || '/assets/images/default-avatar.png'}}" mode="aspectFill"></image>
+                  <image src="{{item.userAvatar || defaultAvatarUrl}}" mode="aspectFill"></image>
                 </view>
                 <view class="user-detail">
                   <view class="user-name">{{item.userName || '未知用户'}}</view>

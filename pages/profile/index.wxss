@@ -370,8 +370,43 @@ page {
   background: #f7f8fa;
   display: flex;
   flex-direction: column;
-  /* 本页为 Tab 页：底栏需整体上移，避开 custom-tab-bar（变量供各 panel 内 .bottom-actions 继承） */
   --tab-bar-visual-gap: 64rpx;
+}
+
+.global-popup-skeleton-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+  background: #f7f8fa;
+  opacity: 1;
+  transition: opacity 280ms ease;
+  pointer-events: none;
+}
+
+.global-popup-skeleton-overlay--fading {
+  opacity: 0;
+}
+
+.global-popup-panel-layer {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  opacity: 1;
+}
+
+.global-popup-panel-fill {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
 .popup-skeleton {

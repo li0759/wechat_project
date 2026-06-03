@@ -1,7 +1,10 @@
 const app = getApp();
+const { getDefaultAvatarUrl } = require('../../../utils/default-avatar');
 const { submitClockIn } = require('../../../utils/event-clockin');
+const { runPanelLoad, emitPanelLoaded } = require('../../../components/panel-loading-transition/run-load');
 
 Component({
+
   properties: {
     eventId: {
       type: String,
@@ -15,6 +18,8 @@ Component({
   },
 
   data: {
+    pltCommand: '',
+    panelLoading: false,
     featuredEvent: null,
     isLoading: true,
     autoActionExecuted: false, // 标记是否已执行自动操数
@@ -25,7 +30,7 @@ Component({
     recentJoinMembers: [],
     recentClockinMembers: [],
 
-    default_avatar: app.globalData.static_url + '/assets/default_avatar.webp',
+    default_avatar: getDefaultAvatarUrl(),
     
     // 时间线相数
       stepsCurrent: 0,
@@ -106,29 +111,50 @@ Component({
 
   methods: {
     // 懒加载入口：供外部调用，只有弹窗展开时才加载数据
-  loadData() {      this._hasExpanded = true;
-      if (this._loaded) {        return Promise.resolve();
+  onPanelLoadTransitionDone() {
+      emitPanelLoaded(this);
+    },
+
+  loadData() {
+      this._hasExpanded = true;
+      if (this._loadDataPromise) return this._loadDataPromise;
+      if (this._loaded) return Promise.resolve();
+
+      const eventId = this.properties.eventId || this.data.eventId || '';
+      if (!eventId || String(eventId).startsWith('placeholder')) {
+        return runPanelLoad(this, { shouldFetch: () => false });
       }
-      if (!this.data.eventId || this.data.eventId.startsWith('placeholder')) {        return Promise.resolve();
-      }
-      this._loaded = true;      return this.loadEventData();
+
+      this._loaded = true;
+      this._loadDataPromise = runPanelLoad(this, {
+        revealAfterPaint: true,
+        fetch: () => this.loadEventData({ silent: true }),
+      }).finally(() => {
+        this._loadDataPromise = null;
+      });
+      return this._loadDataPromise;
     },
 
   // 加载活动数据
-  async loadEventData() {
+  async loadEventData(options = {}) {
+    const silent = !!options.silent;
     try {
-      this.setData({ isLoading: true });
+      if (!silent) {
+        this.setData({ isLoading: true });
+      }
 
-      const eventResult = await this.loadEventDetail();
-      
+      const eventId = this.properties.eventId || this.data.eventId || '';
+      const eventResult = await this.loadEventDetail(eventId);
+
       if (eventResult && eventResult.data) {
         await this.processEventData(eventResult.data);
       }
 
-      this.setData({ isLoading: false });
-      this.triggerEvent('loaded');
-    } catch (error) {      this.setData({ isLoading: false });
-      this.triggerEvent('loaded');
+      if (!silent) {
+        this.setData({ isLoading: false });
+      }
+    } catch (error) {
+      this.setData({ ...(silent ? {} : { isLoading: false }) });
       wx.showToast({
         title: '加载失败',
         icon: 'none'
@@ -137,10 +163,11 @@ Component({
   },
 
   // 加载活动详情
-  loadEventDetail() {
+  loadEventDetail(eventId) {
+    const id = eventId || this.properties.eventId || this.data.eventId || '';
     return new Promise((resolve, reject) => {
       wx.request({
-        url: app.globalData.request_url + `/event/${this.data.eventId}`,
+        url: app.globalData.request_url + `/event/${id}`,
         method: 'GET',
         header: {
           'Authorization': 'Bearer ' + wx.getStorageSync('token'),

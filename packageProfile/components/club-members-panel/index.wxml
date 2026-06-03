@@ -1,19 +1,25 @@
+<panel-loading-transition
+  duration="280"
+  command="{{pltCommand}}"
+  auto-need-load="{{true}}"
+  bind:needload="loadData"
+  bind:loaded="onPanelLoadTransitionDone"
+>
+  <view slot="skeleton">
+    <club-members-skeleton />
+  </view>
+  <view slot="content">
 <!--pages/profile/club-members/index.wxml-->
 
-<view class="cmp-panel-root {{(loading || (!loading && members.length > 0)) ? 'cmp-panel-root--member-list' : ''}}">
+<view class="cmp-panel-root cmp-panel-root--member-list">
 
-  <!-- 加载骨架屏（参考现有 club-members-skeleton） -->
-  <club-members-skeleton wx:if="{{loading}}" />
-
-  <!-- 空状态：仅协会真实无成员；搜索无匹配不要用 filteredMembers，否则会盖住搜索框 -->
   <t-empty 
-    wx:elif="{{!loading && members.length === 0}}"
+    wx:if="{{members.length === 0}}"
     icon="member"
     description="暂无成员"
   />
 
-  <!-- 成员列表：搜索与 t-indexes 同列定位；Tab 下为「仿 t-indexes」单 scroll 索引列表 -->
-  <view wx:elif="{{!loading && members.length > 0}}" class="members-main cm-indexes-shell">
+  <view wx:if="{{members.length > 0}}" class="members-main cm-indexes-shell">
     <view class="cm-member-toolbar">
       <view wx:if="{{bulkMode}}" class="cm-bulk-send-bar">
         <view class="cm-bulk-icon-btn" hover-class="cm-bulk-icon-btn--hover" bindtap="onExitBulkMode">
@@ -157,7 +163,7 @@
 
 
   <!-- 添加会员悬浮按钮（加载中由骨架屏展示，避免双 FAB） -->
-  <view class="fab-container" wx:if="{{!loading}}">
+  <view class="fab-container" wx:if="{{members.length > 0}}">
     <expandable-container_fullscreen
       id="add-member-sheet"
       expanded-width="750"
@@ -573,8 +579,7 @@
 
 </view>
 
-
-
-
 <!-- Toast 提示 -->
 <t-toast id="t-toast" />
+  </view>
+</panel-loading-transition>

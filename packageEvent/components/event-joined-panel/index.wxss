@@ -1,4 +1,5 @@
 @import "../../../styles/panel-bottom-actions.wxss";
+@import "../../../styles/panel-component-host.wxss";
 
 .clockin-signature-overlay {
   position: fixed;

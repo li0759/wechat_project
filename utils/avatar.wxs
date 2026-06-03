@@ -1,0 +1,10 @@
+function resolve(url, defaultUrl) {
+  if (url === undefined || url === null) url = ''
+  var s = '' + url
+  if (s.replace(/^\s+|\s+$/g, '') === '') return defaultUrl || ''
+  return s
+}
+
+module.exports = {
+  resolve: resolve,
+}

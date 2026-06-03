@@ -1,4 +1,6 @@
 const app = getApp();
+const { runPanelLoad, emitPanelLoaded } = require('../../../components/panel-loading-transition/run-load');
+const panelLazy = require('../../../utils/panel-lazy-load');
 
 /**
  * 通用协会列表Panel组件
@@ -9,6 +11,7 @@ const app = getApp();
  */
 
 Component({
+
   properties: {
     requestUrl: {
       type: String,
@@ -22,7 +25,9 @@ Component({
   },
 
   data: {
+    pltCommand: '',
     contentSuspended: false,
+    panelLoading: false,
     clubList: [],
     isClubLoading: false,
     clubPage: 1,
@@ -72,26 +77,33 @@ Component({
     /**
      * 供外部调用的数据加载方法
      */
+    onPanelLoadTransitionDone() {
+      emitPanelLoaded(this);
+    },
+
     loadData() {
-      this.loadClubList(1);
-      // 触发loaded事件
-    this.triggerEvent('loaded');
+      return runPanelLoad(this, {
+        fetch: () => this.loadClubList(1, { silent: true }),
+      });
     },
 
     /**
      * 加载协会列表
      */
-    async loadClubList(page = 1) {
+    async loadClubList(page = 1, options = {}) {
+      const silent = !!(options && options.silent) && page === 1;
       if (this.data.isClubLoading || (this.data.clubTotalPages && page > this.data.clubTotalPages)) return;
       
-      this.setData({ isClubLoading: true });
+      if (!silent) {
+        this.setData({ isClubLoading: true });
+      }
       
       if (page > 1) {
         const skeletons = Array(2).fill({ loading: true });
         this.setData({
           clubList: this.data.clubList.concat(skeletons)
         });
-      } else if (page === 1 && this.data.clubList.length === 0) {
+      } else if (page === 1 && this.data.clubList.length === 0 && !silent) {
         this.setData({
           clubList: Array(4).fill({ loading: true })
         });
@@ -133,7 +145,7 @@ Component({
                 clubPage: response.data.pagination.current_page || page,
                 clubTotalPages: response.data.pagination.total_pages || 1,
                 clubEmpty: isEmpty,
-                isClubLoading: false
+                ...(silent ? {} : { isClubLoading: false }),
               });
             });
           } else {
@@ -145,17 +157,19 @@ Component({
               ],
               clubPage: response.data.pagination.current_page || page,
               clubTotalPages: response.data.pagination.total_pages || 1,
-              isClubLoading: false
+              ...(silent ? {} : { isClubLoading: false }),
             });
           }
         } else {
           if (page === 1) {
-            this.setData({ isClubLoading: false });
+            if (!silent) {
+              this.setData({ isClubLoading: false });
+            }
           } else {
             const remain = this.data.clubList.length - 2;
             this.setData({
               clubList: this.data.clubList.slice(0, remain),
-              isClubLoading: false
+              ...(silent ? {} : { isClubLoading: false }),
             });
           }
           throw new Error(response.message || '获取协会列表失败');
@@ -165,12 +179,14 @@ Component({
             title: '加载协会列表失败',
             icon: 'none'
           });
-          this.setData({ isClubLoading: false });
+          if (!silent) {
+            this.setData({ isClubLoading: false });
+          }
         } else {
           const remain = this.data.clubList.length - 2;
           this.setData({
             clubList: this.data.clubList.slice(0, remain),
-            isClubLoading: false
+            ...(silent ? {} : { isClubLoading: false }),
           });
         }
       }
@@ -314,12 +330,7 @@ Component({
   onNestedClubManageContentReady() {      this.setData({
         'nestedClubManage.renderPanel': true
       }, () => {
-        setTimeout(() => {
-          const panel = this.selectComponent('#nestedClubManagePanel');
-          if (panel && panel.loadData) {
-            panel.loadData();
-          }
-        }, 100);
+        panelLazy.invokePanelLoadData(this, '#nestedClubManagePanel');
       });
     },
 
@@ -365,12 +376,7 @@ Component({
   onNestedClubDetailContentReady() {      this.setData({
         'nestedClubDetail.renderPanel': true
       }, () => {
-        setTimeout(() => {
-          const panel = this.selectComponent('#nestedClubDetailPanel');
-          if (panel && panel.loadData) {
-            panel.loadData();
-          }
-        }, 100);
+        panelLazy.invokePanelLoadData(this, '#nestedClubDetailPanel');
       });
     },
 
@@ -407,15 +413,13 @@ Component({
     },
 
     // ========= 嵌套 Club Joined 弹窗相关 =========
-  onNestedClubJoinedContentReady() {      this.setData({
-        'nestedClubJoined.renderPanel': true
-      }, () => {
-        setTimeout(() => {
-          const panel = this.selectComponent('#nestedClubJoinedPanel');
-          if (panel && panel.loadData) {
-            panel.loadData();
-          }
-        }, 100);
+  onNestedClubJoinedContentReady() {
+      panelLazy.preloadForPanelType('club-joined').then(() => {
+        this.setData({
+          'nestedClubJoined.renderPanel': true
+        }, () => {
+          panelLazy.invokePanelLoadData(this, '#nestedClubJoinedPanel');
+        });
       });
     },
 

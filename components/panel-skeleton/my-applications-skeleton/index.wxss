@@ -1,41 +1,212 @@
-/* 骨架屏容器 */
-.skeleton-container {
-  padding: 24rpx;
-  padding-top: 24rpx;
-  background-color: #f7f8fa;
-  min-height: 100vh;
-}
+/* 我的入会申请骨架：与 my-applications-panel 同一套 tl-modal-* 结构/样式 */
 
-/* 骨架屏列表 */
-.skeleton-list {
+:host {
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
-}
-
-/* 申请卡片骨架 */
-.skeleton-application-card {
-  background: #fff;
-  border-radius: 12rpx;
-  padding: 20rpx 24rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
-}
-
-/* 摘要骨架 */
-.skeleton-summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.skeleton-left {
-  display: flex;
-  align-items: center;
   flex: 1;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+  position: relative;
+  box-sizing: border-box;
 }
 
-.skeleton-right {
+.map-tl-root {
+  --sk-gray-1: #eceef2;
+  --sk-gray-2: #e2e5ea;
+  --sk-gray-3: #d1d5db;
+  --md-sys-color-on-surface: rgba(0, 0, 0, 0.88);
+  --md-sys-color-on-surface-variant: rgba(0, 0, 0, 0.55);
+}
+
+.sk-tl-root {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.tl-modal-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-shrink: 0;
+  padding: 20rpx 24rpx 12rpx;
+  border-bottom: 1rpx solid #eceef2;
+}
+
+.tl-modal-h-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+}
+
+.tl-modal-scroll {
+  flex: 1;
+  min-height: 0;
+  padding: 16rpx 8rpx 0 20rpx;
+  box-sizing: border-box;
+  background: #f7f8fa;
+  overflow: hidden;
+}
+
+.tl-modal-row {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.tl-modal-left {
+  width: 112rpx;
+  flex-shrink: 0;
+  padding-right: 8rpx;
+  box-sizing: border-box;
+  text-align: right;
+}
+
+.tl-modal-rail {
+  width: 36rpx;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12rpx;
+}
+
+.tl-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  background: var(--sk-gray-3);
+  border: 3rpx solid #fff;
+  box-shadow: 0 0 0 1rpx rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+  margin-top: 6rpx;
+}
+
+.tl-vline {
+  width: 2rpx;
+  flex: 1;
+  min-height: 8rpx;
+  margin-top: 4rpx;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.14) 0%, rgba(0, 0, 0, 0.04) 100%);
+  border-radius: 1rpx;
+}
+
+.tl-modal-main {
+  flex: 1;
+  min-width: 0;
+  padding: 0 12rpx 28rpx 4rpx;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+
+.tl-modal-main--milestone-pending {
+  background: linear-gradient(
+    135deg,
+    rgba(156, 163, 175, 0.2) 0%,
+    rgba(243, 244, 246, 0.78) 42%,
+    rgba(243, 244, 246, 0.3) 68%,
+    rgba(243, 244, 246, 0.06) 100%
+  );
+  border-left: 6rpx solid #9ca3af;
+  border-right: 2rpx dashed rgba(156, 163, 175, 0.38);
+  border-radius: 14rpx;
+  padding: 18rpx 20rpx 22rpx 16rpx;
+  margin-bottom: 8rpx;
+}
+
+/* 封面占位：右侧 60%，60° 对角 mask 与真实 panel 一致 */
+.map-app-cover-sk {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 60%;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.map-app-cover-sk-block {
+  position: absolute;
+  top: -20rpx;
+  right: 0;
+  width: 100%;
+  height: 112%;
+  background: linear-gradient(135deg, var(--sk-gray-2) 0%, var(--sk-gray-1) 100%);
+  opacity: 0.92;
+  -webkit-mask-size: 128% 128%;
+  mask-size: 128% 128%;
+  -webkit-mask-position: -22% 0;
+  mask-position: -22% 0;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-image: linear-gradient(
+    60deg,
+    transparent 0%,
+    transparent 28%,
+    rgba(0, 0, 0, 0.18) 40%,
+    rgba(0, 0, 0, 0.62) 56%,
+    rgba(0, 0, 0, 0.95) 72%,
+    rgba(0, 0, 0, 1) 86%
+  );
+  mask-image: linear-gradient(
+    60deg,
+    transparent 0%,
+    transparent 28%,
+    rgba(0, 0, 0, 0.18) 40%,
+    rgba(0, 0, 0, 0.62) 56%,
+    rgba(0, 0, 0, 0.95) 72%,
+    rgba(0, 0, 0, 1) 86%
+  );
+}
+
+.map-app-card-body {
+  position: relative;
+  z-index: 1;
+}
+
+.map-app-pending-card {
+  position: relative;
+  box-sizing: border-box;
+}
+
+.tl-op-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.map-app-pending-row {
+  align-items: flex-start;
+  width: 100%;
+  margin-top: 12rpx;
+}
+
+.tl-op-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tl-modal-end-sk {
+  display: flex;
+  justify-content: center;
+  padding: 20rpx 0 32rpx;
+}
+
+.tl-modal-footer-space {
+  height: 200rpx;
 }

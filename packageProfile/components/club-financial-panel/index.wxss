@@ -1,3 +1,5 @@
+@import "../../../styles/panel-component-host.wxss";
+
 /* pages/club/club-financial-stats/index.wxss */
 .container {
   padding: 0;

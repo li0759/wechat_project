@@ -13,7 +13,8 @@
     "event-joined-skeleton": "/components/panel-skeleton/event-joined-skeleton/index",
     "ripple": "/components/ripple/index",
     "isotope": "/components/isotope/index",
-    "animated-map": "/components/animated-map/index"
+    "animated-map": "/components/animated-map/index",
+    "panel-loading-transition": "/components/panel-loading-transition/index"
   },
   "componentPlaceholder": {
     "club-joined-panel": "club-joined-skeleton",

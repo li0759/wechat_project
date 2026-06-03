@@ -1,4 +1,5 @@
 const app = getApp()
+const { runPanelLoad, emitPanelLoaded } = require('../../../components/panel-loading-transition/run-load');
 
 /**
  * 所有协会用户数据Panel组件
@@ -6,9 +7,11 @@ const app = getApp()
  */
 
 Component({
+
   properties: {},
 
   data: {
+    pltCommand: '',
     loading: false,
     downloading: false,
     clubs: [],
@@ -36,9 +39,17 @@ Component({
     /**
      * 供外部调用的数据加载方法
      */
+    onPanelLoadTransitionDone() {
+      emitPanelLoaded(this)
+    },
+
     loadData() {
-      // 触发loaded事件
-      this.triggerEvent('loaded');
+      const { startDate, endDate, activityStartDate, activityEndDate } = this.data
+      const ready = !!(startDate && endDate && activityStartDate && activityEndDate)
+      return runPanelLoad(this, {
+        shouldFetch: () => ready,
+        fetch: () => this.fetchData({ silent: true }),
+      })
     },
 
     /**
@@ -92,9 +103,12 @@ Component({
     },
 
   // 加载数据
-  async fetchData() {
+  async fetchData(options = {}) {
+    const silent = !!options.silent
     try {
-      this.setData({ loading: true })
+      if (!silent) {
+        this.setData({ loading: true })
+      }
       
       const token = wx.getStorageSync('token')
       if (!token) {
@@ -133,7 +147,7 @@ Component({
           clubMemberChart: chartData.clubMemberChart,
           genderChart: chartData.genderChart,
           unitChart: chartData.unitChart,
-          loading: false
+          ...(silent ? {} : { loading: false }),
         })
       } else {
         throw new Error(response.message || '获取数据失败')
@@ -143,7 +157,9 @@ Component({
         title: error.message || '加载数据失败',
         icon: 'none'
       })
-      this.setData({ loading: false })
+      if (!silent) {
+        this.setData({ loading: false })
+      }
     }
   },
 

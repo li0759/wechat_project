@@ -11,12 +11,14 @@
     "club-joined-panel": "/packageClub/components/club-joined-panel/index",
     "club-manage-skeleton": "/components/panel-skeleton/club-manage-skeleton/index",
     "club-detail-skeleton": "/components/panel-skeleton/club-detail-skeleton/index",
-    "club-joined-skeleton": "/components/panel-skeleton/club-joined-skeleton/index"
+    "club-joined-skeleton": "/components/panel-skeleton/club-joined-skeleton/index",
+    "clubs-skeleton": "/components/panel-skeleton/clubs-skeleton/index",
+    "panel-loading-transition": "/components/panel-loading-transition/index"
   },
   "componentPlaceholder": {
     "club-manage-panel": "club-manage-skeleton",
     "club-detail-panel": "club-detail-skeleton",
-    "club-joined-panel": "club-detail-skeleton"
+    "club-joined-panel": "club-joined-skeleton"
   }
 }
 

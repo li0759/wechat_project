@@ -1,7 +1,9 @@
 const app = getApp();
+const { getDefaultAvatarUrl } = require('../../utils/default-avatar');
 
 Page({
   data: {
+    default_avatar: getDefaultAvatarUrl(),
     // 搜索相关
     searchKey: '',
     searchQuery: '',

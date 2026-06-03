@@ -1,5 +1,6 @@
 // pages/profile/club-applications/index.js
 const app = getApp()
+const { getDefaultAvatarUrl } = require('../../utils/default-avatar')
 
 Page({
 
@@ -7,6 +8,7 @@ Page({
    * 页面的初始数据
    */
   data: {
+    defaultAvatarUrl: getDefaultAvatarUrl(),
     clubId: null,
     clubInfo: {},
     applications: [],

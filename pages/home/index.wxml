@@ -21,7 +21,7 @@
   >
     <view class="user-info {{userInfoActive ? 'user-info-active' : ''}}" bindtouchstart="handleUserInfoTouchStart" bindtouchend="handleUserInfoTouchEnd">
       <view class="avatar-wrap" bindtap="openMessagesFullscreen">
-        <image class="avatar" src="{{userInfo.avatar}}"></image>
+        <image class="avatar" src="{{userInfo.avatar || default_avatar}}"></image>
         <view wx:if="{{notice_badge_count > 0}}" class="avatar-badge-wrap">
           <view class="avatar-badge avatar-badge--dot" wx:if="{{notice_badge_seen}}"></view>
           <view class="avatar-badge" wx:else>{{notice_badge_count > 99 ? '99+' : notice_badge_count}}</view>
@@ -74,7 +74,7 @@
       >
         <!-- 热门活动轮播 -->
         <view class="hot-events-container" wx:if="{{hotActivities.length > 0}}">
-          <swiper class="hot-events-swiper" indicator-dots="{{true}}" interval="{{3000}}" duration="{{500}}" circular="{{true}}">
+          <swiper class="hot-events-swiper" indicator-dots="{{true}}" interval="{{3000}}" duration="{{500}}" circular="{{true}}" bindchange="onEventSwiperChange">
             <swiper-item wx:for="{{hotActivities}}" wx:key="event_id" wx:for-index="hotIndex" list-item>
               <ripple
                 ripple-color="rgba(223, 118, 176, 0.8)"
@@ -90,6 +90,7 @@
                   <view class="hot-event-map-background" wx:if="{{item.location_data && item.premap_url}}">
                     <view class="hot-event-map">
                       <animated-map
+                        wx:if="{{!homeFullscreenLayerActive && hotIndex === hotEventCurrent}}"
                         map-url="{{item.premap_url}}"
                         zoom-min="{{14}}"
                         zoom-max="{{16}}"
@@ -102,6 +103,12 @@
                         shrink-from="{{2}}"
                         shrink-to="{{1}}"
                         base-scale="{{1}}"
+                      />
+                      <image
+                        wx:else
+                        class="hot-event-map-static"
+                        src="{{item.premap_url}}"
+                        mode="aspectFill"
                       />
                       <text class="location-name">{{item.location_data.name}}</text>
                       <view class="hot-event-overlay"></view>
@@ -487,8 +494,11 @@
   >
     <view slot="trigger"></view>
     <view slot="content" class="popup-content-wrapper">
-      <!-- 骨架屏 - 覆盖在 panel 上面 -->
-      <view wx:if="{{globalPopup.loading}}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 999; background: #f7f8fa;">
+      <!-- 骨架屏：淡出过渡 -->
+      <view
+        wx:if="{{!globalPopup.renderPanel}}"
+        class="global-popup-skeleton-overlay"
+      >
         <event-manage-skeleton wx:if="{{globalPopup.type === 'event-manage'}}" />
         <event-detail-skeleton wx:if="{{globalPopup.type === 'event-detail'}}" />
         <event-joined-skeleton wx:if="{{globalPopup.type === 'event-joined'}}" />
@@ -502,10 +512,15 @@
       </view>
 
       <!-- 真实 panel 组件 - 延迟渲染 -->
-      <block wx:if="{{globalPopup.renderPanel}}">
+      <view
+        wx:if="{{globalPopup.renderPanel}}"
+        class="global-popup-panel-layer"
+      >
+      <block>
         <!-- 活动详情 -->
         <event-detail-panel 
           wx:if="{{globalPopup.type === 'event-detail'}}"
+          class="global-popup-panel-fill"
           id="globalEventDetailPanel" 
           event-id="{{globalPopup.id}}" 
           bind:update="onEventDetailPanelUpdate" 
@@ -516,6 +531,7 @@
         <!-- 已参加活动 -->
         <event-joined-panel
           wx:if="{{globalPopup.type === 'event-joined'}}"
+          class="global-popup-panel-fill"
           id="globalEventJoinedPanel"
           event-id="{{globalPopup.id}}"
           delegate-signature-to-host="{{true}}"
@@ -527,6 +543,7 @@
         <!-- 活动管理 -->
         <event-manage-panel 
           wx:if="{{globalPopup.type === 'event-manage'}}"
+          class="global-popup-panel-fill"
           id="globalEventManagePanel" 
           event-id="{{globalPopup.id}}" 
           bind:update="onEventManagePanelUpdate"
@@ -536,6 +553,7 @@
         <!-- 协会详情 -->
         <club-detail-panel 
           wx:if="{{globalPopup.type === 'club-detail'}}"
+          class="global-popup-panel-fill"
           id="globalClubDetailPanel" 
           club-id="{{globalPopup.id}}" 
           bind:update="onClubDetailPanelUpdate" 
@@ -546,6 +564,7 @@
         <!-- 协会管理 -->
         <club-manage-panel 
           wx:if="{{globalPopup.type === 'club-manage'}}"
+          class="global-popup-panel-fill"
           id="globalClubManagePanel" 
           club-id="{{globalPopup.id}}" 
           bind:update="onClubManagePanelUpdate" 
@@ -557,6 +576,7 @@
         <!-- 已加入协会 -->
         <club-joined-panel
           wx:if="{{globalPopup.type === 'club-joined'}}"
+          class="global-popup-panel-fill"
           id="globalClubJoinedPanel"
           club-id="{{globalPopup.id}}"
           bind:loaded="onGlobalPopupLoaded"
@@ -566,9 +586,9 @@
         <!-- 入会审批 -->
         <club-applications-panel
           wx:if="{{globalPopup.type === 'club-applications'}}"
+          class="global-popup-panel-fill"
           id="globalClubApplicationsPanel"
           club-id="{{globalPopup.id}}"
-          style="flex: 1; min-height: 0; height: 100%; width: 100%;"
           bind:loaded="onGlobalPopupLoaded"
           bind:update="onGlobalPopupPanelUpdate"
           bind:close="closeGlobalPopup"
@@ -576,8 +596,8 @@
         <!-- 我的入会申请 -->
         <my-applications-panel
           wx:if="{{globalPopup.type === 'my-applications'}}"
+          class="global-popup-panel-fill"
           id="globalMyApplicationsPanel"
-          style="flex: 1; min-height: 0; height: 100%; width: 100%;"
           bind:loaded="onGlobalPopupLoaded"
           bind:update="onGlobalPopupPanelUpdate"
           bind:close="closeGlobalPopup"
@@ -585,8 +605,8 @@
         <!-- 我的缴费 -->
         <paypersonal-panel
           wx:if="{{globalPopup.type === 'paypersonal'}}"
+          class="global-popup-panel-fill"
           id="globalPaypersonalPanel"
-          style="flex: 1; min-height: 0; height: 100%; width: 100%;"
           bind:loaded="onGlobalPopupLoaded"
           bind:update="onGlobalPopupPanelUpdate"
           bind:close="closeGlobalPopup"
@@ -594,14 +614,15 @@
         <!-- 用户资料 -->
         <user-info-panel
           wx:if="{{globalPopup.type === 'user-info'}}"
+          class="global-popup-panel-fill"
           id="globalUserInfoPanel"
           user-id="{{globalPopup.id}}"
-          style="flex: 1; min-height: 0; height: 100%; width: 100%;"
           bind:loaded="onGlobalPopupLoaded"
           bind:update="onGlobalPopupPanelUpdate"
           bind:close="closeGlobalPopup"
         />
       </block>
+      </view>
     </view>
   </expandable-container_fullscreen>
 
