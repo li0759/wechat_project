@@ -8,13 +8,13 @@
   background-color: #f7f8fa;
   z-index: 999;
   overflow: hidden;
-  padding-top: 100rpx;
 }
 
 .skeleton-tabs {
   display: flex;
+  align-items: center;
+  height: 96rpx;
   background-color: #ffffff;
-  padding: 16rpx 0;
   border-bottom: 1rpx solid #f0f0f0;
 }
 
@@ -23,7 +23,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 12rpx 0;
+  height: 100%;
 }
 
 .skeleton-tab.active {
@@ -36,10 +36,11 @@
 
 .skeleton-event-card {
   background: #fff;
-  border-radius: 12rpx;
+  border-radius: 16rpx;
   padding: 16rpx;
   margin-bottom: 24rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.06), 0 1rpx 2rpx rgba(0, 0, 0, 0.04);
+  border: 1rpx solid #E5E7EB;
 }
 
 .skeleton-club-header {
