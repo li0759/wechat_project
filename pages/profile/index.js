@@ -208,6 +208,10 @@ Page({
 
   syncProfileTabBarWithOverlay() {
     try {
+      if (this.__globalPopupTabBarReleased) {
+        this._setCustomTabBarHidden(false)
+        return
+      }
       const visible = Boolean((this.data.globalPopup || {}).visible)
       if (this.__lastProfilePopupVisible === visible) return
       this.__lastProfilePopupVisible = visible
@@ -1575,10 +1579,9 @@ Page({
   },
 
   /**
-   * 全局弹窗收起回调
+   * 全局弹窗收起开始：尽早释放重资源（如图表）
    */
   onGlobalPopupCollapse() {
-    // 如果是数据展示panel，先隐藏图表
     const { type } = this.data.globalPopup;
     if (type === 'all-club-events' || type === 'all-club-users' || type === 'club-events' || type === 'club-financial') {
       let panelId = '';
@@ -1591,7 +1594,7 @@ Page({
       } else if (type === 'club-financial') {
         panelId = '#clubFinancialPanel';
       }
-      
+
       if (panelId) {
         const panel = this.selectComponent(panelId);
         if (panel && panel.hideCharts) {
@@ -1599,24 +1602,42 @@ Page({
         }
       }
     }
-    
-    setTimeout(() => {
-      this.setData({
-        'globalPopup.visible': false,
-        'globalPopup.loading': true,
-        'globalPopup.renderPanel': false,
-        'globalPopup.type': '',
-        'globalPopup.id': '',
-        'globalPopup.clubId': '',
-        globalPopupStack: [],
-        globalPopupDeferBack: false,
-        globalPopupStackAnim: '',
-        globalPopupOverlay: null,
-        hostExpandableBackShow: true
-      }, () => {
-        this.syncProfileTabBarWithOverlay()
-      });
-    }, 800);
+  },
+
+  /** 白底下滑至 70%：先恢复 tabBar，弹层仍保留以播完涟漪 */
+  onGlobalPopupCollapsed(e) {
+    const cancelled = !!(e && e.detail && e.detail.cancelled)
+    if (cancelled) {
+      this._finishGlobalPopupDismiss()
+      return
+    }
+    this.__globalPopupTabBarReleased = true
+    this._setCustomTabBarHidden(false)
+  },
+
+  /** 涟漪收回结束：卸载弹层并重置状态 */
+  onGlobalPopupDismissed() {
+    this._finishGlobalPopupDismiss()
+  },
+
+  _finishGlobalPopupDismiss() {
+    this.__globalPopupTabBarReleased = false
+    if (!this.data.globalPopup || !this.data.globalPopup.visible) return
+    this.setData({
+      'globalPopup.visible': false,
+      'globalPopup.loading': true,
+      'globalPopup.renderPanel': false,
+      'globalPopup.type': '',
+      'globalPopup.id': '',
+      'globalPopup.clubId': '',
+      globalPopupStack: [],
+      globalPopupDeferBack: false,
+      globalPopupStackAnim: '',
+      globalPopupOverlay: null,
+      hostExpandableBackShow: true
+    }, () => {
+      this.syncProfileTabBarWithOverlay()
+    })
   },
 
   /**

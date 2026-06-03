@@ -174,15 +174,25 @@
   >
     <view slot="trigger"></view>
     <view slot="content" class="nested-popup-shell">
-      <block wx:if="{{nestedEventManage.renderPanel}}">
+      <view
+        wx:if="{{!nestedEventManage.renderPanel}}"
+        class="global-popup-skeleton-overlay"
+      >
+        <event-manage-skeleton />
+      </view>
+      <view
+        wx:if="{{nestedEventManage.renderPanel}}"
+        class="global-popup-panel-layer"
+      >
         <event-manage-panel
+          class="global-popup-panel-fill"
           id="nestedEventManagePanel"
           event-id="{{nestedEventManage.eventId}}"
           bind:loaded="onNestedEventManageLoaded"
           bind:update="onNestedEventManageUpdate"
           bind:close="closeNestedEventManage"
         />
-      </block>
+      </view>
     </view>
   </expandable-container_fullscreen>
 
@@ -201,15 +211,25 @@
   >
     <view slot="trigger"></view>
     <view slot="content" class="nested-popup-shell">
-      <block wx:if="{{nestedEventDetail.renderPanel}}">
+      <view
+        wx:if="{{!nestedEventDetail.renderPanel}}"
+        class="global-popup-skeleton-overlay"
+      >
+        <event-detail-skeleton />
+      </view>
+      <view
+        wx:if="{{nestedEventDetail.renderPanel}}"
+        class="global-popup-panel-layer"
+      >
         <event-detail-panel
+          class="global-popup-panel-fill"
           id="nestedEventDetailPanel"
           event-id="{{nestedEventDetail.eventId}}"
           bind:loaded="onNestedEventDetailLoaded"
           bind:update="onNestedEventDetailUpdate"
           bind:close="closeNestedEventDetail"
         />
-      </block>
+      </view>
     </view>
   </expandable-container_fullscreen>
 
@@ -228,15 +248,25 @@
   >
     <view slot="trigger"></view>
     <view slot="content" class="nested-popup-shell">
-      <block wx:if="{{nestedEventJoined.renderPanel}}">
+      <view
+        wx:if="{{!nestedEventJoined.renderPanel}}"
+        class="global-popup-skeleton-overlay"
+      >
+        <event-joined-skeleton />
+      </view>
+      <view
+        wx:if="{{nestedEventJoined.renderPanel}}"
+        class="global-popup-panel-layer"
+      >
         <event-joined-panel
+          class="global-popup-panel-fill"
           id="nestedEventJoinedPanel"
           event-id="{{nestedEventJoined.eventId}}"
           bind:loaded="onNestedEventJoinedLoaded"
           bind:update="onNestedEventJoinedUpdate"
           bind:close="closeNestedEventJoined"
         />
-      </block>
+      </view>
     </view>
   </expandable-container_fullscreen>
 </view>

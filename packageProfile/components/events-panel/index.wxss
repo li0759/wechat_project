@@ -436,9 +436,41 @@
   background: #f7f8fa;
 }
 
-.nested-popup-shell > event-manage-panel,
-.nested-popup-shell > event-detail-panel,
-.nested-popup-shell > event-joined-panel {
+.global-popup-skeleton-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+  background: #f7f8fa;
+  opacity: 1;
+  transition: opacity 280ms ease;
+  pointer-events: none;
+}
+
+.global-popup-panel-layer {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  opacity: 1;
+}
+
+.global-popup-panel-fill {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.nested-popup-shell > .global-popup-panel-layer > event-manage-panel,
+.nested-popup-shell > .global-popup-panel-layer > event-detail-panel,
+.nested-popup-shell > .global-popup-panel-layer > event-joined-panel {
   flex: 1 1 0;
   min-height: 0;
   width: 100%;

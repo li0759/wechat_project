@@ -62,7 +62,9 @@
     >
       <view class="fs-sheet-content-bg"></view>
       <view class="fs-sheet-content-body">
-        <slot name="content" ></slot>
+        <block wx:if="{{fsContentVisible}}">
+          <slot name="content"></slot>
+        </block>
       </view>
     </view>
   </view>

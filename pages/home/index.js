@@ -165,12 +165,15 @@ Page({
     try {
       const gp = this.data.globalPopup || {}
       const mf = this.data.messagesFs || {}
-      const active = Boolean(gp.visible) || Boolean(mf.visible)
+      const layerActive = Boolean(gp.visible) || Boolean(mf.visible)
+      const tabBarHidden =
+        (Boolean(gp.visible) && !this.__globalPopupTabBarReleased) ||
+        (Boolean(mf.visible) && !this.__messagesFsTabBarReleased)
       const prev = this.data.homeFullscreenLayerActive
-      if (prev === active) return
-      this.setData({ homeFullscreenLayerActive: active })
-      // 全屏弹层：只隐藏自定义 tabBar（getTabBar），不用 wx.hideTabBar/showTabBar
-      this._setCustomTabBarHidden(active)
+      if (prev !== layerActive) {
+        this.setData({ homeFullscreenLayerActive: layerActive })
+      }
+      this._setCustomTabBarHidden(tabBarHidden)
     } catch (e) {}
   },
 
@@ -206,13 +209,26 @@ Page({
     if (popup && popup.collapse) popup.collapse();
   },
 
-  onMessagesFsCollapse() {
-    // 等待收起动画结束后再隐藏
-    setTimeout(() => {
-      this.setData({ 'messagesFs.visible': false }, () => {
-        this.syncHomeFullscreenLayerState()
-      })
-    }, 800);
+  onMessagesFsCollapsed(e) {
+    const cancelled = !!(e && e.detail && e.detail.cancelled)
+    if (cancelled) {
+      this._finishMessagesFsDismiss()
+      return
+    }
+    this.__messagesFsTabBarReleased = true
+    this._setCustomTabBarHidden(false)
+  },
+
+  onMessagesFsDismissed() {
+    this._finishMessagesFsDismiss()
+  },
+
+  _finishMessagesFsDismiss() {
+    this.__messagesFsTabBarReleased = false
+    if (!this.data.messagesFs || !this.data.messagesFs.visible) return
+    this.setData({ 'messagesFs.visible': false }, () => {
+      this.syncHomeFullscreenLayerState()
+    })
   },
 
   onMessagesFsContentReady() {
@@ -2338,29 +2354,38 @@ Page({
     this.setData({ hostExpandableBackShow: show })
   },
 
-  // 全局弹窗收起回调 - 延迟隐藏以等待动画完成
-  onGlobalPopupCollapse: function() {
-    // 不需要手动调用 applyLocalChanges，因为 recordChange 会自动广播
-    
-    // 延迟设置 visible: false，等待收回动画完成
-    // 动画时长约为 animationDuration(300) + slideDur(360) ≈ 700ms
-    setTimeout(() => {
-      this.setData({
-        'globalPopup.visible': false,
-        'globalPopup.loading': true,
-        'globalPopup.renderPanel': false,  // 重置 renderPanel
-        'globalPopup.type': '',
-        'globalPopup.id': '',
-        'globalPopup.data': {},
-        globalPopupStack: [],
-        globalPopupDeferBack: false,
-        globalPopupStackAnim: '',
-        globalPopupOverlay: null,
-        hostExpandableBackShow: true
-      }, () => {
-        this.syncHomeFullscreenLayerState()
-      })
-    }, 800);
+  onGlobalPopupCollapsed: function(e) {
+    const cancelled = !!(e && e.detail && e.detail.cancelled)
+    if (cancelled) {
+      this._finishGlobalPopupDismiss()
+      return
+    }
+    this.__globalPopupTabBarReleased = true
+    this._setCustomTabBarHidden(false)
+  },
+
+  onGlobalPopupDismissed: function() {
+    this._finishGlobalPopupDismiss()
+  },
+
+  _finishGlobalPopupDismiss: function() {
+    this.__globalPopupTabBarReleased = false
+    if (!this.data.globalPopup || !this.data.globalPopup.visible) return
+    this.setData({
+      'globalPopup.visible': false,
+      'globalPopup.loading': true,
+      'globalPopup.renderPanel': false,
+      'globalPopup.type': '',
+      'globalPopup.id': '',
+      'globalPopup.data': {},
+      globalPopupStack: [],
+      globalPopupDeferBack: false,
+      globalPopupStackAnim: '',
+      globalPopupOverlay: null,
+      hostExpandableBackShow: true
+    }, () => {
+      this.syncHomeFullscreenLayerState()
+    })
   },
 
   // 全局弹窗内容准备好回调

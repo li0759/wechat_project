@@ -1,4 +1,4 @@
-// pages/profile/club-members/index.js
+﻿// pages/profile/club-members/index.js
 const app = getApp()
 const { getDefaultAvatarUrl, resolveAvatarUrl } = require('../../../utils/default-avatar')
 const { runPanelLoad, emitPanelLoaded } = require('../../../components/panel-loading-transition/run-load');
@@ -35,7 +35,7 @@ Component({
     monthMemberGroups: [],
     monthIndexSidebar: [],
     searchKeyword: '',
-    default_avatar: getDefaultAvatarUrl(),
+    default_avatar: '',
     // 角色相关
     roleNames: {
       'president': '会长',
@@ -139,7 +139,11 @@ Component({
   lifetimes: {
     attached() {
       const userId = wx.getStorageSync('userId')
-      this.setData({ currentUserId: userId })
+      const staticBase = String(app.globalData.static_url || '').replace(/\/$/, '')
+      this.setData({
+        currentUserId: userId,
+        default_avatar: staticBase ? `${staticBase}/assets/default_avatar.webp` : getDefaultAvatarUrl(),
+      })
       this._loaded = false
       this._hasExpanded = false
     }
@@ -190,7 +194,13 @@ Component({
       emitPanelLoaded(this)
     },
 
+    _defaultAvatarUrl() {
+      const staticBase = String(app.globalData.static_url || '').replace(/\/$/, '')
+      return staticBase ? `${staticBase}/assets/default_avatar.webp` : getDefaultAvatarUrl()
+    },
+
     loadData() {
+      this.setData({ default_avatar: this._defaultAvatarUrl() })
       this._hasExpanded = true
       const clubId = this.properties.clubId
       this._lastClubId = clubId ? String(clubId) : ''
@@ -279,7 +289,7 @@ Component({
                 role: member.role,
                 is_deleted: isDeleted,
                 role_display: isDeleted ? '已退出协会' : (member.role_display || this.data.roleNames[member.role] || '普通会员'),
-                avatar: member.avatar,
+                avatar: resolveAvatarUrl(member.avatar),
                 join_date: this.formatDate(member.join_date),
                 join_date_raw: member.join_date,
                 is_current_user: member.is_current_user,
@@ -294,6 +304,7 @@ Component({
             this.setData({
               members: processedMembers,
               filteredMembers: processedMembers,
+              default_avatar: this._defaultAvatarUrl(),
               existingUserIds: processedMembers
                 .filter((m) => !m.is_deleted)
                 .map((m) => String(m.user_id)),
@@ -374,7 +385,7 @@ Component({
 
     const items = ordered.map((m) => ({
       id: `club-member-${String(m.user_id)}`,
-      image: m.avatar || getDefaultAvatarUrl(),
+      image: resolveAvatarUrl(m.avatar),
       ini_width: avatar,
       ini_height: avatar,
       user_id: String(m.user_id),
@@ -1079,6 +1090,7 @@ Component({
             return {
               ...u,
               user_id: uid,
+              avatar: resolveAvatarUrl(u.avatar),
               is_current_user: isCurrent,
               is_deleted: !!(existingMember && existingMember.is_deleted),
               isExistingMember: this.abIsExisting(uid) || isCurrent
@@ -1192,6 +1204,7 @@ Component({
           const isActive = this.isActiveClubMember(user.user_id) || isCurrentUser
           return {
             ...user,
+            avatar: resolveAvatarUrl(user.avatar),
             member_id: existingMember ? existingMember.member_id : null,
             role: existingMember ? existingMember.role : (user.role || 'member'),
             role_display: existingMember
@@ -1320,7 +1333,7 @@ Component({
           const avatar = 50
           const newItem = {
             id: `club-member-${String(userInfo.user_id)}`,
-            image: userInfo.avatar || getDefaultAvatarUrl(),
+            image: resolveAvatarUrl(userInfo.avatar),
             ini_width: avatar,
             ini_height: avatar,
             user_id: String(userInfo.user_id),

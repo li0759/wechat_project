@@ -12,7 +12,13 @@ Component({
   properties: {
     groups: { type: Array, value: [] },
     indexSidebar: { type: Array, value: [] },
-    defaultAvatar: { type: String, value: '' },
+    defaultAvatar: {
+      type: String,
+      value: '',
+      observer(val) {
+        this._syncDisplayDefaultAvatar(val)
+      },
+    },
     roleNames: { type: Object, value: {} },
     roleOptions: { type: Object, value: {} },
     roleDisplayMap: { type: Object, value: {} },
@@ -48,6 +54,8 @@ Component({
     selectedUserIds: [],
     selectedUserMap: {},
     detailExporting: false,
+    displayDefaultAvatar: '',
+    avatarErrorIds: {},
   },
 
   observers: {
@@ -58,6 +66,7 @@ Component({
       this._groupTops = null
       this._indexItemRanges = null
       this._scrollRaf = false
+      this.setData({ avatarErrorIds: {} })
       const itemCount = (groups || []).reduce(
         (n, grp) => n + ((grp && grp.children) ? grp.children.length : 0),
         0
@@ -92,6 +101,7 @@ Component({
 
   lifetimes: {
     attached() {
+      this._syncDisplayDefaultAvatar(this.properties.defaultAvatar)
       let guess = 520
       try {
         const wh = wx.getSystemInfoSync().windowHeight || 667
@@ -751,6 +761,23 @@ Component({
 
     onRemoveMember(e) {
       this.triggerEvent('removeMember', e?.currentTarget?.dataset || {})
+    },
+
+    _syncDisplayDefaultAvatar(fromProp) {
+      const staticBase = String(app.globalData.static_url || '').replace(/\/$/, '')
+      const fallback = staticBase ? `${staticBase}/assets/default_avatar.webp` : ''
+      const next = (fromProp && String(fromProp).trim()) || fallback
+      if (next && next !== this.data.displayDefaultAvatar) {
+        this.setData({ displayDefaultAvatar: next })
+      }
+    },
+
+    onMemberAvatarError(e) {
+      const memberId = e?.currentTarget?.dataset?.memberId
+      if (memberId == null || memberId === '') return
+      const key = String(memberId)
+      if (this.data.avatarErrorIds[key]) return
+      this.setData({ [`avatarErrorIds.${key}`]: true })
     },
   },
 })

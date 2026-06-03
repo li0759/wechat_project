@@ -3,11 +3,10 @@
 function getDefaultAvatarUrl() {
   try {
     const app = getApp()
-    if (app && app.globalData && app.globalData.defaultAvatarUrl) {
-      return app.globalData.defaultAvatarUrl
-    }
     const base = (app && app.globalData && app.globalData.static_url) || ''
-    if (base) return `${base}/assets/default_avatar.webp`
+    if (base) {
+      return `${String(base).replace(/\/$/, '')}/assets/default_avatar.webp`
+    }
   } catch (e) {}
   return '/assets/default_avatar.webp'
 }

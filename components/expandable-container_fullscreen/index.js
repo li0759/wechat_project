@@ -55,7 +55,9 @@
     fsDragTransition: '',
     fsGestureDismissing: false,
     effectiveZIndex: 1000,
-    fsNav: { statusBarHeight: 0, titleBarHeight: 44, totalHeight: 44 }
+    fsNav: { statusBarHeight: 0, titleBarHeight: 44, totalHeight: 44 },
+    /** 收起时立即卸掉 sheet 内 slot，下滑阶段仅留白底 */
+    fsContentVisible: false
   },
 
   lifetimes: {
@@ -519,7 +521,8 @@
             isExpanded: true,
             isExpanding: false,
             fsContentClass: 'fs-enter-active',
-            fsContentDur: slideDur
+            fsContentDur: slideDur,
+            fsContentVisible: true
           }, () => {
             // 须在 isExpanded 落库后再入栈仲裁，否则 sync 仍把父层当栈顶
             this.registerGlobalFullscreenCloser()
@@ -569,6 +572,7 @@
         rippleVisible: false,
         rippleStyle: '',
         fsContentClass: 'fs-hidden',
+        fsContentVisible: false,
         pcLeaving: false
       })
     },
@@ -578,6 +582,7 @@
       if (this.data.isExpanding && !this.data.isExpanded) {
         this.cancelExpandInProgress()
         this.triggerEvent('collapse', {})
+        this.triggerEvent('collapsed', { cancelled: true })
         return
       }
       if (!this.data.isExpanded) return
@@ -608,10 +613,14 @@
       // 普通收起立即释放栈；系统返回收起则延后到收起后段，避免视觉闪烁
       if (!deferStackRelease) this.unregisterGlobalFullscreenCloser()
 
-      // 1) sheet 匀速下滑（与手势 dismiss 一致）
-    this.setData({ fsContentClass: 'fs-leave-linear', fsContentDur: slideDur })
+      // 1) 立即清空 sheet 内容；sheet 匀速下滑，下滑阶段仅留白底
+      this.setData({
+        fsContentVisible: false,
+        fsContentClass: 'fs-leave-linear',
+        fsContentDur: slideDur
+      })
 
-      // 2) 下滑到70%时，涟漪收缩
+      // 2) 下滑到70%：涟漪收缩 + collapsed（tabBar 等）；涟漪结束后再 dismissed（卸载弹层）
       setTimeout(() => {
         if (deferStackRelease) {
           this.unregisterGlobalFullscreenCloser()
@@ -621,10 +630,11 @@
         this.setData({ fsContentClass: 'fs-hidden', isExpanded: false })
 
         const animDur = this.playCollapseRippleShrink(dur)
+        this.triggerEvent('collapsed', {})
         setTimeout(() => {
           this.setData({ rippleVisible: false, rippleStyle: '' })
           this._restoreClearParentHostIfNeeded()
-          this.triggerEvent('collapsed', {})
+          this.triggerEvent('dismissed', {})
         }, animDur + 20)
       }, Math.floor(slideDur * 0.7))
 
@@ -757,14 +767,21 @@
 
       // 立即从栈里移除，把“系统返回拦截权”交给下一层（如有）
       this.unregisterGlobalFullscreenCloser()
-      this.setData({ fsGestureDismissing: true, fsDragTransition: `transform ${slideDur}ms linear`, fsDragY: windowHeight + 80, fsDragTransform: `translate3d(0,${windowHeight + 80}px,0)` })
+      this.setData({
+        fsGestureDismissing: true,
+        fsContentVisible: false,
+        fsDragTransition: `transform ${slideDur}ms linear`,
+        fsDragY: windowHeight + 80,
+        fsDragTransform: `translate3d(0,${windowHeight + 80}px,0)`
+      })
 
       setTimeout(() => {
         this.setData({ isExpanded: false })
         const animDur = this.playCollapseRippleShrink(dur)
+        this.triggerEvent('collapsed', {})
         setTimeout(() => {
           this.setData({ fsGestureDismissing: false, fsDragY: 0, fsDragTransition: '', fsDragTransform: 'none', rippleVisible: false, rippleStyle: '' })
-          this.triggerEvent('collapsed', {})
+          this.triggerEvent('dismissed', {})
         }, animDur + 20)
       }, Math.floor(slideDur * 0.7))
 

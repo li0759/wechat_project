@@ -326,6 +326,8 @@
     fullscreen-top-padding="{{0}}"
     show-fullscreen-back="{{hostExpandableBackShow}}"
     bind:collapse="onGlobalPopupCollapse"
+    bind:collapsed="onGlobalPopupCollapsed"
+    bind:dismissed="onGlobalPopupDismissed"
     bind:contentReady="onGlobalPopupContentReady"
   >
     <view slot="trigger"></view>

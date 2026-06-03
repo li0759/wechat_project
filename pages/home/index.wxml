@@ -489,7 +489,8 @@
     fullscreen-sheet-bg-color="#f7f8fa"
     fullscreen-top-padding="{{0}}"
     clear-parent="{{messagesFs.visible}}"
-    bind:collapse="onGlobalPopupCollapse"
+    bind:collapsed="onGlobalPopupCollapsed"
+    bind:dismissed="onGlobalPopupDismissed"
     bind:contentReady="onGlobalPopupContentReady"
   >
     <view slot="trigger"></view>
@@ -633,7 +634,8 @@
     bg-color="rgba(223, 118, 176, 0.8)"
     fullscreen-sheet-bg-color="#f7f8fa"
     fullscreen-top-padding="{{0}}"
-    bind:collapse="onMessagesFsCollapse"
+    bind:collapsed="onMessagesFsCollapsed"
+    bind:dismissed="onMessagesFsDismissed"
     bind:contentReady="onMessagesFsContentReady"
   >
     <view slot="trigger"></view>

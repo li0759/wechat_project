@@ -420,6 +420,38 @@ Component({
       }
     },
     
+    _openNestedEventPopup(panelType, stateKey, popupSelector, eventId, tapX, tapY) {
+      panelLazy.preloadForPanelType(panelType).then(() => {
+        this.setData({
+          [stateKey]: {
+            visible: true,
+            loading: true,
+            renderPanel: false,
+            eventId,
+            tapX,
+            tapY
+          }
+        }, () => {
+          setTimeout(() => {
+            const popup = this.selectComponent(popupSelector);
+            if (popup && popup.expand) {
+              popup.expand(tapX, tapY);
+            }
+          }, 50);
+        });
+      });
+    },
+
+    _renderNestedPanel(panelType, renderPanelKey, panelSelector) {
+      panelLazy.preloadForPanelType(panelType).then(() => {
+        this.setData({
+          [renderPanelKey]: true
+        }, () => {
+          panelLazy.invokePanelLoadData(this, panelSelector);
+        });
+      });
+    },
+
     onEventTap(e) {
       const eventId = e.currentTarget.dataset.event_id;
       
@@ -442,62 +474,32 @@ Component({
       }
       
       if (isUserManage) {
-        // 我管理的活动 -> 打开 event-manage-panel
-    this.setData({
-          nestedEventManage: {
-            visible: true,
-            loading: true,
-            renderPanel: false,
-            eventId: eventId,
-            tapX,
-            tapY
-          }
-        }, () => {
-          setTimeout(() => {
-            const popup = this.selectComponent('#nestedEventManagePopup');
-            if (popup && popup.expand) {
-              popup.expand(tapX, tapY);
-            }
-          }, 50);
-        });
+        this._openNestedEventPopup(
+          'event-manage',
+          'nestedEventManage',
+          '#nestedEventManagePopup',
+          eventId,
+          tapX,
+          tapY
+        );
       } else if (isUserJoined) {
-        // 我参加的活动 -> 打开 event-joined-panel
-    this.setData({
-          nestedEventJoined: {
-            visible: true,
-            loading: true,
-            renderPanel: false,
-            eventId: eventId,
-            tapX,
-            tapY
-          }
-        }, () => {
-          setTimeout(() => {
-            const popup = this.selectComponent('#nestedEventJoinedPopup');
-            if (popup && popup.expand) {
-              popup.expand(tapX, tapY);
-            }
-          }, 50);
-        });
+        this._openNestedEventPopup(
+          'event-joined',
+          'nestedEventJoined',
+          '#nestedEventJoinedPopup',
+          eventId,
+          tapX,
+          tapY
+        );
       } else {
-        // 其他情况 -> 打开 event-detail-panel
-    this.setData({
-          nestedEventDetail: {
-            visible: true,
-            loading: true,
-            renderPanel: false,
-            eventId: eventId,
-            tapX,
-            tapY
-          }
-        }, () => {
-          setTimeout(() => {
-            const popup = this.selectComponent('#nestedEventDetailPopup');
-            if (popup && popup.expand) {
-              popup.expand(tapX, tapY);
-            }
-          }, 50);
-        });
+        this._openNestedEventPopup(
+          'event-detail',
+          'nestedEventDetail',
+          '#nestedEventDetailPopup',
+          eventId,
+          tapX,
+          tapY
+        );
       }
     },
 
@@ -559,11 +561,8 @@ Component({
     /**
      * 嵌套弹窗内容准备就绪
      */
-    onNestedEventManageContentReady() {      this.setData({
-        'nestedEventManage.renderPanel': true
-      }, () => {
-        panelLazy.invokePanelLoadData(this, '#nestedEventManagePanel');
-      });
+    onNestedEventManageContentReady() {
+      this._renderNestedPanel('event-manage', 'nestedEventManage.renderPanel', '#nestedEventManagePanel');
     },
 
     /**
@@ -614,11 +613,8 @@ Component({
     },
 
     // ========= 嵌套 Event Detail 弹窗相关方法 =========
-  onNestedEventDetailContentReady() {      this.setData({
-        'nestedEventDetail.renderPanel': true
-      }, () => {
-        panelLazy.invokePanelLoadData(this, '#nestedEventDetailPanel');
-      });
+    onNestedEventDetailContentReady() {
+      this._renderNestedPanel('event-detail', 'nestedEventDetail.renderPanel', '#nestedEventDetailPanel');
     },
 
     onNestedEventDetailLoaded() {      this.setData({
@@ -652,11 +648,8 @@ Component({
     },
 
     // ========= 嵌套 Event Joined 弹窗相关方法 =========
-  onNestedEventJoinedContentReady() {      this.setData({
-        'nestedEventJoined.renderPanel': true
-      }, () => {
-        panelLazy.invokePanelLoadData(this, '#nestedEventJoinedPanel');
-      });
+    onNestedEventJoinedContentReady() {
+      this._renderNestedPanel('event-joined', 'nestedEventJoined.renderPanel', '#nestedEventJoinedPanel');
     },
 
     onNestedEventJoinedLoaded() {      this.setData({
