@@ -1,0 +1,16 @@
+<view wx:if="{{showRing || badgeVisible}}" class="lr-root">
+  <view
+    wx:if="{{showRing}}"
+    class="lr-overlay {{ringFading ? 'lr-overlay--fade' : ''}}"
+    style="{{overlayStyle}}"
+  >
+    <view class="lr-ring" style="{{ringStyle}};{{ringTransform}}"></view>
+  </view>
+  <view
+    wx:if="{{showBadge && badgeVisible}}"
+    class="lr-badge {{badgeShown ? 'lr-badge--in' : ''}}"
+    style="{{badgeStyle}}"
+  >
+    <text class="lr-badge__text">{{badgeText}}</text>
+  </view>
+</view>

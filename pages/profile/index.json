@@ -1,6 +1,8 @@
 {
   "usingComponents": {
     "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-avatar": "tdesign-miniprogram/avatar/avatar",
+    "loading-ring": "/components/loading-ring/index",
     "t-skeleton": "tdesign-miniprogram/skeleton/skeleton",
     "ripple": "/components/ripple/index",
     "expandable-container_fullscreen": "/components/expandable-container_fullscreen/index",

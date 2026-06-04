@@ -554,32 +554,32 @@ Page({
     });
   },
 
+  _beginAvatarLoading() {
+    this.setData({ loading: true });
+  },
+
+  _finishAvatarLoading() {
+    this.setData({ loading: false });
+  },
+
   /**
    * 获取用户数据
    */
   async fetchUserData() {
+    this._beginAvatarLoading();
     try {
-      wx.showLoading({
-        title: '加载?..',
-      });
-      
-      // 获取用户ID
-    const userId = wx.getStorageSync('userInfo').id;
+      const userId = wx.getStorageSync('userInfo').id;
       if (!userId) {
         throw new Error('未找到用户ID');
       }
-      
 
       await Promise.allSettled([
         this.fetchleadclubInfo()
       ]);
       await this.fetchProfileBadges();
-    this.setData({
-        loading: false
-      });
-      
-      wx.hideLoading();
-    } catch (error) {      wx.hideLoading();
+      this._finishAvatarLoading();
+    } catch (error) {
+      this.setData({ loading: false });
       wx.showToast({
         title: error && error.message ? error.message : '获取用户数据失败',
         icon: 'none'

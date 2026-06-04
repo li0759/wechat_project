@@ -49,18 +49,20 @@ page {
 
 .user-card {
   display: flex;
-  flex-direction: row; /* 显式指定flex-direction */
-  padding-left:0rpx;
-  padding-top: 5rpx;
-  padding-bottom: 5rpx;
+  flex-direction: row;
+  padding-left: 0rpx;
+  padding-top: 20rpx;
   align-items: center;
 }
 
-.avatar {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
-  border: 4rpx solid rgba(255, 255, 255, 0.5);
+.profile-avatar-wrap {
+  position: relative;
+  width: 100rpx;
+  height: 100rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 /* 功能列表 */

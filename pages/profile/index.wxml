@@ -4,7 +4,26 @@
     <!-- 头部用户信息 -->
     <view class="header">
       <view class="user-card">
-        <image class="avatar" src="{{userInfo.avatar || default_avatar}}" mode="aspectFill"></image>
+        <view class="profile-avatar-wrap">
+          <t-avatar
+            image="{{userInfo.avatar || default_avatar}}"
+            size="80rpx"
+            bordered
+          />
+          <loading-ring
+            loading="{{loading}}"
+            size="100rpx"
+            thickness="10rpx"
+            color="#DF76B0"
+            track-color="rgba(223, 118, 176, 0.2)"
+            show-badge
+            badge-text="√"
+            badge-color="#DF76B0"
+            fade-duration="{{500}}"
+            badge-fade-duration="{{500}}"
+            align-angle="{{260}}"
+          />
+        </view>
       </view>
     </view>
  
